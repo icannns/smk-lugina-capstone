@@ -13,8 +13,9 @@ type ShellProps = {
   children: ReactNode;
   empty: boolean;
   onAction: (action: DashboardAction) => void;
-  activePage?: "dashboard" | "students";
+  activePage?: "dashboard" | "students" | "events";
   iconOverrides?: Record<string, GuruIconAsset>;
+  showSettings?: boolean;
 };
 
 function SidebarContent({
@@ -23,15 +24,18 @@ function SidebarContent({
   closeMobile,
   activePage = "dashboard",
   iconOverrides,
+  showSettings = false,
 }: Omit<ShellProps, "children"> & { closeMobile?: () => void }) {
   function select(label: string, figmaNode: string | null) {
     closeMobile?.();
     onAction({
       title: label,
       description:
-        activePage === "students"
-          ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Pengelolaan Data Siswa.`
-          : `Halaman ${label} belum tersedia pada fase Dashboard Guru. Anda tetap berada di Dashboard.`,
+        activePage === "events"
+          ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Event Management.`
+          : activePage === "students"
+            ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Pengelolaan Data Siswa.`
+            : `Halaman ${label} belum tersedia pada fase Dashboard Guru. Anda tetap berada di Dashboard.`,
       figmaNode: figmaNode ?? undefined,
     });
   }
@@ -75,17 +79,26 @@ function SidebarContent({
                 {group.title}
               </h2>
               {group.items.map((item) =>
-                item.icon === "dashboard" || item.icon === "students" ? (
+                item.icon === "dashboard" ||
+                item.icon === "students" ||
+                item.icon === "create" ? (
                   <Link
                     key={item.label}
                     href={
                       item.icon === "dashboard"
                         ? "/guru/dashboard"
-                        : "/guru/students"
+                        : item.icon === "students"
+                          ? "/guru/students"
+                          : "/guru/events"
                     }
-                    aria-current={activePage === item.icon ? "page" : undefined}
+                    aria-current={
+                      activePage === item.icon ||
+                      (activePage === "events" && item.icon === "create")
+                        ? "page"
+                        : undefined
+                    }
                     onClick={closeMobile}
-                    className={`flex h-10 items-center gap-3 rounded-control px-3 text-sm ${activePage === item.icon ? (activePage === "students" ? "bg-primary-soft font-medium text-primary" : "bg-primary-soft font-semibold text-[#1447e6]") : `${activePage === "students" ? "font-semibold" : empty ? "font-medium" : "font-normal"} text-secondary hover:bg-gray-50`}`}
+                    className={`flex h-10 items-center gap-3 rounded-control px-3 text-sm ${activePage === item.icon || (activePage === "events" && item.icon === "create") ? (activePage !== "dashboard" ? "bg-primary-soft font-medium text-primary" : "bg-primary-soft font-semibold text-[#1447e6]") : `${activePage === "students" || (activePage === "events" && item.icon === "dashboard") ? "font-semibold" : empty ? "font-medium" : "font-normal"} text-secondary hover:bg-gray-50`}`}
                   >
                     <DashboardIcon
                       name={item.icon}
@@ -109,6 +122,19 @@ function SidebarContent({
                     <span>{item.label}</span>
                   </button>
                 ),
+              )}
+              {group.title === "Akun" && showSettings && (
+                <button
+                  type="button"
+                  onClick={() => select("Pengaturan", null)}
+                  className="flex h-10 items-center gap-2.5 rounded-control px-3 text-left text-sm font-medium text-secondary hover:bg-gray-50"
+                >
+                  <DashboardIcon
+                    name="settings"
+                    asset={iconOverrides?.settings}
+                  />
+                  Pengaturan
+                </button>
               )}
             </div>
           </div>
@@ -147,6 +173,7 @@ export function DashboardShell({
   onAction,
   activePage = "dashboard",
   iconOverrides,
+  showSettings = false,
 }: ShellProps) {
   const mobile = useRef<HTMLDialogElement>(null);
   const account = useRef<HTMLDetailsElement>(null);
@@ -178,12 +205,20 @@ export function DashboardShell({
       className={`grid min-h-dvh min-w-0 lg:grid-cols-[256px_minmax(0,1fr)] ${empty ? "bg-gray-50" : "bg-[#f5f6f8]"}`}
     >
       <a
-        href={activePage === "students" ? "#students-main" : "#dashboard-main"}
+        href={
+          activePage === "events"
+            ? "#events-main"
+            : activePage === "students"
+              ? "#students-main"
+              : "#dashboard-main"
+        }
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3"
       >
-        {activePage === "students"
-          ? "Ke konten Pengelolaan Data Siswa"
-          : "Ke konten Dashboard"}
+        {activePage === "events"
+          ? "Ke konten Event Management"
+          : activePage === "students"
+            ? "Ke konten Pengelolaan Data Siswa"
+            : "Ke konten Dashboard"}
       </a>
       <aside
         aria-label="Sidebar Guru"
@@ -194,6 +229,7 @@ export function DashboardShell({
           onAction={onAction}
           activePage={activePage}
           iconOverrides={iconOverrides}
+          showSettings={showSettings}
         />
       </aside>
       <div className="min-w-0">
@@ -298,6 +334,7 @@ export function DashboardShell({
             closeMobile={() => mobile.current?.close()}
             activePage={activePage}
             iconOverrides={iconOverrides}
+            showSettings={showSettings}
           />
         </div>
       </dialog>

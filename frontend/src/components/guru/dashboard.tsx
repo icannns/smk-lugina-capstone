@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  dashboardActions,
   draftTitle,
   guruEvents,
   reviewQueue,
@@ -21,6 +20,7 @@ import { EventList } from "./event-list";
 import { ReviewQueue } from "./review-queue";
 
 function Dashboard({ empty }: { empty: boolean }) {
+  const router = useRouter();
   const [action, setAction] = useState<DashboardDialogState | null>(null);
   const [hasDraft, setHasDraft] = useState(true);
   const [deleted, setDeleted] = useState(false);
@@ -53,9 +53,7 @@ function Dashboard({ empty }: { empty: boolean }) {
   ];
   const createButton = (
     <div className={empty ? "w-[137.25px]" : "w-[148px] shrink-0"}>
-      <DashboardPrimaryButton
-        onClick={() => setAction(dashboardActions.create)}
-      >
+      <DashboardPrimaryButton onClick={() => router.push("/guru/events")}>
         {empty && <DashboardIcon name="plus" empty />}Create Event
       </DashboardPrimaryButton>
     </div>
@@ -156,7 +154,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                     </DashboardButton>
                     <DashboardButton
                       className="w-36"
-                      onClick={() => setAction(dashboardActions.resume)}
+                      onClick={() => router.push("/guru/events?tab=draft")}
                     >
                       Lanjutkan Draf
                     </DashboardButton>
