@@ -7,24 +7,31 @@ import {
   teacher,
   type DashboardAction,
 } from "@/lib/guru/dashboard-data";
-import { DashboardIcon } from "./dashboard-ui";
+import { DashboardIcon, type GuruIconAsset } from "./dashboard-ui";
 
 type ShellProps = {
   children: ReactNode;
   empty: boolean;
   onAction: (action: DashboardAction) => void;
+  activePage?: "dashboard" | "students";
+  iconOverrides?: Record<string, GuruIconAsset>;
 };
 
 function SidebarContent({
   empty,
   onAction,
   closeMobile,
+  activePage = "dashboard",
+  iconOverrides,
 }: Omit<ShellProps, "children"> & { closeMobile?: () => void }) {
   function select(label: string, figmaNode: string | null) {
     closeMobile?.();
     onAction({
       title: label,
-      description: `Halaman ${label} belum tersedia pada fase Dashboard Guru. Anda tetap berada di Dashboard.`,
+      description:
+        activePage === "students"
+          ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Pengelolaan Data Siswa.`
+          : `Halaman ${label} belum tersedia pada fase Dashboard Guru. Anda tetap berada di Dashboard.`,
       figmaNode: figmaNode ?? undefined,
     });
   }
@@ -68,15 +75,23 @@ function SidebarContent({
                 {group.title}
               </h2>
               {group.items.map((item) =>
-                item.icon === "dashboard" ? (
+                item.icon === "dashboard" || item.icon === "students" ? (
                   <Link
                     key={item.label}
-                    href="/guru/dashboard"
-                    aria-current="page"
+                    href={
+                      item.icon === "dashboard"
+                        ? "/guru/dashboard"
+                        : "/guru/students"
+                    }
+                    aria-current={activePage === item.icon ? "page" : undefined}
                     onClick={closeMobile}
-                    className="flex h-10 items-center gap-3 rounded-control bg-primary-soft px-3 text-sm font-semibold text-[#1447e6]"
+                    className={`flex h-10 items-center gap-3 rounded-control px-3 text-sm ${activePage === item.icon ? (activePage === "students" ? "bg-primary-soft font-medium text-primary" : "bg-primary-soft font-semibold text-[#1447e6]") : `${activePage === "students" ? "font-semibold" : empty ? "font-medium" : "font-normal"} text-secondary hover:bg-gray-50`}`}
                   >
-                    <DashboardIcon name={item.icon} empty={empty} />
+                    <DashboardIcon
+                      name={item.icon}
+                      empty={empty}
+                      asset={iconOverrides?.[item.icon]}
+                    />
                     {item.label}
                   </Link>
                 ) : (
@@ -86,7 +101,11 @@ function SidebarContent({
                     onClick={() => select(item.label, item.figmaNode)}
                     className={`flex h-10 items-center rounded-control px-3 text-left text-sm text-secondary hover:bg-gray-50 ${index === 1 ? "gap-2.5" : "gap-3"} ${empty || item.icon === "privacy" ? "font-medium" : "font-normal"}`}
                   >
-                    <DashboardIcon name={item.icon} empty={empty} />
+                    <DashboardIcon
+                      name={item.icon}
+                      empty={empty}
+                      asset={iconOverrides?.[item.icon]}
+                    />
                     <span>{item.label}</span>
                   </button>
                 ),
@@ -122,7 +141,13 @@ function SidebarContent({
   );
 }
 
-export function DashboardShell({ children, empty, onAction }: ShellProps) {
+export function DashboardShell({
+  children,
+  empty,
+  onAction,
+  activePage = "dashboard",
+  iconOverrides,
+}: ShellProps) {
   const mobile = useRef<HTMLDialogElement>(null);
   const account = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -153,16 +178,23 @@ export function DashboardShell({ children, empty, onAction }: ShellProps) {
       className={`grid min-h-dvh min-w-0 lg:grid-cols-[256px_minmax(0,1fr)] ${empty ? "bg-gray-50" : "bg-[#f5f6f8]"}`}
     >
       <a
-        href="#dashboard-main"
+        href={activePage === "students" ? "#students-main" : "#dashboard-main"}
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3"
       >
-        Ke konten Dashboard
+        {activePage === "students"
+          ? "Ke konten Pengelolaan Data Siswa"
+          : "Ke konten Dashboard"}
       </a>
       <aside
         aria-label="Sidebar Guru"
         className={`hidden flex-col border border-line bg-white lg:flex ${empty ? "rounded-2xl" : ""}`}
       >
-        <SidebarContent empty={empty} onAction={onAction} />
+        <SidebarContent
+          empty={empty}
+          onAction={onAction}
+          activePage={activePage}
+          iconOverrides={iconOverrides}
+        />
       </aside>
       <div className="min-w-0">
         <header className="relative z-20 flex h-16 items-center justify-between border-b border-line bg-white/80 px-5 backdrop-blur-xl sm:px-8 lg:justify-end">
@@ -201,7 +233,11 @@ export function DashboardShell({ children, empty, onAction }: ShellProps) {
                   {teacher.role}
                 </span>
               </span>
-              <DashboardIcon name="chevron" empty={empty} />
+              <DashboardIcon
+                name="chevron"
+                empty={empty}
+                asset={iconOverrides?.chevron}
+              />
             </summary>
             <div className="absolute right-0 top-[calc(100%+8px)] flex w-64 flex-col rounded-2xl border border-line bg-white p-2 shadow-lg">
               <p className="px-3 py-2 text-xs leading-5 text-secondary">
@@ -260,6 +296,8 @@ export function DashboardShell({ children, empty, onAction }: ShellProps) {
             empty={empty}
             onAction={onAction}
             closeMobile={() => mobile.current?.close()}
+            activePage={activePage}
+            iconOverrides={iconOverrides}
           />
         </div>
       </dialog>

@@ -15,22 +15,28 @@ const iconSizes: Record<string, number> = {
   privacy: 20,
 };
 
+export type GuruIconAsset = { src: string; width: number; height: number };
+
 export function DashboardIcon({
   name,
   empty = false,
+  asset,
 }: {
   name: string;
   empty?: boolean;
+  asset?: GuruIconAsset;
 }) {
   const width = iconSizes[name] ?? 18;
   const height = name === "privacy" ? 20.13 : width;
   return (
     <Image
       className="shrink-0"
-      src={`/guru/dashboard/${empty ? "empty" : "full"}-${name}.svg`}
+      src={
+        asset?.src ?? `/guru/dashboard/${empty ? "empty" : "full"}-${name}.svg`
+      }
       alt=""
-      width={width}
-      height={height}
+      width={asset?.width ?? width}
+      height={asset?.height ?? height}
     />
   );
 }
