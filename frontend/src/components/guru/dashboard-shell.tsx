@@ -16,6 +16,7 @@ type ShellProps = {
   activePage?: "dashboard" | "students" | "events";
   iconOverrides?: Record<string, GuruIconAsset>;
   showSettings?: boolean;
+  mainId?: string;
 };
 
 function SidebarContent({
@@ -174,6 +175,7 @@ export function DashboardShell({
   activePage = "dashboard",
   iconOverrides,
   showSettings = false,
+  mainId,
 }: ShellProps) {
   const mobile = useRef<HTMLDialogElement>(null);
   const account = useRef<HTMLDetailsElement>(null);
@@ -206,11 +208,13 @@ export function DashboardShell({
     >
       <a
         href={
-          activePage === "events"
-            ? "#events-main"
-            : activePage === "students"
-              ? "#students-main"
-              : "#dashboard-main"
+          mainId
+            ? `#${mainId}`
+            : activePage === "events"
+              ? "#events-main"
+              : activePage === "students"
+                ? "#students-main"
+                : "#dashboard-main"
         }
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3"
       >

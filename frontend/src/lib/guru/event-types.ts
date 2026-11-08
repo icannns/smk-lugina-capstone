@@ -7,6 +7,13 @@ export type EventMilestone = {
   deadline?: string; // Local wall time in WIB, never parsed in the browser's time zone.
   formats?: string;
   surveyActive?: boolean;
+  attachments?: EventAttachment[];
+};
+export type EventAttachment = {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
 };
 export type ManagedEvent = {
   id: string;
@@ -19,6 +26,16 @@ export type ManagedEvent = {
   progress?: number;
   rubric?: string;
   certificate?: string;
+  caseStudyHtml?: string;
+  directionsHtml?: string;
+  startAt?: string;
+  endAt?: string;
+  attachments?: EventAttachment[];
+  wizard?: {
+    step: "information" | "milestones";
+    selectedMilestoneId: string;
+    modeChosen: boolean;
+  };
 };
 export type EventEnrollment = {
   id: string;

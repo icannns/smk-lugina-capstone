@@ -141,7 +141,7 @@ export function EventListing({
           </h2>
           <p className="mt-2 text-sm text-secondary">
             {filters.tab === "draft" && !drafts
-              ? "Draf contoh yang dihapus akan tersedia lagi saat halaman dimuat ulang."
+              ? "Draf yang disimpan dalam sesi tab ini akan muncul di sini."
               : "Coba kata kunci atau status lain."}
           </p>
           {(filters.search || filters.status !== "all") && (

@@ -43,10 +43,11 @@ export function DashboardIcon({
 
 export function DashboardPrimaryButton({
   children,
+  type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <AuthButton {...props} type="button" compact className="whitespace-nowrap">
+    <AuthButton {...props} type={type} compact className="whitespace-nowrap">
       {children}
     </AuthButton>
   );

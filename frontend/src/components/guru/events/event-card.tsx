@@ -18,12 +18,13 @@ export function ManagedEventCard({
   onDelete: () => void;
 }) {
   const draft = event.status === "draft";
+  const title = event.title || "Draf tanpa judul";
   return (
-    <article aria-label={event.title}>
+    <article aria-label={title}>
       <EventSurface className="flex h-full min-h-[254px] flex-col gap-4 p-6">
         <EventBadge status={event.status} />
         <h2 className="text-base font-semibold leading-[22px]">
-          {event.title}
+          {title}
         </h2>
         <dl className="grid grid-cols-2 gap-x-2 gap-y-2 text-xs leading-4 min-[380px]:grid-cols-3">
           {[

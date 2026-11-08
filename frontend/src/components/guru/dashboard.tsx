@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  beginEventDraft,
+  useEventDraftStore,
+  wizardHref,
+} from "@/lib/guru/event-draft-store";
+import {
   draftTitle,
   guruEvents,
   reviewQueue,
@@ -21,6 +26,7 @@ import { ReviewQueue } from "./review-queue";
 
 function Dashboard({ empty }: { empty: boolean }) {
   const router = useRouter();
+  const draftState = useEventDraftStore();
   const [action, setAction] = useState<DashboardDialogState | null>(null);
   const [hasDraft, setHasDraft] = useState(true);
   const [deleted, setDeleted] = useState(false);
@@ -53,7 +59,9 @@ function Dashboard({ empty }: { empty: boolean }) {
   ];
   const createButton = (
     <div className={empty ? "w-[137.25px]" : "w-[148px] shrink-0"}>
-      <DashboardPrimaryButton onClick={() => router.push("/guru/events")}>
+      <DashboardPrimaryButton
+        onClick={() => router.push(wizardHref(beginEventDraft()))}
+      >
         {empty && <DashboardIcon name="plus" empty />}Create Event
       </DashboardPrimaryButton>
     </div>
@@ -128,7 +136,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                   </article>
                 ))}
               </section>
-              {hasDraft && (
+              {hasDraft && !draftState.deleted.includes("absensi") && (
                 <section
                   aria-label="Draf event"
                   className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-white p-4"
@@ -154,7 +162,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                     </DashboardButton>
                     <DashboardButton
                       className="w-36"
-                      onClick={() => router.push("/guru/events?tab=draft")}
+                      onClick={() => router.push(wizardHref("absensi"))}
                     >
                       Lanjutkan Draf
                     </DashboardButton>

@@ -64,9 +64,9 @@ export function EventDialog(props: Props) {
         {props.kind === "delete" ? (
           <>
             <p id={description} className="text-sm leading-5 text-secondary">
-              Draf event &quot;{props.event.title}&quot; beserta seluruh
-              pengaturan milestone yang tersimpan akan dihapus secara permanen.
-              Tindakan ini tidak dapat dibatalkan.
+              Draf event &quot;{props.event.title || "Draf tanpa judul"}&quot;
+              beserta seluruh pengaturan milestone yang tersimpan akan dihapus
+              secara permanen. Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex w-full flex-wrap justify-end gap-3">
               <button

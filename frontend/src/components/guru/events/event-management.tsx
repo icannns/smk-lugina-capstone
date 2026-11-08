@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  beginEventDraft,
+  deleteEventDraft,
+  listedEvents,
+  useEventDraftStore,
+  wizardHref,
+} from "@/lib/guru/event-draft-store";
 import { managedEvents } from "@/lib/guru/event-data";
 import { eventAssets } from "@/lib/guru/event-assets";
 import { eventHref, readEventFilters } from "@/lib/guru/event-selectors";
@@ -21,13 +28,15 @@ import { EventDetail } from "./event-detail";
 import { EventDialog } from "./event-dialogs";
 
 export function EventManagement() {
+  const router = useRouter();
+  const draftState = useEventDraftStore();
   const params = useSearchParams();
   const filters = readEventFilters(params);
   const eventId = params.get("event");
   const event = managedEvents.find(
     (e) => e.id === eventId && e.status !== "draft",
   );
-  const [deleted, setDeleted] = useState<string[]>([]);
+  const deleted = draftState.deleted;
   const [deleteEvent, setDeleteEvent] = useState<ManagedEvent | null>(null);
   const [deadline, setDeadline] = useState<{
     eventId: string;
@@ -40,11 +49,9 @@ export function EventManagement() {
     window.history.replaceState(null, "", eventHref({ ...filters, ...patch }));
   }
   function wizard(resume?: ManagedEvent) {
-    setAction({
-      title: resume ? "Lanjutkan Draf" : "Create Event",
-      description: `${resume ? `Draf contoh “${resume.title}” belum dibuka. ` : ""}Wizard Create Event belum diimplementasikan pada Phase 4A. Tidak ada event yang dibuat atau diterbitkan.`,
-      figmaNode: "293:29139",
-    });
+    router.push(
+      wizardHref(resume?.id ?? beginEventDraft(), resume?.wizard?.step),
+    );
   }
   return (
     <>
@@ -67,6 +74,14 @@ export function EventManagement() {
           }
           className="mx-auto min-w-0 max-w-[1176px] px-5 py-8 outline-none sm:px-8"
         >
+          {draftState.storageError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-control border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+            >
+              {draftState.storageError}
+            </p>
+          )}
           {eventId ? (
             event ? (
               <EventDetail
@@ -100,7 +115,7 @@ export function EventManagement() {
             )
           ) : (
             <EventListing
-              events={managedEvents}
+              events={listedEvents(draftState)}
               filters={filters}
               deleted={deleted}
               deleting={deleteEvent?.id ?? null}
@@ -118,10 +133,10 @@ export function EventManagement() {
           event={deleteEvent}
           onClose={() => setDeleteEvent(null)}
           onDelete={() => {
-            setDeleted((old) => [...old, deleteEvent.id]);
+            deleteEventDraft(deleteEvent.id);
             setDeleteEvent(null);
             setNotice(
-              "Draf contoh dihapus dari demo. Tidak ada data server yang dihapus; muat ulang untuk mereset.",
+              "Draf contoh dihapus dari sesi tab ini. Tidak ada data server yang dihapus.",
             );
             window.history.pushState(
               null,
