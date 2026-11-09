@@ -48,7 +48,7 @@ Satu store domain, `src/lib/guru/event-draft-store.ts`, menyatukan event, enroll
 
 State disimpan di sessionStorage per tab dan alamat/port. Gunakan satu tab dengan pergantian akun untuk demo lintas role. Perubahan belum tersinkron otomatis antartab, browser, atau perangkat. Unggahan tugas menyimpan metadata; autentikasi, Google, dan sertifikat tetap prototipe. Event baru belum membuat instrumen survei eksternal.
 
-Menu administrasi Survei/privasi Guru dan Pengaturan Siswa tetap terlihat sebagai tombol `disabled`. Form survei milestone Siswa yang sudah dikonfigurasi tetap berfungsi. Daftar batasan yang memengaruhi integrasi tersedia pada handover.
+Menu administrasi Survei/privasi Guru dan Pengaturan Siswa tetap tampil normal sebagai tombol yang dapat ditekan, tetapi sementara tidak menjalankan aksi, membuka modal, atau mengubah URL dan menu aktif. Form survei milestone Siswa yang sudah dikonfigurasi tetap berfungsi. Daftar batasan yang memengaruhi integrasi tersedia pada handover.
 
 ## Desain
 

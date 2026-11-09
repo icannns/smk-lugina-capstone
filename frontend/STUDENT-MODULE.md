@@ -57,7 +57,7 @@ Klaim bersifat idempotent dan menyimpan nama serta nilai saat klaim. Edit profil
 
 Profil mendukung validasi nama/kontak, simpan/batal, feedback, serta pembaruan identitas header/roster. Nama yang valid sampai `STUDENT_NAME_MAX_LENGTH` (120 karakter) dipertahankan saat rehidrasi. Role dan sekolah tidak dapat diubah; email profil tidak mengganti identitas login atau memberikan akses Guru.
 
-Avatar menggunakan JPG/PNG lokal, maksimal 2 MB dan minimal 200×200 piksel, dengan canvas crop yang digunakan kembali dari komponen Guru. Gunakan gambar dan identitas fiktif. Pengaturan tetap terlihat sebagai tombol disabled tanpa modal; bantuan mempertahankan keterangan informatifnya. Form survei milestone tetap aktif.
+Avatar menggunakan JPG/PNG lokal, maksimal 2 MB dan minimal 200×200 piksel, dengan canvas crop yang digunakan kembali dari komponen Guru. Gunakan gambar dan identitas fiktif. Pengaturan tampil normal dan dapat ditekan, tetapi sementara tidak menjalankan aksi, membuka modal, atau mengubah URL dan menu aktif; bantuan mempertahankan keterangan informatifnya. Form survei milestone tetap aktif.
 
 ## Peta source dan integrasi
 

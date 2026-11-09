@@ -30,8 +30,9 @@ Sertifikat → Tinjau → Terbitkan → Selesai**. Draf dan perubahan demo disim
 sesi browser.
 
 Menu Guru **Dashboard Survei, Survei Saya, Template Survei, Hasil Survei, Kebijakan
-Privasi**, serta menu Siswa **Pengaturan** tetap ditampilkan dalam keadaan
-nonaktif sampai modul pemiliknya terintegrasi. Form survei pada milestone Siswa
+Privasi**, serta menu Siswa **Pengaturan** tetap tampil normal dan dapat ditekan,
+tetapi sementara tidak menjalankan aksi sampai modul pemiliknya terintegrasi.
+Tombol ini tidak membuka modal atau mengubah URL dan menu aktif. Form survei pada milestone Siswa
 yang sudah dikonfigurasi tetap dapat digunakan.
 
 ## Teknologi

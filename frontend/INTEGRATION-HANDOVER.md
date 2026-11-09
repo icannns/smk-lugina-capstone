@@ -58,7 +58,7 @@ Task terkirim, task+survei selesai, assessment aktif, dan eligibility dokumen ad
 
 Event baru belum memprovisikan instrument Survei. Task dapat dikirim dan dinilai, tetapi tahap yang menunggu survei belum selesai. Pemilik modul perlu menyediakan konfigurasi/aktivasi instrument per event/milestone, ID respons, versi, timestamp, status kelengkapan, dan status review. Jangan menganggap jawaban fixture sebagai kebijakan penilaian baru atau membuat hasil diagnosis.
 
-Menu administrasi Survei/privasi Guru dan Pengaturan Siswa terlihat tetapi disabled. Form survei milestone yang sudah dikonfigurasi tetap aktif. Gunakan event demo yang sesuai untuk mencoba unlock serta klaim dokumen sampai akhir; alur membuat event baru tidak berpura-pura menyediakan layanan Survei.
+Menu administrasi Survei/privasi Guru dan Pengaturan Siswa tampil normal dan dapat ditekan, tetapi sementara tidak menjalankan aksi, membuka modal, atau mengubah URL dan menu aktif. Form survei milestone yang sudah dikonfigurasi tetap aktif. Gunakan event demo yang sesuai untuk mencoba unlock serta klaim dokumen sampai akhir; alur membuat event baru tidak berpura-pura menyediakan layanan Survei.
 
 Data mock hanya lokal pada tab dan alamat/port. Tab baru dapat membawa salinan awal tetapi tidak menerima pembaruan berikutnya; tidak ada sinkronisasi otomatis antartab/perangkat. Lampiran berupa metadata, preview/unduhan sampel diberi label simulasi. Laporan PDF/XLSX dibuat di browser; dokumen sertifikat contoh tidak memiliki penerbitan, tanda tangan, pengakuan profesi, atau verifikasi resmi institusi.
 

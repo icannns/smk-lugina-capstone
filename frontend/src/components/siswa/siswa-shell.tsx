@@ -99,8 +99,7 @@ export function SiswaShell({
           </Link>
           <button
             type="button"
-            disabled
-            className="flex h-10 cursor-not-allowed items-center gap-3 rounded-xl px-3 text-sm text-secondary opacity-60"
+            className="flex h-10 cursor-pointer items-center gap-3 rounded-xl px-3 text-sm text-secondary hover:bg-gray-50"
           >
             <SiswaIcon frame={frame} name={icons.settings} />
             Pengaturan

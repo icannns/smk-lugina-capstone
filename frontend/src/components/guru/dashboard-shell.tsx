@@ -111,8 +111,7 @@ function SidebarContent({
                   <button
                     key={item.label}
                     type="button"
-                    disabled
-                    className={`flex h-10 cursor-not-allowed items-center rounded-control px-3 text-left text-sm text-secondary opacity-60 ${index === 1 ? "gap-2.5" : "gap-3"} ${empty || item.icon === "privacy" ? "font-medium" : "font-normal"}`}
+                    className={`flex h-10 cursor-pointer items-center rounded-control px-3 text-left text-sm text-secondary hover:bg-gray-50 ${index === 1 ? "gap-2.5" : "gap-3"} ${empty || item.icon === "privacy" ? "font-medium" : "font-normal"}`}
                   >
                     <DashboardIcon
                       name={item.icon}

@@ -40,7 +40,7 @@ Contoh deep link: `/guru/students?event=wireframe&milestone=M1`, `/guru/students
 
 Dashboard menyediakan kondisi berisi/kosong, pencarian judul, filter status, pengurutan, dan pagination 2/4 event. Jumlah hasil mengikuti event unik; kartu yang berulang di Figma tidak menjadi event duplikat. Angka progres dan antrean penilaian/survei berasal dari selector bersama. Tanggal header tetap merupakan snapshot desain.
 
-Create Event membuka wizard; Lanjutkan Draf memakai draft ID yang sama. Hapus draf menggunakan konfirmasi dan mendukung undo pada Dashboard. Sidebar fitur aktif terhubung ke route yang sesuai. Menu administrasi Survei/privasi tetap terlihat sebagai tombol disabled tanpa modal placeholder. Menu akun mendukung Escape dan klik di luar; drawer mobile memakai dialog dengan pembatasan fokus dan tombol tutup.
+Create Event membuka wizard; Lanjutkan Draf memakai draft ID yang sama. Hapus draf menggunakan konfirmasi dan mendukung undo pada Dashboard. Sidebar fitur aktif terhubung ke route yang sesuai. Menu administrasi Survei/privasi tampil normal dan dapat ditekan, tetapi sementara tidak menjalankan aksi, membuka modal, atau mengubah URL dan menu aktif. Menu akun mendukung Escape dan klik di luar; drawer mobile memakai dialog dengan pembatasan fokus dan tombol tutup.
 
 ## Pengelolaan data Siswa
 
