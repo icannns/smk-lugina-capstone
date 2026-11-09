@@ -1,90 +1,74 @@
-# Bojong United frontend
+# Panduan Pengembangan Frontend Bojong United
 
-Integrated Teacher and Student **fictional-data prototype**, built with Next.js
-16 App Router, React, TypeScript and Tailwind CSS. It is suitable for a local
-frontend demonstration, not production authentication or multi-user operation.
+Frontend Guru dan Siswa sudah tergabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Aplikasi menggunakan Next.js 16 App Router, React, TypeScript, dan Tailwind CSS, dengan mock data untuk demonstrasi lokal.
 
-## Run locally
+[README utama](../README.md) memuat ringkasan fitur, akun demo, dan langkah mencoba integrasi Guru–Siswa. Dokumen ini menjadi panduan kerja dari folder `frontend/`.
 
-Use Node.js 20.9 or newer and npm. From this directory:
+## Instalasi dan menjalankan aplikasi
+
+Gunakan Node.js **20.9 atau lebih baru** dan npm. Dari folder `frontend/`:
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. For a production-mode local demonstration, stop the
-running production server before rebuilding its `.next` output, then run:
+Buka alamat yang ditampilkan terminal, biasanya `http://localhost:3000`. Port dapat ditentukan dengan `npm run dev -- --port 3001`. Tidak diperlukan database, backend, atau kredensial `.env` untuk demo saat ini. Build pertama dapat mengunduh font Inter melalui `next/font`; hasil build menyajikannya secara lokal.
+
+Untuk menjalankan hasil build:
 
 ```powershell
 npm run build
 npm run start
 ```
 
-No backend, database, OAuth setup or `.env` credentials are required. Do not enter
-real personal information or credentials. Figma assets are local. Next.js serves
-Inter locally after building; the first build may download it through `next/font`.
+Hentikan server produksi sebelum membangun ulang `.next`, lalu jalankan kembali server agar CSS dan JavaScript berasal dari build yang sama.
 
-## Demo accounts and routes
+## Struktur dan tanggung jawab
 
-| Role | Username / email | Public demo password | Home |
-| --- | --- | --- | --- |
-| Teacher | `rina.guru` / `guru@example.com` | `DemoGuru123!` | `/guru/dashboard` |
-| Student Dimas | `dimas` / `siswa@example.com` | `DemoSiswa123!` | `/siswa/dashboard` |
-| Student Aisyah | `aisyah` / `aisyah@example.com` | `DemoSiswa123!` | `/siswa/dashboard` |
+| Lokasi | Tanggung jawab |
+| --- | --- |
+| `src/app/` | Route, metadata, layout, dan batas Suspense pada App Router |
+| `src/app/guru/` | Dashboard, data Siswa, event/wizard, rubric, monitoring, karya, laporan, dan profil Guru |
+| `src/app/siswa/` | Event, dashboard, workspace, survei milestone, portofolio, dan profil Siswa |
+| `src/components/auth/` | UI autentikasi bersama dan `RoleGate` |
+| `src/components/guru/`, `src/components/siswa/` | Komponen fitur sesuai peran |
+| `src/lib/auth/` | Akun fiktif, validasi, dan sesi autentikasi mock |
+| `src/lib/guru/`, `src/lib/siswa/` | Tipe, fixture, store bersama, adapter, dan selector |
+| `public/` | Aset SVG dan gambar lokal |
+| `tests/` | Runner regresi logika, browser, dan navigasi role |
 
-Both roles use `/login`, `/register`, `/register/google` and `/loading`.
-Public registration creates fictional Student accounts only; Google is a mock.
+Halaman `/login`, `/register`, `/register/google`, dan `/loading` dipakai kedua role. Akun Guru diarahkan ke `/guru/dashboard`, akun Siswa ke `/siswa/dashboard`. Akun demo dan kebijakan register dijelaskan pada [autentikasi bersama](SHARED-AUTHENTICATION.md).
 
-- Teacher: Dashboard, Students, Events and complete event wizard, Rubrics,
-  Monitoring/Assessment, Student Work, Reports and Profile under `/guru/*`.
-- Student: event discovery/enrollment, Dashboard, Workspace, configured milestone
-  Survey forms, Portfolio/example certificates and Profile under `/siswa/*`.
-- Teacher Survey-administration/privacy sidebar entries and Student Settings are
-  visible native disabled buttons. They neither navigate nor open placeholders.
-  Functional Student milestone Survey forms remain available.
+Layout role selalu merender child page. Setiap halaman terlindungi membungkus komponen fiturnya dengan `RoleGate` yang sesuai. Sertakan halaman baru dalam `tests/role-navigation-regressions.mjs`; penempatan guard ini mempertahankan validasi Instant Navigation tanpa menghilangkan segmen halaman.
 
-Use **one tab**, logging out and back in as the other role, to demonstrate
-Teacher publication → Student enrollment/submission → Teacher feedback/revision
-→ Student revision → Teacher reassessment. New versions retain history and need
-a new assessment. Browser sessions/devices do not share mock changes.
+## State dan batas integrasi
 
-## Verification
+Satu store domain, `src/lib/guru/event-draft-store.ts`, menyatukan event, enrollment, rubric, submission, assessment, profil, dan respons survei. Gunakan kembali tipe dan selector yang ada ketika menambah modul. Rincian kontrak ada di [handover integrasi](INTEGRATION-HANDOVER.md).
+
+State disimpan di sessionStorage per tab dan alamat/port. Gunakan satu tab dengan pergantian akun untuk demo lintas role. Perubahan belum tersinkron otomatis antartab, browser, atau perangkat. Unggahan tugas menyimpan metadata; autentikasi, Google, dan sertifikat tetap prototipe. Event baru belum membuat instrumen survei eksternal.
+
+Menu administrasi Survei/privasi Guru dan Pengaturan Siswa tetap terlihat sebagai tombol `disabled`. Form survei milestone Siswa yang sudah dikonfigurasi tetap berfungsi. Daftar batasan yang memengaruhi integrasi tersedia pada handover.
+
+## Desain
+
+Gunakan Figma `hWTpQwbyreDsivI3tZ0yLa`: **Page 1 → Redesign Guru** untuk Guru, serta **Guru & Siswa → Redesign Siswa** untuk Siswa dan autentikasi S01–S04. Gunakan frame target sebagai acuan ketika berbeda dari pedoman umum Design System `244:845`. Token dan global CSS yang ada tetap menjadi dasar styling.
+
+## Pemeriksaan
 
 ```powershell
 npm run lint
-node node_modules/typescript/bin/tsc --noEmit --incremental false
 npm run build
+node node_modules/typescript/bin/tsc --noEmit --incremental false
 node --test tests/audit-regressions.test.mjs
 ```
 
-See [`tests/README.md`](tests/README.md) for the existing browser regression runner
-and its optional external Playwright installation. No Playwright runtime
-dependency is required by the application.
+Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru, jalankan build sebelum TypeScript mandiri. Cara menyediakan Playwright dan menjalankan runner browser ada di [panduan pengujian](tests/README.md). Hasil pengujian lama bukan pengganti pemeriksaan pada perubahan baru.
 
-## Design, architecture and limits
+## Panduan lanjutan
 
-Teacher screens follow **Page 1 → Redesign Guru**. Shared authentication and
-Student screens follow **Guru & Siswa → Redesign Siswa**, including S01–S04, in
-Figma file `hWTpQwbyreDsivI3tZ0yLa`. Original Role Guru is not authoritative.
-
-The shared domain adapter is `src/lib/guru/event-draft-store.ts`; auth is in
-`src/lib/auth/`. Domain changes persist in this tab's sessionStorage. Client
-guards and password digests demonstrate behavior, not secure authentication.
-Uploads retain metadata, not file bytes. PDF/XLSX and example certificate PDF
-downloads are generated locally; certificates are unofficial prototypes.
-
-New events do not provision external Survey instruments. Submission, grading,
-feedback and Reports work, but later survey-gated stages/certificates require
-Survey-team integration. The accepted B11 development-tooling advisory and minor
-V04 visual differences remain documented limitations.
-
-## Handover
-
-- [Integration and COMMIT migration](INTEGRATION-HANDOVER.md): current entry point.
-- [Shared authentication](SHARED-AUTHENTICATION.md): roles/session contract.
-- [Teacher Module](TEACHER-MODULE.md) and [Student Module](STUDENT-MODULE.md):
-  feature/source maps and implementation history.
-- `DASHBOARD.md`, `STUDENT-MANAGEMENT.md`, `EVENT-MANAGEMENT.md`, `EVENT-WIZARD.md`
-  are retained historical phase records; current integration behavior supersedes
-  their earlier scope and persistence limitations.
+- [Modul Guru](TEACHER-MODULE.md): alur event/wizard, data Siswa, assessment, laporan, dan referensi desain.
+- [Modul Siswa](STUDENT-MODULE.md): enrollment, tugas/revisi, survei, portofolio, dan profil.
+- [Autentikasi bersama](SHARED-AUTHENTICATION.md): role, sesi mock, dan batas keamanan.
+- [Handover integrasi](INTEGRATION-HANDOVER.md): kontrak bersama, batas eksternal, serta migrasi tim COMMIT.
+- [Instruksi coding agent](AGENTS.md): aturan Next.js yang aktif.

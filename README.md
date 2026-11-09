@@ -13,6 +13,10 @@ nilai, feedback, atau permintaan revisi.
 > OAuth. Gunakan akun dan data contoh; jangan masukkan kredensial atau data pribadi
 > asli.
 
+Implementasi frontend Guru dan Siswa sudah masuk ke branch `main` melalui
+[PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Panduan teknis
+berbahasa Indonesia tersedia pada bagian [referensi dan panduan tim](#referensi-desain-dan-panduan-tim).
+
 ## Fitur yang tersedia
 
 | Bagian | Fitur |

@@ -1,100 +1,60 @@
-# Shared authentication prototype
+# Autentikasi Bersama Guru dan Siswa
 
-For current setup/publication context, see [README.md](README.md) and
-[INTEGRATION-HANDOVER.md](INTEGRATION-HANDOVER.md). The QA and no-publication
-statements at the end record the original implementation phase.
+Frontend di `main` menggunakan satu alur autentikasi mock untuk kedua role. Petunjuk instalasi tersedia di [panduan frontend](README.md), sedangkan kredensial fiktif yang menjadi acuan ada pada [akun demo di README utama](../README.md#akun-demo).
 
-The latest authentication correction supersedes the earlier Teacher-only visuals.
-Figma is accessible through the connected MCP. The verified source is
-`hWTpQwbyreDsivI3tZ0yLa` → **Guru & Siswa** (`348:10566`) → **Redesign Siswa**.
+## Referensi desain dan route
 
-| Screen | Exact frame | Shared route |
+Sumber desain adalah Figma `hWTpQwbyreDsivI3tZ0yLa` → **Guru & Siswa** (`348:10566`) → **Redesign Siswa**. Referensi autentikasi Guru yang lama telah digantikan oleh:
+
+| Layar | Frame | Route bersama |
 | --- | --- | --- |
 | S01 Login | `370:1538` | `/login` |
 | S02 Register | `370:1651` | `/register` |
-| S03 Google registration | `370:1724` | `/register/google` |
+| S03 Registrasi Google mock | `370:1724` | `/register/google` |
 | S04 Loading | `370:1777` | `/loading` |
 
-All four contexts, screenshots, assets and prototype reactions were inspected
-before implementation. There is one interface for both roles. Login copy is
-role-neutral while retaining the S01 split layout, form positions and mascot.
-S02/S03 retain their blue illustration panel and floating cards. Native shapes
-remain CSS; four exported SVG assets are local under `public/auth/shared/`.
-Copy claiming official certification or actual Google authorization was replaced
-with truthful prototype wording.
+Teks Login netral terhadap role. Layout terpisah, ilustrasi, dan aset SVG lokal di `public/auth/shared/` mengikuti referensi; bentuk dekoratif menggunakan CSS. Klaim otorisasi Google atau sertifikasi resmi diganti dengan keterangan simulasi.
 
-## Fictional accounts
+## Penentuan identitas dan role
 
-| Role | Username | Email | Password |
-| --- | --- | --- | --- |
-| Teacher | `rina.guru` | `guru@example.com` | `DemoGuru123!` |
-| Student Dimas | `dimas` | `siswa@example.com` | `DemoSiswa123!` |
-| Student Aisyah | `aisyah` | `aisyah@example.com` | `DemoSiswa123!` |
+`src/lib/auth/accounts.ts` memuat akun Guru Rina serta Siswa Dimas/Aisyah beserta kredensial demo publik. `AccountRole` hanya berisi `teacher | student`. Email, nama, domain, dan label profil tidak digunakan untuk menaikkan hak akses.
 
-These are public demo fixtures, not secrets or real accounts. The expandable
-notice on Login exposes the testing credentials. Google sign-in selects the
-fictional `google-dimas` Student record and S03, with no OAuth or external request.
-It represents the same demo learner as Dimas, so their learning data is shared.
+- Login menerima username atau email dan mencocokkan kata sandi demo.
+- Register publik hanya membuat akun Siswa fiktif dengan email `@example.com`, pemeriksaan kekuatan kata sandi, dan konfirmasi yang cocok. Tidak ada pemilih role Guru.
+- Simulasi Google menggunakan identitas `google-dimas` dengan role Siswa; identitas pembelajarannya sama dengan Dimas. Tidak ada request Google OAuth.
+- Email kontak profil dapat diubah tanpa mengganti identitas login atau role. Akun Guru berasal dari fixture yang sudah ditentukan.
 
-The account registry sets each role. Email domains, names, profile fields and
-registration input never assign roles. Public registration creates only Student
-records; there is no role selector. Registration uses fictional `@example.com`
-addresses, password strength checks and confirmation. Profile contact email can
-change without altering login identity or role. Teacher accounts are preconfigured.
+## Login, loading, dan pembatasan halaman
 
-Login verifies credentials before establishing a pending session. S04 renders
-through two animation frames, then promotes the pending account and redirects
-Teacher to `/guru/dashboard` or Student to `/siswa/dashboard`. There is no artificial
-long loading delay. Invalid credentials remain on Login with an error. Both roles
-have working logout actions. Unauthenticated role routes redirect to Login; the
-wrong role redirects to its own dashboard. These checks cover direct navigation
-as well as the sidebar.
+Setelah kredensial valid, sesi diberi status pending. S04 tampil melalui dua frame animasi, lalu akun pending diaktifkan: Guru menuju `/guru/dashboard`, Siswa menuju `/siswa/dashboard`. Tidak ada penundaan panjang buatan. Kredensial salah tetap berada di Login dengan pesan error.
 
-Role layouts always render their child page. Each protected Guru/Siswa page wraps
-its feature component in the existing `RoleGate`, inside its existing Suspense
-boundary where present. Guarding in a layout used to omit the entire page segment
-while client auth was initializing, causing Next.js Instant Navigation validation
-to report `instant-unrendered-segment`. Page-level guards preserve the same
-loading, wrong-role redirect and logout behavior without dropping the route
-segment. New protected pages must include the matching guard and be added to
-`tests/role-navigation-regressions.mjs`; do not remove guards or disable framework
-validation to bypass this requirement. These remain client-side prototype guards.
+Layout `/guru` dan `/siswa` selalu merender child page. Setiap halaman terlindungi menempatkan `RoleGate` di dalam page, membungkus komponen fitur; batas Suspense yang sudah ada dipertahankan. Guard mengarahkan pengguna tanpa sesi ke `/login` dan role yang salah ke dashboard miliknya.
 
-## Storage and production boundary
+Pola tersebut memperbaiki `instant-unrendered-segment`: guard pada layout sebelumnya mengganti seluruh subtree dengan loading sehingga validator Next.js tidak mencapai segmen page. Validasi tidak dinonaktifkan. Halaman terlindungi baru harus memakai guard role yang sesuai dan ditambahkan pada `tests/role-navigation-regressions.mjs`.
 
-`src/lib/auth/accounts.ts` owns fixed records; `session.ts` owns the reactive mock
-session. `lugina.auth.demo.v1` in sessionStorage contains account IDs, fictional
-registration records, salted SHA-256 comparison digests and mock Google profile
-data. It never contains plaintext passwords. Fixed demo passwords exist only in
-the public source fixture and the visible demo notice. This digest scheme is
-strictly for the prototype, not production password storage.
+Logout mengosongkan akun aktif/pending dan membatasi akses berikutnya. Data domain tetap tersedia dalam tab yang sama untuk pergantian akun demo. Ini pembatasan UI di browser, bukan otorisasi server.
 
-Checked “Ingat saya” preserves login on refresh of the same tab. Unchecked keeps
-login in memory only. Registered fictional records remain available in that tab.
-Blocked/corrupt storage produces a warning and a memory fallback. Logout clears
-the active/pending IDs, preserving domain data for a Teacher/Student demonstration.
-No localStorage, cookies, backend authentication, database, OAuth or credential
-transmission is used.
+## Penyimpanan dan penanganan gangguan
 
-**Client-only route restrictions are demonstrative, not production security.**
-The browser and its storage are editable. Production requires server-side account
-verification, authorization on every protected request, secure sessions, proper
-password hashing and genuine OAuth integration.
+`src/lib/auth/session.ts` menyediakan sesi reaktif melalui `useSyncExternalStore`. Key `lugina.auth.demo.v1` di sessionStorage menyimpan ID akun, record registrasi fiktif, profil Google mock, serta salt dan digest SHA-256 untuk pencocokan kata sandi registrasi. Kata sandi registrasi tidak disimpan sebagai plaintext. Kata sandi akun fixture tetap publik pada source dan informasi akun demo.
 
-## Files and verification
+Pilihan “Ingat saya” mempertahankan login saat refresh pada tab yang sama. Jika tidak dipilih, akun aktif hanya bertahan di memori halaman; record registrasi fiktif masih dapat digunakan pada tab tersebut. Logout tidak menghapus data pembelajaran. Storage rusak atau diblokir menampilkan peringatan dan menggunakan fallback memori dengan batas persistensi yang dijelaskan kepada pengguna.
 
-New shared files: `src/lib/auth/{accounts,session,validation}.ts`,
-`src/components/auth/{shared-ui,auth-graphic,auth-loading,role-gate}.tsx`,
-`src/app/(auth)/loading/page.tsx`, and role layouts under `src/app/{guru,siswa}/`.
-Updated: existing auth shell, login/register/Google forms, mock-navigation hook,
-root metadata, and Teacher logout wiring. The old reusable `AuthButton` remains
-unchanged because Dashboard components reuse it. There are no separate Guru or
-Siswa login routes, and no project/dependency/global-CSS changes.
+Tidak ada localStorage, cookie sesi server, database autentikasi, atau pengiriman kredensial ke backend. Penyimpanan dan role di browser dapat dimodifikasi pengguna. Produksi memerlukan verifikasi akun, otorisasi setiap request, sesi aman, hashing kata sandi yang sesuai, dan OAuth sungguhan.
 
-QA artifacts and scripts are outside the repository in `%TEMP%`:
-`lugina-shared-auth-qa/`, `lugina-shared-auth-check.cjs`,
-`lugina-teacher-shared-regression.cjs`, `lugina-shared-final-smoke.cjs`.
-See `STUDENT-MODULE.md` for the connected Student data model and final QA results.
+## Peta implementasi
 
-No reset, revert, commit, push or merge was performed. Existing uncommitted Teacher
-work was preserved on `feature/guru-frontend` (base `34f738c`).
+| Lokasi | Isi |
+| --- | --- |
+| `src/lib/auth/accounts.ts` | Akun tetap, `AccountRole`, dan tujuan dashboard |
+| `src/lib/auth/session.ts` | Sesi, pencocokan kredensial, registrasi, dan simulasi Google |
+| `src/lib/auth/validation.ts` | Validasi form bersama |
+| `src/components/auth/` | Shell, form, ilustrasi, loading, `shared-ui.tsx`, dan `role-gate.tsx` |
+| `src/app/(auth)/` | Route autentikasi bersama |
+| `src/app/guru/`, `src/app/siswa/` | Page yang menggunakan guard sesuai role |
+
+Komponen `AuthButton` lama tetap memiliki konsumen pada modul Guru; keberadaannya tidak berarti ada alur login kedua. Tidak ada route login khusus Guru/Siswa yang terpisah.
+
+## Verifikasi
+
+Gunakan [panduan pengujian](tests/README.md) untuk tes navigasi role di development dan produksi. Pemeriksaan perlu mencakup register, invalid credentials, S04, login kedua role, refresh, logout, akses langsung, dan penolakan role yang salah. Catatan hasil verifikasi sebelumnya serta batas QA ada pada [handover](INTEGRATION-HANDOVER.md).

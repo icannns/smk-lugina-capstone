@@ -1,19 +1,21 @@
-# Frontend regression checks
+# Panduan Pengujian Regresi Frontend
 
-From `frontend/`, after installing the existing dependencies:
+Jalankan perintah dari folder `frontend/` setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif dan tidak memerlukan backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
+
+## Pemeriksaan dasar dan tes logika
 
 ```powershell
+npm run lint
+npm run build
+node node_modules/typescript/bin/tsc --noEmit --incremental false
 node --test tests/audit-regressions.test.mjs
 ```
 
-This uses Node's test runner and the project's installed TypeScript compiler to
-exercise the actual selectors, PDF writer, serialization and session store. It
-does not replace application modules with a second implementation.
+Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru, selesaikan build sebelum TypeScript mandiri. Runner Node menguji selector, serializer, session store, label milestone, dan penulis PDF yang sebenarnya melalui compiler TypeScript proyek. Tidak ada implementasi mock paralel untuk mengganti fungsi yang diuji. Saat ini terdapat sembilan tes logika.
 
-For the browser cases, start the built application separately (`npm run build`,
-then `npm run start`). Stop the running server before rebuilding `.next` to avoid
-stale stylesheet URLs. Use an existing Playwright installation; no application
-dependency was added for this audit:
+## Persiapan runner browser
+
+Jalankan server hasil build secara terpisah dengan `npm run start`. Hentikan server produksi sebelum build ulang untuk mencegah URL CSS lama. Gunakan instalasi Playwright yang tersedia di lingkungan pengujian; dependensi runtime aplikasi tidak perlu ditambah.
 
 ```powershell
 $env:PLAYWRIGHT_MODULE = 'C:/path/to/node_modules/@playwright/test'
@@ -21,46 +23,40 @@ $env:PLAYWRIGHT_CHANNEL = 'msedge'
 node tests/audit-browser-regressions.mjs
 ```
 
-If `@playwright/test` is already resolvable, omit `PLAYWRIGHT_MODULE`. The default
-browser channel is Edge. `AUDIT_BASE_URL` defaults to `http://localhost:3000`;
-`AUDIT_OUTPUT_DIR` defaults to the OS temporary directory under
-`lugina-final-audit-round-2/regressions`.
+`PLAYWRIGHT_MODULE` dapat dihilangkan bila `@playwright/test` sudah dapat di-resolve. Channel default adalah Edge. Path di atas merupakan contoh yang harus disesuaikan, bukan path mesin yang wajib digunakan.
 
-The browser runner creates a fresh isolated context and a controlled **40-person
-fictional enrollment fixture**, including a historical grade/current ungraded
-revision. It checks B01–B10, notes/review/profile persistence, survey metadata,
-Dashboard counts, readable labels, actual PDF/XLSX downloads and field-level
-validation focus/ARIA associations. No real accounts, uploads or backend APIs
-are involved. The fixture is separate from the full UI-created event integration
-walkthrough described in `../INTEGRATION-HANDOVER.md`. Historical audit reports
-are retained locally and are not required by either runner.
+| Variabel | Fungsi/default |
+| --- | --- |
+| `PLAYWRIGHT_MODULE` | Lokasi modul Playwright bila tidak tersedia pada resolusi Node normal |
+| `PLAYWRIGHT_CHANNEL` | Channel browser; default `msedge` |
+| `AUDIT_BASE_URL` | Alamat server; default `http://localhost:3000` |
+| `AUDIT_OUTPUT_DIR` | Folder bukti di luar repository; gunakan lokasi berbeda untuk tiap server/run yang ingin disimpan |
 
-Evidence is written outside the repository. Existing user browser sessions are
-not used. These checks do not certify server security, screen-reader behavior,
-cross-device synchronization or exact pixel equivalence to Figma.
+## Regresi temuan audit
 
-## Role guards and Instant Navigation
+`audit-browser-regressions.mjs` membuat konteks browser baru dengan fixture enrollment 40 orang, termasuk nilai historis dan revisi terbaru yang belum dinilai. Delapan kelompok pengujian mencakup B01–B10: filter pengerjaan, label nol/sebagian/seluruh nilai, catatan/review yang bertahan, progres event, metadata/waktu survei, antrean Dashboard, label M1 alih-alih UUID, error form, serta nama panjang pada ukuran 320/768/1440 px.
 
-`role-navigation-regressions.mjs` exercises every Guru and Siswa page without
-login, with its correct role and with the wrong role, plus logout. It verifies
-Aisyah M1 and Nabila M4 through direct and client navigation and fails on Next.js
-Instant Navigation diagnostics, console errors, page errors or failed responses.
-Its route inventory also fails when a new protected page has no test scenario.
+Runner benar-benar mengunduh PDF/XLSX. Pemeriksaan browser pada runner tidak sama dengan validasi seluruh format/render pada semua aplikasi pembaca; periksa file keluaran bila kebutuhan ekspor berubah. Tanpa `AUDIT_OUTPUT_DIR`, bukti masuk ke folder temporary OS `lugina-final-audit-round-2/regressions`.
 
-Run it against both the production server and a development server, using the
-same optional `PLAYWRIGHT_MODULE` / `PLAYWRIGHT_CHANNEL` settings above:
+Fixture terkontrol ini berbeda dari alur UI membuat event, enrollment, submit, assessment, dan revisi pada [handover](../INTEGRATION-HANDOVER.md#alur-uji-integrasi). Laporan audit lokal tidak diperlukan untuk menjalankan runner.
+
+## Regresi role dan Instant Navigation
+
+`role-navigation-regressions.mjs` menguji seluruh page Guru/Siswa tanpa login, dengan role yang benar, dengan role salah, dan setelah logout. Tes juga memeriksa Aisyah M1 serta Nabila M4 melalui URL langsung dan klik dari Monitoring. Runner gagal jika mendapati diagnostic Instant Navigation, console error, page error, atau respons HTTP gagal. Inventaris route gagal ketika page terlindungi baru belum memiliki skenario.
+
+Gunakan konfigurasi Playwright yang sama, lalu uji development dan produksi:
 
 ```powershell
 $env:AUDIT_BASE_URL = 'http://localhost:3000'
 node tests/role-navigation-regressions.mjs
 
-# With npm run dev serving on port 3001:
+# Dengan npm run dev yang berjalan pada port 3001:
 $env:AUDIT_BASE_URL = 'http://localhost:3001'
 node tests/role-navigation-regressions.mjs
 ```
 
-Without `AUDIT_OUTPUT_DIR`, this runner writes results to the OS temporary
-directory under `lugina-role-navigation-regressions`. Use separate output
-directories when retaining results from both server modes. Each successful run
-currently exercises 51 checks; development image-sizing warnings are recorded
-separately and do not stand in for Instant Navigation errors.
+Setiap run saat ini memuat 51 pemeriksaan. Tanpa override, hasil masuk ke temporary OS `lugina-role-navigation-regressions`. Peringatan ukuran gambar development dicatat terpisah dari diagnostic Instant Navigation. Sesuaikan port dengan server yang benar-benar aktif.
+
+## Batas dan bukti pengujian
+
+Browser memakai sesi terisolasi; sesi browser pengguna tidak dipakai. Simpan bukti di luar Git. Tes ini tidak menyertifikasi keamanan server, perilaku screen reader, sinkronisasi antarperangkat, seluruh browser, atau kesetaraan piksel Figma. Untuk perubahan lintas modul, ulangi alur Guru–Siswa dan periksa data Reports/Portfolio yang sama; untuk backend mendatang, tambahkan tes pengguna/sesi terpisah.

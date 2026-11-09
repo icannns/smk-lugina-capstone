@@ -1,148 +1,94 @@
-# Integrated frontend handover
+# Handover Integrasi Frontend dan Tim COMMIT
 
-The Next.js application lives in `frontend/`. Follow [README.md](README.md) for
-installation, demo accounts and commands. This is an accepted local fictional-data
-prototype with explicit boundaries, not a production service.
+Frontend Guru/Siswa sudah digabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Statusnya prototipe lokal dengan mock data, bukan layanan produksi. Gunakan [README utama](../README.md) untuk gambaran produk/akun demo dan [panduan frontend](README.md) untuk struktur pengembangan.
 
-## Existing route and component contracts
+## Memulai integrasi
 
-| Area | Entry points |
+Aplikasi berada di `frontend/`. Gunakan Node.js 20.9 atau lebih baru; dari folder tersebut:
+
+```powershell
+npm ci
+npm run dev
+```
+
+Buka alamat/port pada terminal. Backend, database, OAuth, dan kredensial `.env` tidak diperlukan untuk skenario demo yang ada. Hentikan server produksi sebelum build ulang, lalu jalankan kembali `npm run start` agar aset sesuai build terbaru.
+
+## Route dan titik koordinasi
+
+| Area | Titik masuk |
 | --- | --- |
-| Shared auth | `/login`, `/register`, `/register/google`, `/loading`; `src/lib/auth/{accounts,session,validation}.ts`, `src/components/auth/role-gate.tsx` |
-| Teacher | `/guru/dashboard`, `/guru/students`, `/guru/events`, `/guru/events/create`, `/guru/rubrics`, `/guru/monitoring`, `/guru/work`, `/guru/reports`, `/guru/profile` |
-| Student | `/siswa/events`, `/siswa/dashboard`, `/siswa/workspace`, `/siswa/survey`, `/siswa/portfolio`, `/siswa/profile` |
-| Shared domain | `src/lib/guru/event-draft-store.ts`, `event-types.ts`, `teacher-types.ts`, `learning-selectors.ts`, `report-selectors.ts`, `student-integration.ts` |
-| Student adapters | `src/lib/siswa/{student-types,student-actions,selectors,serialization,survey-questions}.ts` |
-| Shared presentation | `src/components/guru/`, `src/components/siswa/`, `src/app/globals.css`; local asset maps under `src/lib/{guru,siswa}/` |
+| Autentikasi | `/login`, `/register`, `/register/google`, `/loading`; `src/lib/auth/` dan `src/components/auth/role-gate.tsx` |
+| Guru | `/guru/dashboard`, `/guru/students`, `/guru/events`, `/guru/events/create`, `/guru/rubrics`, `/guru/monitoring`, `/guru/work`, `/guru/reports`, `/guru/profile` |
+| Siswa | `/siswa/events`, `/siswa/dashboard`, `/siswa/workspace`, `/siswa/survey`, `/siswa/portfolio`, `/siswa/profile` |
+| Domain bersama | `src/lib/guru/event-draft-store.ts`, `event-types.ts`, `teacher-types.ts`, `learning-selectors.ts`, `report-selectors.ts`, `student-integration.ts` |
+| Adapter Siswa | `src/lib/siswa/student-types.ts`, `student-actions.ts`, `selectors.ts`, `serialization.ts`, `survey-questions.ts` |
+| Tampilan | `src/components/guru/`, `src/components/siswa/`, token `src/app/globals.css`, aset lokal `public/`, serta pemetaan di `src/lib/` |
 
-Monitoring deep links use `?event=ID&student=ID&milestone=ID`. The reviewed
-`/guru/monitoring?event=kantin&student=nabila&milestone=M4` is an actual assessment
-context, not a separate route file. Query parameters select the event enrollment
-and milestone; unavailable data must remain a truthful missing state.
+Monitoring menggunakan `?event=ID&student=ID&milestone=ID`; contoh Nabila M4 adalah `/guru/monitoring?event=kantin&student=nabila&milestone=M4`. UI harus tetap menyatakan data belum tersedia ketika submission belum ada. Perubahan pada layout, auth, store, tipe bersama, dan global CSS perlu dikoordinasikan antartim.
 
-## One domain store, stable identities
+## Kontrak data yang harus dipertahankan
 
-- `lugina.teacher.event-drafts.v1` in sessionStorage holds compatible drafts,
-  published events, rubrics, learning, profiles, Student drafts/responses/claims
-  and Teacher notes/reviews. Extend its adapter/types rather than creating a
-  competing event or assessment database.
-- Event enrollment is **event ID + student ID**, not class membership. Submission
-  context includes event/student/milestone; assessments refer to a submission
-  version. Display labels such as M1 are separate from internal UUIDs.
-- Revision preserves older evidence/grades. A later version needs a new grade;
-  old assessments do not silently count as current. Task submission, task-and-survey
-  completion, current grading and certificate eligibility are distinct.
-- Survey response timestamps are distinct from work submission timestamps.
-  Dashboard, Monitoring, Work and Reports consume common selectors.
-- Auth uses the separate `lugina.auth.demo.v1` key. Fixed account roles are
-  `teacher | student`; public registration and mock Google create/select Students.
-  Editable profile labels must never become authorization rules.
+| Entitas/konteks | Aturan integrasi saat ini |
+| --- | --- |
+| Identitas | ID akun/pembelajar stabil; role bertipe `teacher | student`, tidak ditentukan dari nama atau email profil |
+| Event dan milestone | `ManagedEvent`/`EventMilestone` digunakan lintas modul; label M1/M2 dipisahkan dari UUID internal |
+| Enrollment | Hubungan event ID + student ID; keanggotaan kelas bukan pengganti peserta event |
+| Submission | Konteks event, Siswa, milestone; versi baru mempertahankan bukti dan nilai historis |
+| Assessment | Kunci versi `${submissionId}:v${version}`; hanya penilaian versi terkini yang dihitung sebagai nilai aktif |
+| Survei | Waktu respons berbeda dari waktu tugas; instrument/response/review harus memiliki kepemilikan dan kontrak yang disepakati |
+| Sertifikat contoh | Eligibility terpisah dari task/progres; nama dan nilai dibekukan pada saat klaim |
 
-## Reproducible prototype demonstration
+Key sessionStorage domain adalah `lugina.teacher.event-drafts.v1`. Store tersebut memuat `working`, `saved`, `deleted`, `rubrics`, `published`, `learning`, `profile`, `studentUI`, dan catatan/penanda review Guru pada `studentReviews`. Parser mempertahankan kompatibilitas state versi 1 dan memakai default untuk bagian lama yang belum tersedia. Storage rusak/tidak tersedia memakai fallback memori dengan peringatan; keberhasilan persisten tidak boleh diklaim ketika penyimpanan gagal.
 
-Use one browser tab and fictional data. Log in as Teacher; create a one-milestone
-event with rubric/certificate settings and publish once. Log out, sign in as Dimas,
-discover the new event and enroll. Save/refresh a work draft and submit it. Switch
-back to Teacher, inspect that exact submission, grade and send feedback; check
-Reports. Switch to Dimas and inspect the same grade/feedback in Portfolio. Request
-revision as Teacher, submit a new version as Dimas and reassess as Teacher.
+Auth memakai `lugina.auth.demo.v1` dengan tanggung jawab berbeda dari domain. Kata sandi registrasi demo berbentuk digest bersalt, tetapi seluruh mekanisme browser tetap dapat dimodifikasi pengguna. Produksi memerlukan backend autentikasi/otorisasi, bukan penggunaan sessionStorage sebagai lapisan keamanan.
 
-New events have no Survey instrument until the owning team configures one. Their
-tasks may be assessed while completion remains pending. Use existing configured
-fixtures for the full survey/unlock/example-certificate demonstration. Do not
-fabricate survey completion merely to unlock later stages.
+Task terkirim, task+survei selesai, assessment aktif, dan eligibility dokumen adalah konsep terpisah. Jangan mengubah salah satunya untuk memalsukan penyelesaian konsep lain. Catatan peninjauan survei juga bukan assessment rubric. Aturan review produksi per respons masih perlu ditetapkan tim pemilik.
 
-## COMMIT team's Streamlit migration
+## Migrasi tim COMMIT dari Streamlit ke Next.js
 
-1. Add agreed App Router routes within this project; reuse existing identity,
-   tokens and shells where appropriate. Do not add another React router or reset
-   global CSS. Coordinate edits to layouts, role gates, auth and shared store/types.
-2. Replace Streamlit rerun mechanics with React event handlers/local state for
-   transient UI; use shared typed adapters for cross-page records. Browser APIs
-   belong in Client Components. Preserve App Router server/client boundaries.
-3. Agree record ownership and versioned API contracts before integration: users,
-   events, enrollments, milestones, rubrics, submissions/versions, assessments and
-   Survey instruments/responses/reviews. Keep stable IDs and explicit WIB/time
-   conversion. Do not infer enrollment from school classes.
-4. Reuse the Teacher role if applicable. A new role requires explicit changes to
-   the typed account/home/guard contract, which currently supports only two roles.
-5. Replace mock persistence/auth through adapters when backend services exist.
-   Add real server authorization, durable uploads, shared state/concurrency and
-   approved certificate policy. sessionStorage is not a database or security layer.
-6. Run lint, TypeScript, build, regression suites and the same-tab cross-role smoke
-   test after integration. Also test genuinely separate users once APIs exist.
+1. Tambahkan route App Router dalam namespace yang disepakati pada aplikasi yang sama. Gunakan kembali identitas, shell, komponen, dan token yang sesuai; hindari router/aplikasi Next.js paralel serta reset global CSS.
+2. Ubah mekanisme rerun Streamlit menjadi event handler dan state React. State UI sementara berada dekat komponennya; record lintas halaman melewati adapter bertipe bersama. Jangan memindahkan `st.session_state` menjadi store event kedua.
+3. Browser API dan interaksi ditempatkan pada Client Components; pertahankan batas server/client App Router. Layout role harus tetap merender page; page terlindungi membungkus fitur dengan guard yang sesuai.
+4. Sepakati pemilik record dan versi kontrak user, event, enrollment, milestone, rubric, submission/version, assessment, serta instrument/response Survei sebelum menghubungkan data. Pertahankan konversi waktu WIB yang eksplisit.
+5. Jika COMMIT memakai role Guru, gunakan role yang ada. Role baru memerlukan perubahan eksplisit pada tipe akun, pemetaan tujuan, dan guard; label profil bukan sumber izin.
+6. Ganti adapter persistence/auth ketika layanan tersedia. Siapkan server authorization, upload permanen, sinkronisasi/concurrency, dan kebijakan dokumen yang disetujui. Endpoint API produksi belum ditetapkan oleh prototipe ini.
+7. Jalankan lint, build, TypeScript, tes regresi, dan alur lintas role setelah integrasi. Ketika backend tersedia, tambah pengujian pengguna nyata yang memakai sesi/perangkat terpisah.
 
-## Navigation and accepted limits
+## Batas dengan tim Survei dan layanan eksternal
 
-Teacher Dashboard Survei, Survei Saya, Template Survei, Hasil Survei and Kebijakan
-Privasi, plus Student Pengaturan, remain visible native disabled buttons. Pointer
-and keyboard cannot activate them; they do not open placeholder modals. Student
-milestone Survey instructions/forms/confirmation remain functional. Support and
-other unrelated informational actions retain their original behavior.
+Event baru belum memprovisikan instrument Survei. Task dapat dikirim dan dinilai, tetapi tahap yang menunggu survei belum selesai. Pemilik modul perlu menyediakan konfigurasi/aktivasi instrument per event/milestone, ID respons, versi, timestamp, status kelengkapan, dan status review. Jangan menganggap jawaban fixture sebagai kebijakan penilaian baru atau membuat hasil diagnosis.
 
-Mock changes are tab-local; a new tab may initially copy session state but does not
-receive later updates. Separate browsers/devices do not synchronize. Attachments
-store metadata only; previews/sample downloads are labelled simulations. Reports
-generate real PDF/XLSX files; example certificate PDFs are unofficial learning
-documents without institutional signature, recognition or external verification.
+Menu administrasi Survei/privasi Guru dan Pengaturan Siswa terlihat tetapi disabled. Form survei milestone yang sudah dikonfigurasi tetap aktif. Gunakan event demo yang sesuai untuk mencoba unlock serta klaim dokumen sampai akhir; alur membuat event baru tidak berpura-pura menyediakan layanan Survei.
 
-B01–B10 and structural visual findings V01–V03 were fixed and independently
-verified. B11 remains a moderate development-only minimatch advisory chain; do not
-force a major dependency override. V04 includes minor spacing/native-control visual
-differences. Full screen-reader, cross-browser and pixel-perfect certification
-remain outside the verified scope. No Critical/High application issue was confirmed
-in the accepted prototype scenarios.
+Data mock hanya lokal pada tab dan alamat/port. Tab baru dapat membawa salinan awal tetapi tidak menerima pembaruan berikutnya; tidak ada sinkronisasi otomatis antartab/perangkat. Lampiran berupa metadata, preview/unduhan sampel diberi label simulasi. Laporan PDF/XLSX dibuat di browser; dokumen sertifikat contoh tidak memiliki penerbitan, tanda tangan, pengakuan profesi, atau verifikasi resmi institusi.
 
-## Publication verification — 9 November 2026
+## Alur uji integrasi
 
-Fresh release checks passed: ESLint, standalone TypeScript, production build,
-9 logic regressions, 8 browser defect groups, 8 shared-auth groups, 21 Teacher
-walkthrough checks, 7 Teacher control groups, 13 Student groups, 8 Student edge
-groups, 9 cross-role checkpoints, 7 independent defect probes and 2 storage cases.
-The 42-state route matrix at 320/768/1440 px and 27 wizard/dialog layouts had no
-document overflow, broken visible assets or runtime errors. Sidebar checks covered
-18 disabled-item cases and 36 functional navigations, plus actual Student Survey
-validation/draft/confirmation/submission. A 40-participant PDF rendered across two
-pages within page bounds; XLSX CRC/XML and all 43 rows validated. A dependency-
-complete export from the proposed Git index also built independently using a
-temporary physical copy of the already installed dependencies, without installing
-or upgrading packages. Local QA evidence remains outside the repository.
+Gunakan [langkah Guru–Siswa](../README.md#cara-mencoba-integrasi-guru-dan-siswa) dalam satu tab: Guru terbitkan event → Dimas daftar/kirim tugas → Guru nilai/feedback → Dimas baca feedback/kirim revisi → Guru nilai versi baru dan periksa laporan. Sebuah event baru dapat memiliki nilai lengkap tetapi penyelesaian masih tertunda karena surveinya belum dikonfigurasi. Gunakan fixture dengan survei aktif untuk uji tahap lanjut.
 
-The initial publication still had an `instant-unrendered-segment` development
-diagnostic despite functional Monitoring navigation. The follow-up correction
-moves `RoleGate` from both role layouts into all 15 protected pages, wrapping the
-feature components. Layouts always render their page segment; the same guard
-still controls feature rendering, loading and redirects. This follows the
-[Next.js guidance](https://nextjs.org/docs/messages/instant-unrendered-segment)
-to put conditional auth inside pages rather than omit layout children.
+## Catatan verifikasi dan isu terbuka
 
-The original Aisyah M1 diagnostic was reproduced before the correction. Afterward,
-51 navigation/auth checks passed in each of development and production, including
-Aisyah M1 and Nabila M4 direct/client navigation, all protected pages without
-login, own/wrong-role navigation and logout. No Instant Navigation diagnostic,
-console error, page error or failed response remained in those runs. The runner
-is `tests/role-navigation-regressions.mjs`. No `instant = false`, suppression,
-framework upgrade or configuration change was introduced. An existing development-
-only privacy-icon sizing warning remains unrelated to this correction. Full
-navigation performance certification is still outside these functional checks.
+Catatan berikut adalah hasil verifikasi implementasi pada 9 November 2026, bukan klaim tes baru pada setiap pembacaan dokumen:
 
-The fresh full npm audit reports 8 moderate affected development packages in the
-accepted B11 chain; the production-only audit reports zero. Registry checks do not
-replace a production security review. The temporary legacy Student edge runner's
-old Settings-modal expectation was updated to assert disabled Settings, matching
-the final publication instructions. No application defect was hidden by that test
-adaptation.
+- Temuan fungsional B01–B10 dan komposisi visual V01–V03 telah diperbaiki dan diuji ulang. Filter/status laporan, progres event, nilai versi terbaru, catatan/review, metadata survei, pagination PDF, panjang nama profil, label milestone, dan asosiasi error form menggunakan perilaku yang diperbaiki.
+- Pengujian terdahulu meliputi 9 tes logika, 8 kelompok regresi browser, auth kedua role, alur Guru/Siswa, 153 kombinasi layar/resolusi, PDF 40 peserta dua halaman dan XLSX 43 baris. Jalankan ulang [tes repository](tests/README.md) ketika implementasi berubah; bukti lokal lama bukan pengganti.
+- Fix `6712c64` memindahkan `RoleGate` dari layout ke 15 page. Diagnostic Aisyah M1 direproduksi sebelum fix; setelahnya 51 pemeriksaan navigasi lolos masing-masing pada development dan produksi, termasuk Nabila M4, tanpa diagnostic Instant Navigation atau error runtime. Validasi framework tidak dimatikan. Peringatan development tentang ukuran ikon privasi masih terpisah dari fix tersebut.
+- B11 masih berupa advisory development pada rantai `eslint-config-next → typescript-eslint → @typescript-eslint/typescript-estree → minimatch`. Audit saat verifikasi mencatat 8 paket moderate dalam satu rantai dan nol temuan production-only. Itu bukan delapan eksploit terpisah atau jaminan keamanan. Ulangi audit pada lingkungan terbaru; jangan memakai force-fix/override major tanpa kajian.
+- V04 memuat selisih kecil jarak, wrapping, kontrol tanggal/select native, dan detail visual. Audit screen reader penuh, browser/perangkat lain, kesetaraan piksel, serta performa navigasi menyeluruh belum disertifikasi.
+- Backend, OAuth, upload permanen, administrasi Survei, concurrency, dan pengesahan dokumen masih menjadi pekerjaan integrasi berikutnya.
 
-## Documentation retained for the shared repository
+## Peta dokumentasi dan riwayat
 
-| Class | Files | Decision |
-| --- | --- | --- |
-| A — essential | Root `README.md`; frontend `README.md`, `AGENTS.md`, `TEACHER-MODULE.md`, `STUDENT-MODULE.md`, `SHARED-AUTHENTICATION.md`, this handover | Retain; README now describes integrated behavior; phase history is labelled |
-| B — useful QA | `tests/README.md` and its regression runners | Include reproducible tests without local browser dependencies/evidence |
-| B — historical phase reference | `DASHBOARD.md`, `STUDENT-MANAGEMENT.md`, `EVENT-MANAGEMENT.md`, `EVENT-WIZARD.md` | Already tracked; preserve unchanged; their earlier scope is historical |
-| C — local historical audit evidence | `FINAL-AUDIT-ROUND-1.md`, `FINAL-AUDIT-ROUND-2.md`, `FINAL-VERIFICATION.md` | Preserve on disk, intentionally exclude from new commits: long overlapping machine-specific reports; current handover summarizes actionable limits |
+| Dokumen | Fungsi |
+| --- | --- |
+| [README utama](../README.md) | Gambaran, setup awal, akun demo, dan alur demonstrasi |
+| [Panduan frontend](README.md) | Struktur pengembangan dan perintah kerja |
+| [Modul Guru](TEACHER-MODULE.md) | Referensi desain/route dan alur fitur Guru, termasuk event/wizard |
+| [Modul Siswa](STUDENT-MODULE.md) | Enrollment, submission/revisi, survei, portofolio, dan profil |
+| [Autentikasi](SHARED-AUTHENTICATION.md) | Sesi, role, guard, dan batas keamanan |
+| [Pengujian](tests/README.md) | Runner yang dapat dijalankan ulang |
+| [Instruksi agent](AGENTS.md) | Aturan Next.js yang aktif |
 
-Generated directories, environment files, machine-specific browser paths, QA
-screenshots/logs/downloads and temporary indexes are not repository deliverables.
-No Markdown was deleted. The intentionally untracked local reports can remain
-visible in Git status after publication.
+Informasi fase awal yang masih berlaku telah dikonsolidasikan ke panduan modul. Riwayat lengkap tetap tersedia pada commit lama; klaim fase yang sudah bertentangan dengan source tidak menjadi petunjuk integrasi saat ini.
+
+`FINAL-AUDIT-ROUND-1.md`, `FINAL-AUDIT-ROUND-2.md`, dan `FINAL-VERIFICATION.md` adalah laporan historis lokal yang sengaja tidak di-commit. Jangan menambahkannya, file megaprompt operasional, environment privat, log, screenshot, unduhan QA, `node_modules`, atau `.next` ke snapshot aplikasi.
