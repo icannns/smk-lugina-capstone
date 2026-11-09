@@ -1,0 +1,56 @@
+﻿@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #111827;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  /* Lugina foundations, with the auth frames' 12px control radius. */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d53d1;
+  --color-primary-soft: #eff6ff;
+  --color-secondary: #4b5563;
+  --color-muted: #9ca3af;
+  --color-line: #e5e7eb;
+  --color-danger: #dc2626;
+  --radius-control: 12px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+button:not(:disabled),
+a {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* Preserve the reference form positions on tall desktops. Shorter screens keep
+   the notice in normal flow so every control remains reachable by scrolling. */
+@media (min-width: 1024px) and (min-height: 900px) {
+  .auth-prototype {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
