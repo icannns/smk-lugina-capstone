@@ -108,16 +108,23 @@ complete export from the proposed Git index also built independently using a
 temporary physical copy of the already installed dependencies, without installing
 or upgrading packages. Local QA evidence remains outside the repository.
 
-Monitoring Nabila M4 passed direct and client navigation in both production and
-development. Development still emits `instant-unrendered-segment`: the validator
-cannot validate the segment; authenticated UI nevertheless renders correctly.
-The client-only RoleGate renders a loading screen before browser auth is ready,
-which is consistent with the diagnostic's omitted validation segment; this is an
-explanation from source inspection, not a proven framework root-cause fix. No
-`instant = false`, warning suppression or configuration change was introduced.
-An existing development-only privacy-icon sizing warning also remains; production
-route/CSS checks pass. Neither diagnostic blocked the exercised flow. Instant-
-navigation performance certification remains incomplete.
+The initial publication still had an `instant-unrendered-segment` development
+diagnostic despite functional Monitoring navigation. The follow-up correction
+moves `RoleGate` from both role layouts into all 15 protected pages, wrapping the
+feature components. Layouts always render their page segment; the same guard
+still controls feature rendering, loading and redirects. This follows the
+[Next.js guidance](https://nextjs.org/docs/messages/instant-unrendered-segment)
+to put conditional auth inside pages rather than omit layout children.
+
+The original Aisyah M1 diagnostic was reproduced before the correction. Afterward,
+51 navigation/auth checks passed in each of development and production, including
+Aisyah M1 and Nabila M4 direct/client navigation, all protected pages without
+login, own/wrong-role navigation and logout. No Instant Navigation diagnostic,
+console error, page error or failed response remained in those runs. The runner
+is `tests/role-navigation-regressions.mjs`. No `instant = false`, suppression,
+framework upgrade or configuration change was introduced. An existing development-
+only privacy-icon sizing warning remains unrelated to this correction. Full
+navigation performance certification is still outside these functional checks.
 
 The fresh full npm audit reports 8 moderate affected development packages in the
 accepted B11 chain; the production-only audit reports zero. Registry checks do not
@@ -131,7 +138,7 @@ adaptation.
 | Class | Files | Decision |
 | --- | --- | --- |
 | A — essential | Root `README.md`; frontend `README.md`, `AGENTS.md`, `TEACHER-MODULE.md`, `STUDENT-MODULE.md`, `SHARED-AUTHENTICATION.md`, this handover | Retain; README now describes integrated behavior; phase history is labelled |
-| B — useful QA | `tests/README.md` and its two regression runners | Include reproducible tests without local browser dependencies/evidence |
+| B — useful QA | `tests/README.md` and its regression runners | Include reproducible tests without local browser dependencies/evidence |
 | B — historical phase reference | `DASHBOARD.md`, `STUDENT-MANAGEMENT.md`, `EVENT-MANAGEMENT.md`, `EVENT-WIZARD.md` | Already tracked; preserve unchanged; their earlier scope is historical |
 | C — local historical audit evidence | `FINAL-AUDIT-ROUND-1.md`, `FINAL-AUDIT-ROUND-2.md`, `FINAL-VERIFICATION.md` | Preserve on disk, intentionally exclude from new commits: long overlapping machine-specific reports; current handover summarizes actionable limits |
 

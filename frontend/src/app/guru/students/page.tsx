@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { StudentManagement } from "@/components/guru/students/student-management";
+import { RoleGate } from "@/components/auth/role-gate";
 
 export const metadata: Metadata = { title: "Pengelolaan Data Siswa" };
 
@@ -16,7 +17,9 @@ export default function StudentsPage() {
         </main>
       }
     >
-      <StudentManagement />
+      <RoleGate role="teacher">
+        <StudentManagement />
+      </RoleGate>
     </Suspense>
   );
 }

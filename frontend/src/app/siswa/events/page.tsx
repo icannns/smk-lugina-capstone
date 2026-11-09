@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { StudentEvents } from "@/components/siswa/events/student-events";
+import { RoleGate } from "@/components/auth/role-gate";
 export const metadata = { title: "Jelajah Event" };
 export default function StudentEventsPage() {
   return (
@@ -10,7 +11,9 @@ export default function StudentEventsPage() {
         </main>
       }
     >
-      <StudentEvents />
+      <RoleGate role="student">
+        <StudentEvents />
+      </RoleGate>
     </Suspense>
   );
 }

@@ -50,6 +50,16 @@ have working logout actions. Unauthenticated role routes redirect to Login; the
 wrong role redirects to its own dashboard. These checks cover direct navigation
 as well as the sidebar.
 
+Role layouts always render their child page. Each protected Guru/Siswa page wraps
+its feature component in the existing `RoleGate`, inside its existing Suspense
+boundary where present. Guarding in a layout used to omit the entire page segment
+while client auth was initializing, causing Next.js Instant Navigation validation
+to report `instant-unrendered-segment`. Page-level guards preserve the same
+loading, wrong-role redirect and logout behavior without dropping the route
+segment. New protected pages must include the matching guard and be added to
+`tests/role-navigation-regressions.mjs`; do not remove guards or disable framework
+validation to bypass this requirement. These remain client-side prototype guards.
+
 ## Storage and production boundary
 
 `src/lib/auth/accounts.ts` owns fixed records; `session.ts` owns the reactive mock

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { StudentWork } from "@/components/guru/work/student-work";
+import { RoleGate } from "@/components/auth/role-gate";
 export const metadata = { title: "Karya Siswa" };
 export default function WorkPage() {
   return (
@@ -10,7 +11,9 @@ export default function WorkPage() {
         </main>
       }
     >
-      <StudentWork />
+      <RoleGate role="teacher">
+        <StudentWork />
+      </RoleGate>
     </Suspense>
   );
 }

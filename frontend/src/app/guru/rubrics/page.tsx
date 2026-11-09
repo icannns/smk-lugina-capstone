@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { RubricManagement } from "@/components/guru/rubrics/rubric-management";
+import { RoleGate } from "@/components/auth/role-gate";
 export const metadata = { title: "Kelola Rubrik" };
 export default function RubricsPage() {
   return (
@@ -10,7 +11,9 @@ export default function RubricsPage() {
         </main>
       }
     >
-      <RubricManagement />
+      <RoleGate role="teacher">
+        <RubricManagement />
+      </RoleGate>
     </Suspense>
   );
 }

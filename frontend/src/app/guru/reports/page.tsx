@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ProgressReports } from "@/components/guru/reports/progress-reports";
+import { RoleGate } from "@/components/auth/role-gate";
 export const metadata = { title: "Laporan Perkembangan" };
 export default function ReportsPage() {
   return (
@@ -10,7 +11,9 @@ export default function ReportsPage() {
         </main>
       }
     >
-      <ProgressReports />
+      <RoleGate role="teacher">
+        <ProgressReports />
+      </RoleGate>
     </Suspense>
   );
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { RoleGate } from "@/components/auth/role-gate";
+// Each page applies RoleGate; layouts must keep route segments in the render tree.
 export default function TeacherLayout({ children }: { children: ReactNode }) {
-  return <RoleGate role="teacher">{children}</RoleGate>;
+  return <>{children}</>;
 }

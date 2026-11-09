@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { EventManagement } from "@/components/guru/events/event-management";
+import { RoleGate } from "@/components/auth/role-gate";
 
 export const metadata: Metadata = { title: "Create Event" };
 
@@ -16,7 +17,9 @@ export default function EventsPage() {
         </main>
       }
     >
-      <EventManagement />
+      <RoleGate role="teacher">
+        <EventManagement />
+      </RoleGate>
     </Suspense>
   );
 }
