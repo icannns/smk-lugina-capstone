@@ -1,4 +1,6 @@
 import type { ManagedEvent } from "./event-types";
+import type { GuruRubric } from "./teacher-types";
+import { defaultCertificate } from "./rubric-data";
 
 export function isWibDateTime(value: string | undefined): value is string {
   const parts = value?.match(
@@ -39,6 +41,8 @@ export function informationErrors(event: ManagedEvent) {
 }
 export function milestoneErrors(event: ManagedEvent) {
   const errors: Record<string, string> = {};
+  if (!event.milestones.length)
+    errors["milestone-list"] = "Tambahkan milestone sebelum melanjutkan.";
   for (const m of event.milestones) {
     const key = `milestone-${m.id}`;
     if (!m.title.trim())
@@ -47,6 +51,40 @@ export function milestoneErrors(event: ManagedEvent) {
       errors[`${key}-formats`] = "Pilih minimal satu format pengumpulan.";
     if (!isWibDateTime(m.deadline))
       errors[`${key}-deadline`] = "Deadline milestone wajib diisi.";
+  }
+  return errors;
+}
+export function rubricErrors(
+  event: ManagedEvent,
+  rubrics: GuruRubric[],
+): Record<string, string> {
+  return rubrics.some((r) => r.id === event.rubricId)
+    ? {}
+    : { "wizard-rubric": "Pilih rubrik penilaian." };
+}
+export function certificateErrors(event: ManagedEvent) {
+  const c = event.certificateConfig ?? defaultCertificate();
+  const errors: Record<string, string> = {};
+  if (
+    c.threshold.trim() === "" ||
+    !Number.isFinite(Number(c.threshold)) ||
+    Number(c.threshold) < 0 ||
+    Number(c.threshold) > 100
+  )
+    errors["cert-threshold"] = "Ambang nilai harus antara 0 dan 100.";
+  if (c.mode === "template") {
+    if (!c.template) errors["cert-template"] = "Pilih template sertifikat.";
+  } else {
+    for (const key of [
+      "name",
+      "organizer",
+      "issuedAt",
+      "signer",
+      "signerRole",
+    ] as const)
+      if (!c[key].trim()) errors[`cert-${key}`] = "Kolom ini wajib diisi.";
+    if (c.issuedAt && !isWibDateTime(`${c.issuedAt}T00:00`))
+      errors["cert-issuedAt"] = "Tanggal terbit tidak valid.";
   }
   return errors;
 }

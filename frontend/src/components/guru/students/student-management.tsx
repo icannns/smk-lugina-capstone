@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { studentDirectory } from "@/lib/guru/student-integration";
 import {
-  studentEnrollments,
-  studentEvents,
-  students,
-} from "@/lib/guru/student-data";
+  listedEvents,
+  useEventDraftStore,
+  saveStudentNote,
+  markStudentReviewed,
+} from "@/lib/guru/event-draft-store";
 import { studentAssets } from "@/lib/guru/student-assets";
 import {
   getStudentRecords,
   readStudentFilters,
   studentHref,
 } from "@/lib/guru/student-selectors";
-import type { StudentFilters, StudentSession } from "@/lib/guru/student-types";
+import type { StudentFilters } from "@/lib/guru/student-types";
 import {
   DashboardDialog,
   type DashboardDialogState,
@@ -24,13 +26,25 @@ import { StudentTable } from "./student-table";
 import { StudentDetail } from "./student-detail";
 
 export function StudentManagement() {
+  const store = useEventDraftStore(),
+    directory = studentDirectory(
+      listedEvents(store),
+      store.learning,
+      store.studentUI,
+      store.studentReviews,
+    );
+  const {
+    events: studentEvents,
+    enrollments: studentEnrollments,
+    students,
+  } = directory;
   const params = useSearchParams();
   const filters = readStudentFilters(params);
   const studentId = params.get("student");
-  const [session, setSession] = useState<StudentSession>({
-    notes: {},
-    reviews: {},
-  });
+  const session = store.studentReviews;
+  const effectiveReviews = Object.fromEntries(
+    studentEnrollments.map((e) => [e.id, e.reviewed]),
+  );
   const [action, setAction] = useState<DashboardDialogState | null>(null);
   const event = studentEvents.find((e) => e.id === filters.event);
   const enrollment = studentEnrollments.find(
@@ -80,20 +94,10 @@ export function StudentManagement() {
                 student={student}
                 event={event}
                 enrollment={enrollment}
-                reviewed={session.reviews[enrollment.id] ?? enrollment.reviewed}
+                reviewed={enrollment.reviewed}
                 savedNote={session.notes[enrollment.id] ?? ""}
-                onSave={(text) =>
-                  setSession((old) => ({
-                    ...old,
-                    notes: { ...old.notes, [enrollment.id]: text },
-                  }))
-                }
-                onReview={() =>
-                  setSession((old) => ({
-                    ...old,
-                    reviews: { ...old.reviews, [enrollment.id]: true },
-                  }))
-                }
+                onSave={(text) => saveStudentNote(enrollment.id, text)}
+                onReview={() => markStudentReviewed(enrollment.id)}
                 onAction={setAction}
               />
             ) : (
@@ -115,10 +119,16 @@ export function StudentManagement() {
           ) : (
             <StudentTable
               filters={filters}
-              records={getStudentRecords(filters, session.reviews)}
-              reviews={session.reviews}
+              records={getStudentRecords(filters, effectiveReviews, directory)}
+              events={studentEvents}
+              reviews={effectiveReviews}
               onChange={changeFilters}
             />
+          )}
+          {store.storageError && (
+            <p role="alert" className="mt-4 text-sm text-amber-800">
+              {store.storageError}
+            </p>
           )}
         </main>
       </DashboardShell>

@@ -41,4 +41,6 @@ export type StudentFilters = {
 export type StudentSession = {
   notes: Record<string, string>;
   reviews: Record<string, boolean>;
+  reviewedAt?: Record<string, string>;
+  reviewedResponses?: Record<string, string[]>;
 };

@@ -9,8 +9,8 @@ import {
   listedEvents,
   useEventDraftStore,
   wizardHref,
+  updateEventDeadline,
 } from "@/lib/guru/event-draft-store";
-import { managedEvents } from "@/lib/guru/event-data";
 import { eventAssets } from "@/lib/guru/event-assets";
 import { eventHref, readEventFilters } from "@/lib/guru/event-selectors";
 import type {
@@ -26,6 +26,7 @@ import {
 import { EventListing } from "./event-listing";
 import { EventDetail } from "./event-detail";
 import { EventDialog } from "./event-dialogs";
+import { monitoringHref, eventLearning } from "@/lib/guru/learning-selectors";
 
 export function EventManagement() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export function EventManagement() {
   const params = useSearchParams();
   const filters = readEventFilters(params);
   const eventId = params.get("event");
-  const event = managedEvents.find(
+  const event = listedEvents(draftState).find(
     (e) => e.id === eventId && e.status !== "draft",
   );
   const deleted = draftState.deleted;
@@ -42,7 +43,6 @@ export function EventManagement() {
     eventId: string;
     milestone: EventMilestone;
   } | null>(null);
-  const [deadlines, setDeadlines] = useState<Record<string, string>>({});
   const [action, setAction] = useState<DashboardDialogState | null>(null);
   const [notice, setNotice] = useState("");
   function change(patch: Partial<EventFilters>) {
@@ -86,19 +86,17 @@ export function EventManagement() {
             event ? (
               <EventDetail
                 event={event}
+                learning={eventLearning(
+                  event,
+                  draftState.learning,
+                  draftState.rubrics[event.rubricId ?? ""],
+                )}
                 filters={filters}
-                deadlines={deadlines}
+                deadlines={{}}
                 onDeadline={(milestone) =>
                   setDeadline({ eventId: event.id, milestone })
                 }
-                onMonitoring={() =>
-                  setAction({
-                    title: "Monitoring Progres",
-                    description:
-                      "Halaman Monitoring Progres belum tersedia pada Phase 4A. Anda tetap berada pada detail event contoh.",
-                    figmaNode: "291:21691",
-                  })
-                }
+                onMonitoring={() => router.push(monitoringHref(event.id))}
               />
             ) : (
               <div className="rounded-2xl border border-line bg-white p-8">
@@ -153,13 +151,10 @@ export function EventManagement() {
           milestone={deadline.milestone}
           onClose={() => setDeadline(null)}
           onSave={(value) => {
-            setDeadlines((old) => ({
-              ...old,
-              [`${deadline.eventId}-${deadline.milestone.id}`]: value,
-            }));
+            updateEventDeadline(deadline.eventId, deadline.milestone.id, value);
             setDeadline(null);
             setNotice(
-              "Deadline contoh diperbarui secara lokal (WIB). Muat ulang untuk mereset.",
+              "Deadline contoh diperbarui pada sesi tab ini (WIB) dan terhubung ke Monitoring.",
             );
           }}
         />

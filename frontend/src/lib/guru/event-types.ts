@@ -1,4 +1,5 @@
 import type { EventStatus } from "./dashboard-data";
+import type { CertificateConfig, WizardStep } from "./teacher-types";
 
 export type EventMilestone = {
   id: string;
@@ -26,13 +27,15 @@ export type ManagedEvent = {
   progress?: number;
   rubric?: string;
   certificate?: string;
+  rubricId?: string;
+  certificateConfig?: CertificateConfig;
   caseStudyHtml?: string;
   directionsHtml?: string;
   startAt?: string;
   endAt?: string;
   attachments?: EventAttachment[];
   wizard?: {
-    step: "information" | "milestones";
+    step: WizardStep;
     selectedMilestoneId: string;
     modeChosen: boolean;
   };

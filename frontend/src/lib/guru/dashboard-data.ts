@@ -14,6 +14,7 @@ export type GuruEvent = {
   students: number;
 };
 export type ReviewItem = {
+  href?: string;
   id: string;
   student: string;
   event: string;
@@ -35,7 +36,6 @@ export const teacher = {
 };
 export const snapshotDate = "Rabu, 2 April 2025 · 08.15 WIB";
 export const draftTitle = "Aplikasi Absensi Digital";
-export const surveyResponseCount = 27;
 
 export const guruEvents: GuruEvent[] = [
   {
@@ -155,33 +155,34 @@ export const statusOrder: Record<EventStatus, number> = {
 };
 
 // Prototype destinations were inspected on the exact two Redesign Guru frames.
-// These target pages deliberately remain outside this phase.
+// Metadata for prototype actions; implemented destinations use real frontend routes.
 export const dashboardActions = {
   create: {
     title: "Buat Event",
-    description: "Pembuatan event akan tersedia pada fase berikutnya.",
+    description: "Wizard event contoh tersedia melalui Create Event.",
     figmaNode: "293:29139",
   },
   resume: {
     title: "Lanjutkan Draf",
-    description: `Draf “${draftTitle}” masih tersedia. Editor event akan diimplementasikan pada fase berikutnya.`,
+    description: `Draf “${draftTitle}” dapat dilanjutkan melalui wizard event contoh.`,
     figmaNode: "293:29139",
   },
   monitoring: {
     title: "Monitoring Progres",
-    description: "Halaman monitoring akan tersedia pada fase berikutnya.",
+    description:
+      "Monitoring menampilkan pengumpulan pada enrollment event contoh.",
     figmaNode: "291:21691",
   },
   assessment: {
     title: "Penilaian Siswa",
     description:
-      "Lembar penilaian belum tersedia pada fase Dashboard. Tidak ada nilai yang diubah.",
+      "Pilih pengumpulan siswa di Monitoring untuk membuka lembar penilaian contoh.",
     figmaNode: "291:23200",
   },
   survey: {
     title: "Hasil Survei",
     description:
-      "Peninjauan respons survei belum tersedia pada fase Dashboard.",
+      "Respons lengkap berada pada modul Survei yang dikerjakan terpisah. Prototipe Teacher hanya menampilkan ringkasan baca-saja; tidak membuka atau mengubah respons survei.",
     figmaNode: "262:6820",
   },
 } satisfies Record<string, DashboardAction>;

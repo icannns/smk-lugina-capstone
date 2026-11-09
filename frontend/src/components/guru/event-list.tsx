@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  dashboardActions,
   statusLabels,
   statusOrder,
   type DashboardAction,
@@ -10,15 +9,19 @@ import {
   type GuruEvent,
 } from "@/lib/guru/dashboard-data";
 import { DashboardButton, DashboardIcon } from "./dashboard-ui";
+import { useRouter } from "next/navigation";
+import { monitoringHref } from "@/lib/guru/learning-selectors";
 
 export function EventCard({
   event,
-  onAction,
 }: {
   event: GuruEvent;
   onAction: (action: DashboardAction) => void;
 }) {
-  const progress = Math.round((event.completed / event.total) * 100);
+  const router = useRouter();
+  const progress = event.total
+    ? Math.round((event.completed / event.total) * 100)
+    : 0;
   const colors = {
     ongoing: "bg-[#e8f7ed] text-[#1a7d4a]",
     upcoming: "bg-[#edf2ff] text-primary",
@@ -89,12 +92,7 @@ export function EventCard({
         </p>
         <DashboardButton
           variant="outline"
-          onClick={() =>
-            onAction({
-              ...dashboardActions.monitoring,
-              description: `${event.title}. ${dashboardActions.monitoring.description}`,
-            })
-          }
+          onClick={() => router.push(monitoringHref(event.id))}
         >
           Lihat Progres
         </DashboardButton>
@@ -129,7 +127,8 @@ export function EventList({
           sort === "name"
             ? a.title.localeCompare(b.title, "id")
             : sort === "progress"
-              ? b.completed / b.total - a.completed / a.total
+              ? (b.total ? b.completed / b.total : 0) -
+                (a.total ? a.completed / a.total : 0)
               : sort === "newest"
                 ? b.start.localeCompare(a.start)
                 : statusOrder[a.status] - statusOrder[b.status],

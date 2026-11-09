@@ -10,6 +10,7 @@ import type {
 } from "@/lib/guru/student-types";
 import type { DashboardAction } from "@/lib/guru/dashboard-data";
 import { StudentCard, StudentIcon } from "./student-ui";
+import { milestoneLabel } from "@/lib/guru/learning-selectors";
 
 function Definition({
   title,
@@ -30,16 +31,18 @@ function Definition({
 
 function SummaryCard({
   milestone,
+  label,
   onResponse,
 }: {
   milestone: MilestoneSummary;
+  label: string;
   onResponse: () => void;
 }) {
   return (
     <StudentCard className="p-5 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-base font-semibold leading-6">
-          {milestone.id}
+          {label}
           {milestone.title && ` · ${milestone.title}`}
         </h3>
         {milestone.submittedAt && (
@@ -101,7 +104,7 @@ type Props = {
   enrollment: StudentEnrollment;
   reviewed: boolean;
   savedNote: string;
-  onSave: (text: string) => void;
+  onSave: (text: string) => boolean;
   onReview: () => void;
   onAction: (action: DashboardAction) => void;
 };
@@ -205,10 +208,11 @@ export function StudentDetail({
               <SummaryCard
                 key={milestone.id}
                 milestone={milestone}
+                label={milestoneLabel(event, milestone.id)}
                 onResponse={() =>
                   onAction({
                     title: "Detail Respons",
-                    description: `${student.name} · ${event.title} · ${milestone.id}. Ringkasan di halaman ini bersifat baca-saja. Halaman respons lengkap belum diimplementasikan pada fase Pengelolaan Data Siswa.`,
+                    description: `${student.name} · ${event.title} · ${milestoneLabel(event, milestone.id)}. Ringkasan di halaman ini bersifat baca-saja. Administrasi respons lengkap berada di modul Survei terpisah.`,
                   })
                 }
               />
@@ -249,8 +253,7 @@ export function StudentDetail({
               <button
                 type="button"
                 onClick={() => {
-                  onSave(note);
-                  setSaved(true);
+                  setSaved(onSave(note));
                 }}
                 className="flex h-10 items-center justify-center rounded-control px-4 text-sm font-medium hover:bg-gray-50"
               >

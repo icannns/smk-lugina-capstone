@@ -10,10 +10,13 @@ import {
   saveEventDraft,
   useEventDraftStore,
   wizardHref,
+  publishEvent,
 } from "@/lib/guru/event-draft-store";
 import {
   informationErrors,
   milestoneErrors,
+  rubricErrors,
+  certificateErrors,
 } from "@/lib/guru/event-wizard-validation";
 import { wizardSteps } from "@/lib/guru/event-wizard-data";
 import { wizardAssets } from "@/lib/guru/wizard-assets";
@@ -29,6 +32,14 @@ import { DashboardIcon, DashboardPrimaryButton } from "../../dashboard-ui";
 import { InformationStep } from "./information-step";
 import { MilestoneStep } from "./milestone-step";
 import { WizardIcon } from "./wizard-ui";
+import { RubricStep } from "./rubric-step";
+import { CertificateStep } from "./certificate-step";
+import { defaultCertificate } from "@/lib/guru/rubric-data";
+import type { WizardStep } from "@/lib/guru/teacher-types";
+import { designNavigation } from "../../design-ui";
+import { DesignIcon } from "../../design-ui";
+import { ReviewStep } from "./review-step";
+import { EventComplete } from "./event-complete";
 
 const subscribeReady = () => () => {};
 export function EventWizard() {
@@ -50,6 +61,7 @@ function EventWizardSession() {
   const raw = id ? readEventDraft(state, id) : undefined;
   const [attemptedInfo, setAttemptedInfo] = useState(false);
   const [attemptedMilestones, setAttemptedMilestones] = useState(false);
+  const [attemptedAdvanced, setAttemptedAdvanced] = useState(false);
   const [action, setAction] = useState<DashboardDialogState | null>(null);
   const [notice, setNotice] = useState("");
   useEffect(() => {
@@ -83,8 +95,13 @@ function EventWizardSession() {
         </Link>
       </main>
     );
+  if (raw.status !== "draft")
+    return <EventComplete event={raw} storageError={state.storageError} />;
   const event: ManagedEvent = {
     ...raw,
+    rubricId: raw.rubricId ?? "uiux",
+    rubric: raw.rubric ?? state.rubrics[raw.rubricId ?? "uiux"]?.title,
+    certificateConfig: raw.certificateConfig ?? defaultCertificate(),
     wizard: raw.wizard ?? {
       step: "information",
       selectedMilestoneId: raw.milestones[0]?.id ?? "",
@@ -92,25 +109,76 @@ function EventWizardSession() {
     },
   };
   const infoErrors = informationErrors(event);
-  const requestedMilestones = params.get("step") === "milestones";
-  const isMilestones = requestedMilestones && !Object.keys(infoErrors).length;
+  const order: WizardStep[] = [
+    "information",
+    "milestones",
+    "rubric",
+    "certificate",
+    "review",
+  ];
+  const requested = order.includes(params.get("step") as WizardStep)
+    ? (params.get("step") as WizardStep)
+    : "information";
+  let step: WizardStep = requested;
+  const rubrics = Object.values(state.rubrics);
+  if (order.indexOf(requested) > 0 && Object.keys(infoErrors).length)
+    step = "information";
+  else if (
+    order.indexOf(requested) > 1 &&
+    Object.keys(milestoneErrors(event)).length
+  )
+    step = "milestones";
+  else if (
+    order.indexOf(requested) > 2 &&
+    Object.keys(rubricErrors(event, rubrics)).length
+  )
+    step = "rubric";
+  else if (
+    order.indexOf(requested) > 3 &&
+    Object.keys(certificateErrors(event)).length
+  )
+    step = "certificate";
+  const activeIndex = order.indexOf(step);
+  const isMilestones = step === "milestones";
+  const frame =
+    step === "review"
+      ? "291:20108"
+      : step === "rubric"
+        ? "291:19328"
+        : step === "certificate"
+          ? event.certificateConfig?.mode === "template"
+            ? "291:19865"
+            : "291:19593"
+          : isMilestones
+            ? "291:19016"
+            : "293:29139";
   const selected = event.milestones.some(
     (m) => m.id === event.wizard?.selectedMilestoneId,
   )
     ? event.wizard!.selectedMilestoneId
     : (event.milestones[0]?.id ?? "");
-  const errors = isMilestones
-    ? attemptedMilestones
-      ? milestoneErrors(event)
-      : {}
-    : attemptedInfo || requestedMilestones
-      ? infoErrors
-      : {};
+  const errors: Record<string, string> =
+    step === "rubric"
+      ? attemptedAdvanced || requested !== step
+        ? rubricErrors(event, rubrics)
+        : {}
+      : step === "certificate"
+        ? attemptedAdvanced
+          ? certificateErrors(event)
+          : {}
+        : isMilestones
+          ? attemptedMilestones
+            ? milestoneErrors(event)
+            : {}
+          : attemptedInfo || requested !== step
+            ? infoErrors
+            : {};
   function change(patch: Partial<ManagedEvent>) {
     changeEventDraft({ ...event, ...patch });
     setNotice("");
   }
-  function go(step: "information" | "milestones") {
+  function go(step: WizardStep) {
+    setAttemptedAdvanced(false);
     change({ wizard: { ...event.wizard!, step } });
     window.history.pushState(null, "", wizardHref(id!, step));
     window.scrollTo({ top: 0 });
@@ -119,13 +187,36 @@ function EventWizardSession() {
     );
   }
   function next() {
-    const found = isMilestones
-      ? milestoneErrors(event)
-      : informationErrors(event);
+    const found =
+      step === "review"
+        ? {
+            ...informationErrors(event),
+            ...milestoneErrors(event),
+            ...rubricErrors(event, rubrics),
+            ...certificateErrors(event),
+          }
+        : step === "rubric"
+          ? rubricErrors(event, rubrics)
+          : step === "certificate"
+            ? certificateErrors(event)
+            : isMilestones
+              ? milestoneErrors(event)
+              : informationErrors(event);
     if (isMilestones) setAttemptedMilestones(true);
-    else setAttemptedInfo(true);
+    else if (step === "information") setAttemptedInfo(true);
+    else setAttemptedAdvanced(true);
     const first = Object.keys(found)[0];
     if (first) {
+      if (step === "review")
+        go(
+          first.startsWith("event-")
+            ? "information"
+            : first.startsWith("milestone-")
+              ? "milestones"
+              : first === "wizard-rubric"
+                ? "rubric"
+                : "certificate",
+        );
       if (isMilestones) {
         const m = event.milestones.find((m) =>
           first.startsWith(`milestone-${m.id}-`),
@@ -136,18 +227,24 @@ function EventWizardSession() {
       requestAnimationFrame(() => document.getElementById(first)?.focus());
       return;
     }
-    if (isMilestones) boundary("Rubrik");
-    else go("milestones");
+    if (step === "review") {
+      publishEvent(event);
+      window.history.replaceState(null, "", wizardHref(event.id, "done"));
+      window.scrollTo({ top: 0 });
+    } else go(order[activeIndex + 1]);
   }
   function boundary(title: string) {
     setAction({
       title,
-      description: `${title === "Rubrik" ? "Langkah Rubrik" : title} belum diimplementasikan pada Phase 4B-1. Data isian tetap tersimpan dalam sesi tab ini. Tidak ada survei, rubrik, sertifikat, atau event terbit yang dibuat.`,
+      description: `${title} merupakan bagian modul Survei yang dikerjakan terpisah. Wizard ini hanya menyimpan pengaturan event contoh; tidak membuat formulir atau respons survei. Data isian event tetap tersimpan pada sesi tab ini.`,
     });
   }
-  const overrides = isMilestones
-    ? { ...wizardAssets, dashboard: studentAssets["initial-dashboard"] }
-    : { ...eventAssets };
+  const overrides =
+    activeIndex > 1
+      ? designNavigation(frame)
+      : isMilestones
+        ? { ...wizardAssets, dashboard: studentAssets["initial-dashboard"] }
+        : { ...eventAssets };
   return (
     <>
       <DashboardShell
@@ -159,7 +256,7 @@ function EventWizardSession() {
       >
         <main
           id="wizard-main"
-          data-figma-node={isMilestones ? "291:19016" : "293:29139"}
+          data-figma-node={frame}
           className="mx-auto min-w-0 max-w-[1176px] px-5 pb-2 pt-8 sm:px-8"
         >
           <nav
@@ -200,8 +297,8 @@ function EventWizardSession() {
           >
             <ol className="grid min-w-[760px] grid-cols-5 gap-2">
               {wizardSteps.map((label, index) => {
-                const active = index === (isMilestones ? 1 : 0);
-                const done = index === 0 && isMilestones;
+                const active = index === activeIndex;
+                const done = index < activeIndex;
                 return (
                   <li key={label}>
                     <div
@@ -209,15 +306,18 @@ function EventWizardSession() {
                     />
                     <button
                       type="button"
-                      disabled={index > 1}
+                      disabled={index > 4}
                       aria-current={active ? "step" : undefined}
                       title={
-                        index > 1 ? "Belum tersedia pada Phase 4B-1" : undefined
+                        index > 4
+                          ? "Langkah berikutnya belum tersedia"
+                          : undefined
                       }
                       onClick={() => {
                         if (active) return;
-                        if (index === 0) go("information");
-                        else next();
+                        if (index < activeIndex) go(order[index]);
+                        else if (index === activeIndex + 1) next();
+                        else go(order[index]);
                       }}
                       className="mt-2 flex h-6 items-center gap-2 whitespace-nowrap text-left text-sm"
                     >
@@ -259,7 +359,32 @@ function EventWizardSession() {
             }}
             className="mt-5"
           >
-            {isMilestones ? (
+            {step === "review" ? (
+              <ReviewStep
+                event={event}
+                rubric={state.rubrics[event.rubricId!]}
+                onEdit={go}
+                onSurvey={() => boundary("Pengaitan Survei")}
+              />
+            ) : step === "rubric" ? (
+              <RubricStep
+                event={event}
+                rubrics={rubrics}
+                error={errors["wizard-rubric"]}
+                onChange={change}
+                onCreate={() =>
+                  router.push(
+                    `/guru/rubrics?mode=create&from=${encodeURIComponent(event.id)}`,
+                  )
+                }
+              />
+            ) : step === "certificate" ? (
+              <CertificateStep
+                event={event}
+                errors={errors}
+                onChange={change}
+              />
+            ) : isMilestones ? (
               <MilestoneStep
                 event={event}
                 selectedId={selected}
@@ -285,16 +410,31 @@ function EventWizardSession() {
             )}
           </form>
           <div
-            className={`${isMilestones ? "mt-6" : "mt-4"} flex flex-wrap items-center justify-between gap-3 bg-[#f5f6f8]/90 py-3 backdrop-blur-sm`}
+            className={`${activeIndex > 0 ? "mt-6" : "mt-4"} flex flex-wrap items-center justify-between gap-3 bg-[#f5f6f8]/90 py-3 backdrop-blur-sm`}
           >
             <button
               type="button"
               onClick={() =>
-                isMilestones ? go("information") : router.push("/guru/events")
+                step === "review"
+                  ? go("milestones")
+                  : activeIndex > 0
+                    ? go(order[activeIndex - 1])
+                    : router.push("/guru/events")
               }
-              className={`flex h-10 items-center justify-center gap-2 rounded-control px-4 text-sm font-medium text-secondary ${isMilestones ? "" : "opacity-50"}`}
+              className={`flex h-10 items-center justify-center gap-2 rounded-control px-4 text-sm font-medium text-secondary ${activeIndex > 0 ? "" : "opacity-50"}`}
             >
-              {isMilestones ? (
+              {activeIndex > 1 ? (
+                <DesignIcon
+                  frame={frame}
+                  name={
+                    step === "review"
+                      ? "imgFrame3"
+                      : step === "rubric"
+                        ? "imgIcon3"
+                        : "imgIcon5"
+                  }
+                />
+              ) : isMilestones ? (
                 <WizardIcon name="back" />
               ) : (
                 <span className="grid size-4 place-items-center">
@@ -320,7 +460,14 @@ function EventWizardSession() {
               </button>
               <div>
                 <DashboardPrimaryButton type="submit" form="event-wizard-form">
-                  {isMilestones ? "Lanjut ke Rubrik" : "Lanjut"}
+                  {step === "review" && (
+                    <DesignIcon frame={frame} name="imgFrame4" />
+                  )}
+                  {step === "review"
+                    ? "Terbitkan Event"
+                    : isMilestones
+                      ? "Lanjut ke Rubrik"
+                      : "Lanjut"}
                 </DashboardPrimaryButton>
               </div>
             </div>

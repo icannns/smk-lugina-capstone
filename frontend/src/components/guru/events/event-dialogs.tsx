@@ -97,7 +97,8 @@ export function EventDialog(props: Props) {
           >
             <p id={description} className="text-sm leading-5 text-secondary">
               {props.milestone.title}. Waktu dalam WIB. Perubahan hanya berlaku
-              pada demo ini dan akan direset saat halaman dimuat ulang.
+              pada sesi demo ini dan digunakan juga oleh Monitoring. Tidak ada
+              perubahan server.
             </p>
             <label className="mt-4 block text-sm font-medium">
               Deadline (WIB)

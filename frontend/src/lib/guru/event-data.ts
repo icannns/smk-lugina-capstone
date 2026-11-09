@@ -2,6 +2,15 @@ import { draftTitle, guruEvents } from "./dashboard-data";
 import { studentEnrollments, studentEvents, students } from "./student-data";
 import type { EventEnrollment, ManagedEvent } from "./event-types";
 
+// Presentation summaries from the Student Portfolio references. Keep these
+// distinct from the longer case study entered in the Teacher wizard.
+export const eventDescriptions: Record<string, string> = {
+  kantin:
+    "Merancang ulang aplikasi pemesanan kantin agar antrean istirahat lebih singkat.",
+  wireframe: "Latihan intensif membuat wireframe aplikasi dalam satu hari.",
+  poster: "Poster digital kampanye hemat listrik di sekolah.",
+};
+
 const kantinMilestones = [
   {
     id: "M1",
@@ -51,33 +60,60 @@ export const managedEvents: ManagedEvent[] = [
     milestones: kantinMilestones,
     progress: 34,
     rubric: "Rubrik UI/UX Dasar",
+    rubricId: "uiux",
     certificate: "Nilai akhir ≥ 75",
   },
   {
     id: "wireframe",
+    rubricId: "wireframe",
+    rubric: "Rubrik Wireframe Cepat",
+    certificate: "Nilai akhir ≥ 70",
     title: guruEvents[2].title,
     status: "ended",
     mode: "Penyelesaian",
     updated: "2025-02-16",
     period: "15 Feb 2025, 07.30 WIB – 15 Feb 2025, 15.00 WIB",
-    milestones: studentEvents[0].milestones,
+    milestones: studentEvents[0].milestones.map((m, i) => ({
+      ...m,
+      title: ["Sketsa Layout", "Wireframe Digital", "Presentasi Singkat"][i],
+      instructions: [
+        "Sketsa 3 alternatif layout di kertas, lalu foto.",
+        "Pindahkan sketsa terbaik ke Figma.",
+        "Unggah slide presentasi.",
+      ][i],
+      deadline: `2025-02-15T${["10:00", "12:00", "15:00"][i]}`,
+    })),
     progress: 35,
   },
   {
     id: "poster",
+    rubricId: "poster",
+    rubric: "Rubrik Poster Digital",
     title: guruEvents[3].title,
     status: "ended",
     mode: "Penyelesaian",
     updated: "2025-02-03",
     period: "6 Jan 2025, 08.00 WIB – 31 Jan 2025, 23.59 WIB",
     milestones: [
-      { id: "M1", title: "" },
-      { id: "M2", title: "Poster Final" },
+      {
+        id: "M1",
+        title: "Konsep & Moodboard",
+        instructions: "Susun konsep pesan dan moodboard.",
+        deadline: "2025-01-17T23:59",
+      },
+      {
+        id: "M2",
+        title: "Poster Final",
+        instructions: "Unggah poster final siap cetak.",
+        deadline: "2025-01-31T23:59",
+      },
     ],
     progress: 12,
   },
   {
     id: "umkm",
+    rubricId: "uiux",
+    rubric: "Rubrik UI/UX Dasar",
     title: guruEvents[1].title,
     status: "upcoming",
     mode: "Penyelesaian",

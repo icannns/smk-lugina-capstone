@@ -1,20 +1,23 @@
 import {
   dashboardActions,
-  surveyResponseCount,
   type DashboardAction,
   type ReviewItem,
 } from "@/lib/guru/dashboard-data";
 import { DashboardButton } from "./dashboard-ui";
+import { useRouter } from "next/navigation";
 
 export function ReviewQueue({
   items,
   total,
+  surveyResponseCount,
   onAction,
 }: {
   items: ReviewItem[];
   total: number;
+  surveyResponseCount: number;
   onAction: (action: DashboardAction) => void;
 }) {
+  const router = useRouter();
   return (
     <aside
       aria-label="Antrean dan survei"
@@ -54,10 +57,12 @@ export function ReviewQueue({
                   type="button"
                   aria-label={`Periksa ${item.student}`}
                   onClick={() =>
-                    onAction({
-                      ...dashboardActions.assessment,
-                      description: `${item.student} · ${item.milestone}. ${dashboardActions.assessment.description}`,
-                    })
+                    item.href
+                      ? router.push(item.href)
+                      : onAction({
+                          ...dashboardActions.assessment,
+                          description: `${item.student} · ${item.milestone}. ${dashboardActions.assessment.description}`,
+                        })
                   }
                   className="inline-flex h-8 w-21 shrink-0 items-center justify-center rounded-control border border-primary bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover"
                 >
@@ -79,12 +84,7 @@ export function ReviewQueue({
         <div className="p-6">
           <DashboardButton
             className="w-full"
-            onClick={() =>
-              onAction({
-                ...dashboardActions.monitoring,
-                description: `Terdapat ${total} tugas dalam ringkasan contoh; enam pengiriman terlama ditampilkan di Dashboard. ${dashboardActions.monitoring.description}`,
-              })
-            }
+            onClick={() => router.push("/guru/monitoring")}
           >
             Lihat semua {total} tugas
           </DashboardButton>
@@ -111,10 +111,14 @@ export function ReviewQueue({
         </div>
         <DashboardButton
           className="w-full px-2"
-          onClick={() => onAction(dashboardActions.survey)}
+          onClick={() => router.push("/guru/students?review=unreviewed")}
         >
-          Lihat semua {surveyResponseCount} respons
+          Pilih event untuk meninjau
         </DashboardButton>
+        <p className="text-xs leading-4 text-secondary">
+          Total ringkasan survei belum ditinjau di Pengelolaan Data Siswa;
+          administrasi survei terpisah.
+        </p>
       </section>
     </aside>
   );

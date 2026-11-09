@@ -1,194 +1,198 @@
 "use client";
-
-import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { emailError, nameError } from "@/lib/auth-demo";
 import {
-  DEMO_EMAIL,
-  DEMO_PASSWORD,
-  emailError,
-  nameError,
-  passwordError,
-} from "@/lib/auth-demo";
+  passwordRules,
+  registrationPasswordError,
+} from "@/lib/auth/validation";
+import { registerStudent } from "@/lib/auth/session";
 import {
-  AuthButton,
-  AuthDivider,
-  AuthField,
-  AuthHeading,
-  GoogleButton,
-  PrototypeNotice,
-} from "./auth-ui";
+  SharedAuthInput,
+  SharedAuthButton,
+  DemoNotice,
+  GoogleMark,
+} from "./shared-ui";
 import { useMockNavigation } from "./use-mock-navigation";
-
 export function RegisterForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const { busy, navigate } = useMockNavigation();
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextErrors = {
+  const [name, setName] = useState("Dimas Saputra"),
+    [email, setEmail] = useState("dimas.baru@example.com"),
+    [password, setPassword] = useState(""),
+    [confirm, setConfirm] = useState(""),
+    [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const { busy, run, enter, google } = useMockNavigation(),
+    rules = passwordRules(password);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const next = {
       name: nameError(name),
       email: emailError(email),
-      password: passwordError(password),
-      consent: consent
-        ? undefined
-        : "Centang persetujuan untuk mencoba pendaftaran demo.",
+      password: registrationPasswordError(password),
+      confirm:
+        confirm && confirm === password
+          ? undefined
+          : "Konfirmasi kata sandi harus sama.",
     };
-    setErrors(nextErrors);
-    const first = Object.entries(nextErrors).find(([, value]) => value);
+    setErrors(next);
+    const first = Object.entries(next).find(([, v]) => v);
     if (first) {
-      document.getElementById(`register-${first[0]}`)?.focus();
+      document.getElementById("register-" + first[0])?.focus();
       return;
     }
-    navigate("/guru/dashboard", "submit", () => {
-      setPassword("");
-      setEmail("");
-      setName("");
-    });
+    try {
+      const result = await run(() =>
+        registerStudent({ name, email, password }),
+      );
+      if (!result) return;
+      if (result.error) {
+        setErrors({ email: result.error });
+        return;
+      }
+      if (result.account)
+        enter(result.account, true, () => {
+          setPassword("");
+          setConfirm("");
+        });
+    } catch {
+      setErrors({
+        save: "Pendaftaran lokal tidak dapat diselesaikan. Coba lagi.",
+      });
+    }
   }
-
-  function clearError(key: string) {
-    setErrors((old) => ({ ...old, [key]: undefined }));
-  }
-
   return (
-    <section
-      className="relative w-full max-w-96 lg:min-h-[580px]"
-      aria-label="Daftar Guru"
-      data-figma-node="291:15974"
-    >
-      <div className="flex flex-col gap-4">
-        <AuthHeading title="Daftar Akun">
-          Daftar menggunakan akun Google atau data umum Anda.
-        </AuthHeading>
-        <GoogleButton
-          register
-          loading={busy === "google"}
-          disabled={!!busy}
-          onClick={() =>
-            navigate("/register/google", "google", () => setPassword(""))
-          }
+    <section aria-label="Pendaftaran akun bersama" data-figma-node="370:1651">
+      <h1 className="text-[32px] font-bold leading-[38px]">
+        Daftar Akun Siswa
+      </h1>
+      <p className="mt-1 text-sm leading-[17px] text-[#6b7280]">
+        Mulai perjalanan belajar berbasis project dan bangun portofoliomu di SMK
+        Lugina.
+      </p>
+      <form
+        noValidate
+        autoComplete="off"
+        onSubmit={submit}
+        aria-busy={busy}
+        className="mt-[22px]"
+      >
+        <SharedAuthInput
+          id="register-name"
+          label="Nama Lengkap"
+          icon="name"
+          required
+          value={name}
+          valid={Boolean(name.trim()) && !nameError(name)}
+          error={errors.name}
+          placeholder="Nama lengkap contoh"
+          maxLength={100}
+          disabled={busy}
+          onChange={(e) => {
+            setName(e.target.value);
+            setErrors((v) => ({ ...v, name: undefined }));
+          }}
         />
-        <AuthDivider register />
-        <form
-          noValidate
-          autoComplete="off"
-          onSubmit={submit}
-          aria-busy={!!busy}
-          className="flex flex-col gap-4"
-        >
-          <AuthField
-            id="register-name"
-            label="Nama Lengkap"
-            required
-            value={name}
-            maxLength={100}
-            placeholder="Masukkan nama lengkap Anda"
-            disabled={!!busy}
-            error={errors.name}
-            onChange={(e) => {
-              setName(e.target.value);
-              clearError("name");
-            }}
-          />
-          <AuthField
+        <div className="mt-3">
+          <SharedAuthInput
             id="register-email"
             label="Email"
+            icon="email"
             type="email"
-            inputMode="email"
             required
             value={email}
-            maxLength={120}
-            placeholder="nama@example.com"
-            disabled={!!busy}
+            valid={Boolean(email) && !emailError(email)}
             error={errors.email}
+            placeholder="nama@example.com"
+            maxLength={120}
+            disabled={busy}
             onChange={(e) => {
               setEmail(e.target.value);
-              clearError("email");
+              setErrors((v) => ({ ...v, email: undefined }));
             }}
           />
-          <AuthField
+        </div>
+        <div className="mt-3">
+          <SharedAuthInput
             id="register-password"
             label="Kata Sandi"
+            icon="password"
             password
             required
             value={password}
-            maxLength={64}
-            placeholder="Minimal 8 karakter"
-            disabled={!!busy}
             error={errors.password}
+            placeholder="Kata sandi demo"
+            maxLength={128}
+            disabled={busy}
             onChange={(e) => {
               setPassword(e.target.value);
-              clearError("password");
+              setErrors((v) => ({ ...v, password: undefined }));
             }}
           />
-          <div>
-            <label className="flex items-start gap-2 text-xs leading-5 text-secondary">
-              <input
-                id="register-consent"
-                type="checkbox"
-                checked={consent}
-                disabled={!!busy}
-                onChange={(e) => {
-                  setConsent(e.target.checked);
-                  clearError("consent");
-                }}
-                aria-invalid={!!errors.consent}
-                aria-describedby={errors.consent ? "consent-error" : undefined}
-                className="mt-0.5 size-4 shrink-0 accent-primary"
-              />
-              <span>
-                Saya menyetujui Ketentuan Layanan &amp; Kebijakan Privasi
-              </span>
-            </label>
-            {errors.consent && (
-              <p
-                id="consent-error"
-                role="alert"
-                className="mt-1.5 text-xs text-danger"
-              >
-                {errors.consent}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col gap-3.5">
-            <AuthButton
-              type="submit"
-              loading={busy === "submit"}
-              disabled={!!busy}
-              loadingText="Menyelesaikan simulasi…"
+        </div>
+        <ul
+          aria-label="Persyaratan kata sandi"
+          className="ml-2 mt-2 space-y-1.5 text-xs leading-[18px]"
+        >
+          {[
+            "Minimal 8 karakter",
+            "Mengandung minimal 1 angka (0-9) atau simbol",
+            "Mengandung huruf kecil (a-z) dan huruf besar (A-Z)",
+          ].map((label, i) => (
+            <li
+              key={label}
+              className={rules[i] ? "text-[#10b981]" : "text-[#808794]"}
             >
-              Daftar Sekarang
-            </AuthButton>
-            <p className="text-center text-sm leading-5 text-secondary">
-              Sudah memiliki akun?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-primary hover:underline"
-              >
-                Masuk
-              </Link>
-            </p>
+              <span aria-hidden className="mr-2">
+                {rules[i] ? "✓" : "○"}
+              </span>
+              {label}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-[22px]">
+          <SharedAuthInput
+            id="register-confirm"
+            label="Konfirmasi Kata Sandi"
+            icon="password"
+            password
+            required
+            value={confirm}
+            error={errors.confirm}
+            placeholder="Ulangi kata sandi demo"
+            maxLength={128}
+            disabled={busy}
+            onChange={(e) => {
+              setConfirm(e.target.value);
+              setErrors((v) => ({ ...v, confirm: undefined }));
+            }}
+          />
+        </div>
+        {errors.save && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            {errors.save}
+          </p>
+        )}
+        <div className="mt-7 flex h-[52px] items-center gap-4">
+          <div className="min-w-0 flex-1 sm:max-w-[260px]">
+            <SharedAuthButton type="submit" busy={busy} pill>
+              Daftar Sekarang <span aria-hidden>→</span>
+            </SharedAuthButton>
           </div>
-        </form>
-      </div>
-      <PrototypeNotice credentials />
-      <button
-        type="button"
-        disabled={!!busy}
-        className="mt-2 text-xs font-medium text-primary hover:underline"
-        onClick={() => {
-          setName("Guru Demo");
-          setEmail(DEMO_EMAIL);
-          setPassword(DEMO_PASSWORD);
-          setErrors({});
-        }}
-      >
-        Isi data contoh
-      </button>
+          <span className="text-[13px] text-[#9ca3af]">atau</span>
+          <button
+            type="button"
+            aria-label="Daftar dengan Google"
+            disabled={busy}
+            onClick={google}
+            className="grid size-12 shrink-0 place-items-center rounded-full border border-gray-300"
+          >
+            <GoogleMark />
+          </button>
+        </div>
+      </form>
+      <DemoNotice />
+      <p className="mt-2 text-xs text-secondary">
+        Pendaftaran publik selalu membuat akun Siswa contoh. Akun Guru
+        disediakan khusus dalam daftar demo.
+      </p>
     </section>
   );
 }

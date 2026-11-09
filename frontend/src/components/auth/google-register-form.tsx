@@ -1,133 +1,104 @@
 "use client";
-
-import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { GOOGLE_DEMO, nameError, phoneError } from "@/lib/auth-demo";
-import {
-  AuthButton,
-  AuthField,
-  AuthHeading,
-  FormMessage,
-  PrototypeNotice,
-} from "./auth-ui";
+import { GOOGLE_ACCOUNT } from "@/lib/auth/accounts";
+import { prepareGoogleStudent } from "@/lib/auth/session";
+import { nameError, phoneError } from "@/lib/auth-demo";
+import { SharedAuthInput, SharedAuthButton, DemoNotice } from "./shared-ui";
 import { useMockNavigation } from "./use-mock-navigation";
-
 export function GoogleRegisterForm() {
-  const [name, setName] = useState(GOOGLE_DEMO.name);
-  const [phone, setPhone] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
-  const [message, setMessage] = useState("");
-  const { busy, navigate } = useMockNavigation();
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextErrors = { name: nameError(name), phone: phoneError(phone) };
-    setErrors(nextErrors);
-    if (nextErrors.name || nextErrors.phone) {
+  const [name, setName] = useState(GOOGLE_ACCOUNT.name),
+    [phone, setPhone] = useState(""),
+    [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const { busy, enter } = useMockNavigation();
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const next = { name: nameError(name), phone: phoneError(phone) };
+    setErrors(next);
+    if (next.name || next.phone) {
       document
-        .getElementById(nextErrors.name ? "google-name" : "google-phone")
+        .getElementById(next.name ? "google-name" : "google-phone")
         ?.focus();
       return;
     }
-    navigate("/guru/dashboard", "submit", () => {
-      setName(GOOGLE_DEMO.name);
-      setPhone("");
-    });
+    enter(prepareGoogleStudent(name, phone));
   }
   return (
     <section
-      className="relative w-full max-w-96 lg:min-h-[520px]"
       aria-label="Pendaftaran Google simulasi"
-      data-figma-node="291:16035"
+      data-figma-node="370:1724"
+      className="lg:pt-2.5"
     >
-      <div className="flex flex-col gap-4">
-        <AuthHeading title="Lengkapi Data Akun">
-          Akun Google berhasil terhubung. Konfirmasi data umum Anda.
-        </AuthHeading>
-        <div className="flex min-h-15 items-center gap-3 overflow-hidden rounded-control border border-blue-200 bg-[#f2f8ff] px-3.5 py-2.5 lg:h-15">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-            AR
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">{GOOGLE_DEMO.name}</p>
-            <p className="break-all text-xs text-secondary">
-              {GOOGLE_DEMO.email}
+      <h1 className="text-[32px] font-bold leading-[38px]">
+        Lengkapi Data Akun
+      </h1>
+      <p className="mt-1 text-sm leading-[17px] text-[#6b7280]">
+        Simulasi akun Google. Lengkapi nama contoh untuk profil dan dokumen
+        penyelesaian belajar.
+      </p>
+      <div className="mt-3.5 flex h-20 items-center justify-between gap-2 overflow-hidden rounded-xl border border-[#cce0fa] bg-[#f6faff] pl-5">
+        <div className="flex min-w-0 items-center gap-3.5">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-base font-bold text-white">
+            DS
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-bold">
+              {GOOGLE_ACCOUNT.name}
+            </p>
+            <p className="break-all text-[13px] text-[#6b7280]">
+              {GOOGLE_ACCOUNT.email}
             </p>
           </div>
-          <span className="flex shrink-0 items-center gap-[5px] rounded-md bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700 lg:h-[100px]">
-            <span className="size-1.5 rounded-full bg-green-600" />
-            Terhubung
-          </span>
         </div>
-        <form
-          noValidate
-          autoComplete="off"
-          onSubmit={submit}
-          aria-busy={!!busy}
-          className="flex flex-col gap-4"
-        >
-          <AuthField
-            id="google-name"
-            label="Nama Lengkap"
-            required
-            value={name}
-            maxLength={100}
-            disabled={!!busy}
-            error={errors.name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setErrors((old) => ({ ...old, name: undefined }));
-            }}
-          />
-          <AuthField
+        <span className="flex h-full shrink-0 items-center bg-[#e0faed] px-2.5 text-xs font-bold text-[#10b981]">
+          Simulasi ✓
+        </span>
+      </div>
+      <form
+        noValidate
+        autoComplete="off"
+        onSubmit={submit}
+        className="mt-[25px]"
+      >
+        <SharedAuthInput
+          id="google-name"
+          label="Nama Lengkap Siswa *"
+          value={name}
+          required
+          valid={Boolean(name) && !nameError(name)}
+          maxLength={100}
+          disabled={busy}
+          error={errors.name}
+          helper="Nama ini akan tercantum di profil portofolio dan sertifikat belajar contoh."
+          onChange={(e) => {
+            setName(e.target.value);
+            setErrors((v) => ({ ...v, name: undefined }));
+          }}
+        />
+        <div className="mt-3.5">
+          <SharedAuthInput
             id="google-phone"
             label="Nomor WhatsApp (Opsional)"
             type="tel"
             inputMode="tel"
             value={phone}
             maxLength={18}
-            placeholder="08xxxxxxxxxx"
-            disabled={!!busy}
+            disabled={busy}
+            placeholder="0800-0000-0000"
             error={errors.phone}
+            helper="Notifikasi hanya ilustrasi; prototipe tidak mengirim pesan WhatsApp."
             onChange={(e) => {
               setPhone(e.target.value);
-              setErrors((old) => ({ ...old, phone: undefined }));
+              setErrors((v) => ({ ...v, phone: undefined }));
             }}
           />
-          <div className="flex flex-col gap-3.5">
-            <AuthButton
-              type="submit"
-              disabled={!!busy}
-              loading={busy === "submit"}
-              loadingText="Menyelesaikan simulasi…"
-            >
-              Selesaikan Pendaftaran
-            </AuthButton>
-            <button
-              type="button"
-              disabled={!!busy}
-              className="min-h-5 text-[13px] font-medium text-primary hover:underline"
-              onClick={() => {
-                setMessage(
-                  "Simulasi Google memakai satu akun contoh. Tidak ada koneksi ke Google; tidak ada akun lain yang diakses.",
-                );
-                setName(GOOGLE_DEMO.name);
-                setPhone("");
-                setErrors({});
-              }}
-            >
-              Gunakan akun Google lain
-            </button>
-            <Link
-              href="/login"
-              className="text-center text-xs leading-[18px] text-secondary hover:underline"
-            >
-              Batal &amp; kembali ke Halaman Masuk
-            </Link>
-          </div>
-        </form>
-        {message && <FormMessage>{message}</FormMessage>}
-      </div>
-      <PrototypeNotice />
+        </div>
+        <div className="mt-7">
+          <SharedAuthButton type="submit" busy={busy} pill>
+            Selesaikan Pendaftaran <span aria-hidden>→</span>
+          </SharedAuthButton>
+        </div>
+      </form>
+      <DemoNotice />
     </section>
   );
 }

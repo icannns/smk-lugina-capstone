@@ -1,5 +1,11 @@
 import { studentEnrollments, studentEvents, students } from "./student-data";
-import type { StudentFilters, StudentRecord } from "./student-types";
+import type {
+  StudentFilters,
+  StudentRecord,
+  Student,
+  StudentEvent,
+  StudentEnrollment,
+} from "./student-types";
 
 export function readStudentFilters(params: {
   get: (key: string) => string | null;
@@ -29,13 +35,20 @@ export function studentHref(filters: StudentFilters, student?: string): string {
 export function getStudentRecords(
   filters: StudentFilters,
   reviews: Record<string, boolean>,
+  directory: {
+    events: StudentEvent[];
+    enrollments: StudentEnrollment[];
+    students: Student[];
+  } = { events: studentEvents, enrollments: studentEnrollments, students },
 ): StudentRecord[] {
-  const event = studentEvents.find((e) => e.id === filters.event);
+  const event = directory.events.find((e) => e.id === filters.event);
   if (!event) return [];
-  return studentEnrollments
+  return directory.enrollments
     .filter((enrollment) => enrollment.eventId === event.id)
     .flatMap((enrollment) => {
-      const student = students.find((s) => s.id === enrollment.studentId)!;
+      const student = directory.students.find(
+        (s) => s.id === enrollment.studentId,
+      )!;
       const reviewed = reviews[enrollment.id] ?? enrollment.reviewed;
       if (
         !student.name

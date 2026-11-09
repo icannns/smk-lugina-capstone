@@ -1,9 +1,14 @@
 "use client";
+import { milestoneLabel } from "@/lib/guru/learning-selectors";
 
 import Link from "next/link";
-import { studentEvents, studentPageSize } from "@/lib/guru/student-data";
+import { studentPageSize } from "@/lib/guru/student-data";
 import { studentHref } from "@/lib/guru/student-selectors";
-import type { StudentFilters, StudentRecord } from "@/lib/guru/student-types";
+import type {
+  StudentFilters,
+  StudentRecord,
+  StudentEvent,
+} from "@/lib/guru/student-types";
 import { DashboardButton } from "../dashboard-ui";
 import { StudentCard, StudentIcon, StudentSelect } from "./student-ui";
 
@@ -12,9 +17,16 @@ type Props = {
   records: StudentRecord[];
   reviews: Record<string, boolean>;
   onChange: (patch: Partial<StudentFilters>) => void;
+  events: StudentEvent[];
 };
 
-export function StudentTable({ filters, records, reviews, onChange }: Props) {
+export function StudentTable({
+  filters,
+  records,
+  reviews,
+  onChange,
+  events: studentEvents,
+}: Props) {
   const selectedEvent = studentEvents.find((e) => e.id === filters.event);
   const hasFilter = !!(
     filters.milestone ||
@@ -77,7 +89,7 @@ export function StudentTable({ filters, records, reviews, onChange }: Props) {
                 <option value="">Semua milestone</option>
                 {selectedEvent.milestones.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.id}
+                    {milestoneLabel(selectedEvent, m.id)}
                     {m.title && ` ${m.title}`}
                   </option>
                 ))}
@@ -172,9 +184,9 @@ export function StudentTable({ filters, records, reviews, onChange }: Props) {
               role="region"
               aria-label="Tabel data siswa, geser horizontal jika diperlukan"
               tabIndex={0}
-            className="relative min-w-0 overflow-x-auto"
+              className="relative min-w-0 overflow-x-auto"
             >
-            <table className="w-full min-w-[1112px] table-fixed border-collapse text-left">
+              <table className="w-full min-w-[1112px] table-fixed border-collapse text-left">
                 <caption className="sr-only">
                   Catatan peserta {selectedEvent.title}
                 </caption>
@@ -223,7 +235,7 @@ export function StudentTable({ filters, records, reviews, onChange }: Props) {
                         <td className="px-4 py-3">
                           <Link
                             href={href}
-                            aria-label={`Detail ${record.student.name}, ${record.milestone.id}`}
+                            aria-label={`Detail ${record.student.name}, ${milestoneLabel(record.event, record.milestone.id)}`}
                             className="flex items-center gap-2 text-sm leading-5 hover:text-primary"
                           >
                             {!reviewed && (
@@ -246,7 +258,7 @@ export function StudentTable({ filters, records, reviews, onChange }: Props) {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm leading-5">
-                          {record.milestone.id}
+                          {milestoneLabel(record.event, record.milestone.id)}
                         </td>
                         <td className="overflow-hidden px-4 py-3">
                           <span
@@ -264,7 +276,7 @@ export function StudentTable({ filters, records, reviews, onChange }: Props) {
                         <td className="px-4 py-3">
                           <Link
                             href={href}
-                            aria-label={`Lihat Detail ${record.student.name}, ${record.milestone.id}`}
+                            aria-label={`Lihat Detail ${record.student.name}, ${milestoneLabel(record.event, record.milestone.id)}`}
                             className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-control bg-primary-soft px-3 text-[13px] font-medium leading-[18.571px] text-[#1447e6] hover:bg-blue-100"
                           >
                             Lihat Detail

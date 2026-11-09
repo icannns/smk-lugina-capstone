@@ -1,33 +1,27 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { beginDemoSession } from "@/lib/auth/session";
+import type { DemoAccount } from "@/lib/auth/accounts";
 export function useMockNavigation() {
-  const router = useRouter();
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [busy, setBusy] = useState<"submit" | "google" | null>(null);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
-      setBusy(null);
-    },
-    [],
-  );
-  function navigate(
-    path: string,
-    kind: "submit" | "google",
-    beforeNavigate?: () => void,
-  ) {
-    if (timer.current) return;
-    setBusy(kind);
-    // Local delay demonstrates loading. Nothing is transmitted or persisted.
-    timer.current = setTimeout(() => {
-      beforeNavigate?.();
-      timer.current = null;
-      setBusy(null);
-      router.push(path);
-    }, 650);
+  const router = useRouter(),
+    running = useRef(false),
+    [busy, setBusy] = useState(false);
+  async function run<T>(work: () => Promise<T>): Promise<T | undefined> {
+    if (running.current) return;
+    running.current = true;
+    setBusy(true);
+    try {
+      return await work();
+    } finally {
+      running.current = false;
+      setBusy(false);
+    }
   }
-  return { busy, navigate };
+  function enter(account: DemoAccount, remember = true, clear?: () => void) {
+    if (!beginDemoSession(account, remember)) return;
+    clear?.();
+    router.push("/loading");
+  }
+  return { busy, run, enter, google: () => router.push("/register/google") };
 }

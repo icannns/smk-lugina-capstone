@@ -4,16 +4,28 @@ import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   navigationGroups,
-  teacher,
   type DashboardAction,
 } from "@/lib/guru/dashboard-data";
 import { DashboardIcon, type GuruIconAsset } from "./dashboard-ui";
+import { guruRoutes } from "@/lib/guru/guru-routes";
+import { useTeacherProfile } from "@/lib/guru/event-draft-store";
+import Image from "next/image";
+import { logoutDemo } from "@/lib/auth/session";
+export type GuruPage =
+  | "dashboard"
+  | "students"
+  | "events"
+  | "rubrics"
+  | "monitoring"
+  | "work"
+  | "reports"
+  | "profile";
 
 type ShellProps = {
   children: ReactNode;
   empty: boolean;
   onAction: (action: DashboardAction) => void;
-  activePage?: "dashboard" | "students" | "events";
+  activePage?: GuruPage;
   iconOverrides?: Record<string, GuruIconAsset>;
   showSettings?: boolean;
   mainId?: string;
@@ -31,12 +43,7 @@ function SidebarContent({
     closeMobile?.();
     onAction({
       title: label,
-      description:
-        activePage === "events"
-          ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Event Management.`
-          : activePage === "students"
-            ? `Halaman ${label} belum tersedia pada fase ini. Anda tetap berada di Pengelolaan Data Siswa.`
-            : `Halaman ${label} belum tersedia pada fase Dashboard Guru. Anda tetap berada di Dashboard.`,
+      description: `${label} berada di luar cakupan frontend Teacher Module ini. Modul Survei dan layanan eksternal tidak dijalankan oleh prototipe. Anda tetap berada pada halaman saat ini.`,
       figmaNode: figmaNode ?? undefined,
     });
   }
@@ -80,18 +87,10 @@ function SidebarContent({
                 {group.title}
               </h2>
               {group.items.map((item) =>
-                item.icon === "dashboard" ||
-                item.icon === "students" ||
-                item.icon === "create" ? (
+                guruRoutes[item.icon] ? (
                   <Link
                     key={item.label}
-                    href={
-                      item.icon === "dashboard"
-                        ? "/guru/dashboard"
-                        : item.icon === "students"
-                          ? "/guru/students"
-                          : "/guru/events"
-                    }
+                    href={guruRoutes[item.icon]}
                     aria-current={
                       activePage === item.icon ||
                       (activePage === "events" && item.icon === "create")
@@ -112,8 +111,8 @@ function SidebarContent({
                   <button
                     key={item.label}
                     type="button"
-                    onClick={() => select(item.label, item.figmaNode)}
-                    className={`flex h-10 items-center rounded-control px-3 text-left text-sm text-secondary hover:bg-gray-50 ${index === 1 ? "gap-2.5" : "gap-3"} ${empty || item.icon === "privacy" ? "font-medium" : "font-normal"}`}
+                    disabled
+                    className={`flex h-10 cursor-not-allowed items-center rounded-control px-3 text-left text-sm text-secondary opacity-60 ${index === 1 ? "gap-2.5" : "gap-3"} ${empty || item.icon === "privacy" ? "font-medium" : "font-normal"}`}
                   >
                     <DashboardIcon
                       name={item.icon}
@@ -179,6 +178,7 @@ export function DashboardShell({
 }: ShellProps) {
   const mobile = useRef<HTMLDialogElement>(null);
   const account = useRef<HTMLDetailsElement>(null);
+  const teacher = useTeacherProfile();
   useEffect(() => {
     function outside(event: PointerEvent) {
       if (
@@ -259,17 +259,31 @@ export function DashboardShell({
             className="relative"
           >
             <summary
-              aria-label="Menu akun Rina Marlina"
+              aria-label={`Menu akun ${teacher.name}`}
               className="flex cursor-pointer list-none items-center gap-3 rounded-control py-1 pl-1 pr-2 [&::-webkit-details-marker]:hidden"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#2b7fff,#00bba7)] text-[13.68px] font-semibold leading-[20.52px] text-white">
-                {teacher.initials}
+                {teacher.avatar ? (
+                  <Image
+                    src={teacher.avatar}
+                    alt=""
+                    width={36}
+                    height={36}
+                    unoptimized
+                    className="size-9 rounded-full object-cover"
+                  />
+                ) : (
+                  teacher.initials
+                )}
               </span>
               <span className="hidden w-[137.825px] text-left min-[360px]:block">
-                <span className="block text-sm font-medium leading-5">
+                <span
+                  className="block truncate text-sm font-medium leading-5"
+                  title={teacher.name}
+                >
                   {teacher.name}
                 </span>
-                <span className="block text-xs leading-4 text-secondary">
+                <span className="block truncate text-xs leading-4 text-secondary">
                   {teacher.role}
                 </span>
               </span>
@@ -285,21 +299,13 @@ export function DashboardShell({
                 <br />
                 Tidak terhubung ke backend.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  closeAccount();
-                  onAction({
-                    title: "Profil Guru",
-                    description:
-                      "Halaman profil akan tersedia pada fase berikutnya.",
-                    figmaNode: "291:28235",
-                  });
-                }}
+              <Link
+                href="/guru/profile"
+                onClick={closeAccount}
                 className="rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
               >
                 Profil Guru
-              </button>
+              </Link>
               <Link
                 href={empty ? "/guru/dashboard" : "/guru/dashboard?state=empty"}
                 onClick={closeAccount}
@@ -309,7 +315,10 @@ export function DashboardShell({
               </Link>
               <Link
                 href="/login"
-                onClick={closeAccount}
+                onClick={() => {
+                  logoutDemo();
+                  closeAccount();
+                }}
                 className="rounded-lg px-3 py-2 text-sm text-danger hover:bg-red-50"
               >
                 Keluar dari demo

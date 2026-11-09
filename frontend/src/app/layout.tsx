@@ -10,11 +10,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Lugina PjBL — Prototipe Guru",
+    default: "Lugina PjBL — Prototipe Pembelajaran",
     template: "%s | Lugina PjBL",
   },
   description:
-    "Prototipe autentikasi Guru SMK Lugina Rancaekek. Gunakan data demo saja.",
+    "Prototipe pembelajaran Guru dan Siswa SMK Lugina Rancaekek. Gunakan data demo saja.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

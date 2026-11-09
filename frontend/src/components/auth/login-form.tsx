@@ -1,148 +1,168 @@
 "use client";
-
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { verifyDemoCredentials } from "@/lib/auth/session";
 import {
-  DEMO_EMAIL,
-  DEMO_PASSWORD,
-  emailError,
-  passwordError,
-} from "@/lib/auth-demo";
-import {
-  AuthButton,
-  AuthDivider,
-  AuthField,
-  AuthHeading,
-  FormMessage,
-  GoogleButton,
-  PrototypeNotice,
-} from "./auth-ui";
+  SharedAuthInput,
+  SharedAuthButton,
+  DemoNotice,
+  GoogleMark,
+} from "./shared-ui";
 import { useMockNavigation } from "./use-mock-navigation";
-
 export function LoginForm() {
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
-  const [message, setMessage] = useState("");
-  const { busy, navigate } = useMockNavigation();
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextErrors = {
-      email: emailError(email),
-      password: passwordError(password),
-    };
-    if (!nextErrors.email && email.trim().toLowerCase() !== DEMO_EMAIL)
-      nextErrors.email = `Akun demo tidak ditemukan. Gunakan ${DEMO_EMAIL}.`;
-    setErrors(nextErrors);
+  const [identifier, setIdentifier] = useState("siswa@example.com"),
+    [password, setPassword] = useState(""),
+    [remember, setRemember] = useState(true),
+    [errors, setErrors] = useState<Record<string, string>>({}),
+    [message, setMessage] = useState("");
+  const { busy, run, enter, google } = useMockNavigation();
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setMessage("");
-    if (Object.values(nextErrors).some(Boolean)) {
-      const field = nextErrors.email ? "login-email" : "login-password";
-      document.getElementById(field)?.focus();
+    const next: Record<string, string> = {};
+    if (!identifier.trim())
+      next.identifier = "Email atau username wajib diisi.";
+    if (!password) next.password = "Kata sandi wajib diisi.";
+    setErrors(next);
+    if (Object.keys(next).length) {
+      document
+        .getElementById(next.identifier ? "login-email" : "login-password")
+        ?.focus();
       return;
     }
-    navigate("/guru/dashboard", "submit", () => setPassword(""));
+    try {
+      const account = await run(() =>
+        verifyDemoCredentials(identifier, password),
+      );
+      if (account) enter(account, remember, () => setPassword(""));
+      else if (account === null) {
+        setErrors({
+          credentials: "Email/username atau kata sandi demo tidak cocok.",
+        });
+        setPassword("");
+      }
+    } catch {
+      setErrors({
+        credentials: "Verifikasi lokal tidak dapat diselesaikan. Coba lagi.",
+      });
+    }
   }
-
   return (
     <section
-      className="relative w-full max-w-96 lg:min-h-[500px]"
-      aria-label="Masuk Guru"
-      data-figma-node="291:15929"
+      aria-label="Masuk bersama Guru dan Siswa"
+      data-figma-node="370:1538"
     >
-      <AuthHeading title="Masuk" login>
-        Masuk dengan akun Google atau email Anda.
-      </AuthHeading>
-      <div className="mt-0">
-        <GoogleButton
-          loading={busy === "google"}
-          disabled={!!busy}
-          onClick={() =>
-            navigate("/register/google", "google", () => setPassword(""))
-          }
+      <h1 className="text-[26px] font-bold leading-[31px]">Masuk ke Akun</h1>
+      <p className="mt-[3px] text-sm leading-[17px] text-[#6b7280]">
+        Selamat datang! Masuk untuk melanjutkan pengerjaan event dan milestone.
+      </p>
+      <form
+        noValidate
+        autoComplete="off"
+        onSubmit={submit}
+        aria-busy={busy}
+        className="mt-[18px]"
+      >
+        <SharedAuthInput
+          id="login-email"
+          compact
+          label="Email atau username"
+          icon="email"
+          value={identifier}
+          disabled={busy}
+          maxLength={120}
+          required
+          error={errors.identifier}
+          onChange={(e) => {
+            setIdentifier(e.target.value);
+            setErrors({});
+          }}
         />
-        <AuthDivider />
-      </div>
-      <form noValidate autoComplete="off" onSubmit={submit} aria-busy={!!busy}>
-        <div className="mt-6">
-          <AuthField
-            id="login-email"
-            label="Email"
-            type="email"
-            inputMode="email"
-            compact
-            required
-            value={email}
-            maxLength={120}
-            disabled={!!busy}
-            error={errors.email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setErrors((old) => ({ ...old, email: undefined }));
-            }}
-          />
-        </div>
-        <div className="mt-6">
-          <AuthField
+        <div className="mt-[18px]">
+          <SharedAuthInput
             id="login-password"
-            label="Kata Sandi"
-            password
             compact
-            required
+            label="Kata Sandi"
+            icon="password"
+            password
             value={password}
-            maxLength={64}
-            disabled={!!busy}
+            disabled={busy}
+            maxLength={128}
+            required
             error={errors.password}
+            labelAction={
+              <button
+                type="button"
+                className="text-[13px] font-medium text-primary"
+                onClick={() =>
+                  setMessage(
+                    "Pemulihan hanya simulasi; tidak ada email dikirim. Gunakan kredensial akun demo yang tercantum di bawah.",
+                  )
+                }
+              >
+                Lupa kata sandi?
+              </button>
+            }
             onChange={(e) => {
               setPassword(e.target.value);
-              setErrors((old) => ({ ...old, password: undefined }));
+              setErrors({});
             }}
           />
         </div>
-        <div className="py-4">
-          <AuthButton
-            type="submit"
-            compact
-            loading={busy === "submit"}
-            disabled={!!busy}
-            loadingText="Masuk ke demo…"
-            className="shadow-[0_1px_3px_#155dfc33]"
-          >
+        <label className="mt-[18px] flex min-h-[38px] items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mt-0.5 size-[18px] shrink-0 rounded accent-primary"
+          />
+          <span>
+            Ingat saya
+            <span className="block text-xs text-[#6b7280]">
+              Simpan sesi login pada tab ini.
+            </span>
+          </span>
+        </label>
+        {errors.credentials && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            {errors.credentials}
+          </p>
+        )}
+        <div className="mt-[18px]">
+          <SharedAuthButton type="submit" busy={busy}>
             Masuk
-          </AuthButton>
+          </SharedAuthButton>
         </div>
       </form>
-      <div className="flex flex-col items-center text-sm leading-5">
-        <button
-          type="button"
-          disabled={!!busy}
-          className="font-medium text-[#1447e6] hover:underline"
-          onClick={() =>
-            setMessage(
-              `Simulasi pemulihan: tidak ada email yang dikirim. Gunakan kata sandi demo ${DEMO_PASSWORD}.`,
-            )
-          }
-        >
-          Lupa Kata Sandi?
-        </button>
-        <p className="text-center text-secondary">
-          Belum memiliki akun?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-primary hover:underline"
-          >
-            Daftar Sekarang
-          </Link>
-        </p>
+      <div className="mb-4 mt-[18px] flex h-5 items-center gap-4 text-[13px] text-[#9ca3af]">
+        <span className="h-px flex-1 bg-line" />
+        atau
+        <span className="h-px flex-1 bg-line" />
       </div>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={google}
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-gray-300 text-sm font-semibold"
+      >
+        <GoogleMark />
+        Masuk dengan Google
+      </button>
+      <p className="mt-[18px] text-center text-sm text-[#6b7280]">
+        Belum memiliki akun?{" "}
+        <Link href="/register" className="font-bold text-primary">
+          Daftar Sekarang
+        </Link>
+      </p>
       {message && (
-        <div className="mt-4">
-          <FormMessage>{message}</FormMessage>
-        </div>
+        <p
+          role="status"
+          className="mt-3 rounded-lg bg-blue-50 p-3 text-xs text-secondary"
+        >
+          {message}
+        </p>
       )}
-      <PrototypeNotice credentials />
+      <DemoNotice accounts />
     </section>
   );
 }

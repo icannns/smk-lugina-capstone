@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { eventEnrollments } from "@/lib/guru/event-data";
+import { eventLearning } from "@/lib/guru/learning-selectors";
 import { eventHref, formatEventDate } from "@/lib/guru/event-selectors";
 import type {
   EventFilters,
@@ -14,19 +14,17 @@ export function EventDetail({
   deadlines,
   onDeadline,
   onMonitoring,
+  learning,
 }: {
   event: ManagedEvent;
   filters: EventFilters;
   deadlines: Record<string, string>;
   onDeadline: (milestone: EventMilestone) => void;
   onMonitoring: () => void;
+  learning: ReturnType<typeof eventLearning>;
 }) {
-  const participants = eventEnrollments.filter(
-    (e) => e.eventId === event.id,
-  ).length;
-  const total = participants * event.milestones.length;
-  const progress = event.progress ?? 0;
-  const percent = total ? Math.round((progress / total) * 100) : 0;
+  const participants = learning.rows.length;
+  const { total, completed: progress, percent, submitted } = learning;
   const canonical = event.id === "kantin";
   return (
     <>
@@ -62,12 +60,13 @@ export function EventDetail({
           Monitoring
         </button>
       </div>
-      {canonical && (
+      {submitted > 0 && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl bg-[#fffbeb] p-4 text-sm leading-5 text-[#7b3306] shadow-[0_0_0_1px_#fee685]">
           <EventIcon name="notice-lock" />
           <p>
-            Sudah ada {progress} pengumpulan. Urutan &amp; jumlah milestone
-            serta rubrik terkunci. Arahan dan deadline masih bisa diubah.
+            Sudah ada {submitted} pengumpulan tugas. Urutan &amp; jumlah
+            milestone serta rubrik terkunci. Arahan dan deadline masih bisa
+            diubah.
           </p>
         </div>
       )}
@@ -76,7 +75,7 @@ export function EventDetail({
           className={`p-6 ${canonical ? "min-[1360px]:min-h-[556px]" : ""}`}
         >
           <h2 className="text-base font-semibold leading-6">Milestone</h2>
-          {!canonical && (
+          {!canonical && !event.wizard && (
             <p className="mt-2 text-xs leading-5 text-secondary">
               Sejumlah detail milestone belum tersedia pada acuan fase ini.
               Hanya informasi contoh yang tersedia ditampilkan.
@@ -159,13 +158,17 @@ export function EventDetail({
             <div className="flex flex-wrap justify-between gap-x-2 text-xs leading-4">
               <span className="text-secondary">Progres</span>
               <p className="font-medium">
-                {progress} dari {total} pengumpulan
+                {progress} dari {total} tugas &amp; survei selesai
                 <span className="font-normal text-secondary">
                   {" "}
                   · {percent}%
                 </span>
               </p>
             </div>
+            <p className="mt-2 text-xs text-secondary">
+              {submitted} dari {total} tugas telah dikumpulkan; penyelesaian
+              juga memerlukan Form Survei.
+            </p>
             <div
               role="progressbar"
               aria-label={`Progres ${event.title}`}

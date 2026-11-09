@@ -41,7 +41,12 @@ export function MilestoneStep({
   return (
     <div className="rounded-2xl border border-line bg-white p-5 sm:p-8">
       <div className="grid min-w-0 gap-6 min-[1200px]:grid-cols-[260px_minmax(0,1fr)]">
-        <aside aria-label="Daftar milestone" className="min-w-0">
+        <aside
+          id="milestone-list"
+          tabIndex={-1}
+          aria-label="Daftar milestone"
+          className="min-w-0"
+        >
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold leading-6">
               Milestone ({event.milestones.length})
@@ -88,6 +93,11 @@ export function MilestoneStep({
               </li>
             ))}
           </ol>
+          {errors["milestone-list"] && (
+            <p className="mt-2 text-xs text-danger">
+              {errors["milestone-list"]}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => {
