@@ -1,57 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bojong United frontend
 
-## Phase 1: Teacher authentication prototype
+Integrated Teacher and Student **fictional-data prototype**, built with Next.js
+16 App Router, React, TypeScript and Tailwind CSS. It is suitable for a local
+frontend demonstration, not production authentication or multi-user operation.
 
-The implementation follows Figma file `hWTpQwbyreDsivI3tZ0yLa`, **Page 1 → Redesign Guru**:
+## Run locally
 
-- Login: `291:15929`
-- Register: `291:15974`
-- Google registration state: `291:16035`
-- Design system page: `244:845`
+Use Node.js 20.9 or newer and npm. From this directory:
 
-These three frames are direct children of Page 1, arranged beneath the Redesign Guru canvas label, between Form Survei Guru and Redesign Siswa. The authentication frames' specific spacing and 12 px control radii take precedence over generic library defaults. The four SVG icons in `public/auth/` are downloaded Figma assets. Branding, gradient and circles are native layout elements in the reference, reproduced in CSS.
-
-Routes: `/` redirects to `/login`; `/register` and `/register/google` cover registration. Successful simulations navigate to `/guru/dashboard`, which contains only a placeholder.
-
-Use **guru@example.com** and **DemoGuru123!** for mock login. Registration accepts fictional `@example.com` emails and the same public demo password; “Isi data contoh” fills an example. Registration does not create an account or change the login fixture. Google buttons simulate a local delay and open a fixed fictional identity; changing the Google account displays an explanatory message. Password recovery also displays local feedback only.
-
-All validation and simulated delays run in the browser. Forms have no API/server action, do not serialize field names, and do not store credentials, accounts, cookies or authentication tokens. Do not enter real credentials or personal information. Dashboard access is intentionally unprotected because there is no authentication system.
-
-Only desktop Figma frames were supplied. Tablet/mobile layouts are responsive adaptations: the brand panel stacks above the form, text wraps, and notices remain scrollable. A visible prototype notice and fictional email addresses are intentional additions to the Figma design.
-
-Validation commands: `npm run lint` and `npm run build`. No Student, survey, FOMO, COMMIT, OAuth or backend functionality is included.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
+```powershell
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. For a production-mode local demonstration, stop the
+running production server before rebuilding its `.next` output, then run:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm run build
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No backend, database, OAuth setup or `.env` credentials are required. Do not enter
+real personal information or credentials. Figma assets are local. Next.js serves
+Inter locally after building; the first build may download it through `next/font`.
 
-## Learn More
+## Demo accounts and routes
 
-To learn more about Next.js, take a look at the following resources:
+| Role | Username / email | Public demo password | Home |
+| --- | --- | --- | --- |
+| Teacher | `rina.guru` / `guru@example.com` | `DemoGuru123!` | `/guru/dashboard` |
+| Student Dimas | `dimas` / `siswa@example.com` | `DemoSiswa123!` | `/siswa/dashboard` |
+| Student Aisyah | `aisyah` / `aisyah@example.com` | `DemoSiswa123!` | `/siswa/dashboard` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Both roles use `/login`, `/register`, `/register/google` and `/loading`.
+Public registration creates fictional Student accounts only; Google is a mock.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Teacher: Dashboard, Students, Events and complete event wizard, Rubrics,
+  Monitoring/Assessment, Student Work, Reports and Profile under `/guru/*`.
+- Student: event discovery/enrollment, Dashboard, Workspace, configured milestone
+  Survey forms, Portfolio/example certificates and Profile under `/siswa/*`.
+- Teacher Survey-administration/privacy sidebar entries and Student Settings are
+  visible native disabled buttons. They neither navigate nor open placeholders.
+  Functional Student milestone Survey forms remain available.
 
-## Deploy on Vercel
+Use **one tab**, logging out and back in as the other role, to demonstrate
+Teacher publication → Student enrollment/submission → Teacher feedback/revision
+→ Student revision → Teacher reassessment. New versions retain history and need
+a new assessment. Browser sessions/devices do not share mock changes.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Verification
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```powershell
+npm run lint
+node node_modules/typescript/bin/tsc --noEmit --incremental false
+npm run build
+node --test tests/audit-regressions.test.mjs
+```
+
+See [`tests/README.md`](tests/README.md) for the existing browser regression runner
+and its optional external Playwright installation. No Playwright runtime
+dependency is required by the application.
+
+## Design, architecture and limits
+
+Teacher screens follow **Page 1 → Redesign Guru**. Shared authentication and
+Student screens follow **Guru & Siswa → Redesign Siswa**, including S01–S04, in
+Figma file `hWTpQwbyreDsivI3tZ0yLa`. Original Role Guru is not authoritative.
+
+The shared domain adapter is `src/lib/guru/event-draft-store.ts`; auth is in
+`src/lib/auth/`. Domain changes persist in this tab's sessionStorage. Client
+guards and password digests demonstrate behavior, not secure authentication.
+Uploads retain metadata, not file bytes. PDF/XLSX and example certificate PDF
+downloads are generated locally; certificates are unofficial prototypes.
+
+New events do not provision external Survey instruments. Submission, grading,
+feedback and Reports work, but later survey-gated stages/certificates require
+Survey-team integration. The accepted B11 development-tooling advisory and minor
+V04 visual differences remain documented limitations.
+
+## Handover
+
+- [Integration and COMMIT migration](INTEGRATION-HANDOVER.md): current entry point.
+- [Shared authentication](SHARED-AUTHENTICATION.md): roles/session contract.
+- [Teacher Module](TEACHER-MODULE.md) and [Student Module](STUDENT-MODULE.md):
+  feature/source maps and implementation history.
+- `DASHBOARD.md`, `STUDENT-MANAGEMENT.md`, `EVENT-MANAGEMENT.md`, `EVENT-WIZARD.md`
+  are retained historical phase records; current integration behavior supersedes
+  their earlier scope and persistence limitations.
