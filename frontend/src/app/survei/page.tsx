@@ -1,6 +1,3 @@
-import { Suspense } from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import SurveyResultsContainer from "@/components/survey-results/SurveyResultsContainer";
 
 export const metadata = { title: "Hasil Survei & Analitik Technostress" };

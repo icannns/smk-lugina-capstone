@@ -51,7 +51,7 @@ export default function AnalyticsTab() {
   const [showRawTable, setShowRawTable] = useState<boolean>(false);
 
   // Function to fetch analysis from FastAPI backend
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = React.useCallback(async () => {
     setIsLoading(true);
     setApiError(null);
     try {
@@ -85,7 +85,7 @@ export default function AnalyticsTab() {
 
       const result: AnalyticsResponse = await analyzeResp.json();
       setData(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Backend API tidak terjangkau, menggunakan data fallback simulasi:", err);
       setApiError(
         "Koneksi ke server Python API belum aktif. Menampilkan data evaluasi tersimpan."
@@ -93,11 +93,20 @@ export default function AnalyticsTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ngramMode, cloudTheme, maxWords, customStopwords]);
 
   useEffect(() => {
-    fetchAnalysis();
-  }, [ngramMode, cloudTheme, maxWords]);
+    let ignore = false;
+    const timer = setTimeout(() => {
+      if (!ignore) {
+        void fetchAnalysis();
+      }
+    }, 0);
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
+    };
+  }, [fetchAnalysis]);
 
   const handleDownloadImage = (base64Url: string | null | undefined, fileName: string) => {
     if (!base64Url) return;
@@ -152,7 +161,7 @@ export default function AnalyticsTab() {
         </div>
       )}
 
-      {/* Control & Configuration Header Card */}
+      {/* Control & Configuration Header Card (Sementara di-comment)
       <section className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a]">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -195,7 +204,6 @@ export default function AnalyticsTab() {
           </div>
         </div>
 
-        {/* Expandable Configuration Drawer */}
         {showConfig && (
           <div className="mt-4 pt-4 border-t border-line grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div>
@@ -252,6 +260,7 @@ export default function AnalyticsTab() {
           </div>
         )}
       </section>
+      */}
 
       {/* 4 Metric Cards (Clean Lugina PjBL Style) */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
