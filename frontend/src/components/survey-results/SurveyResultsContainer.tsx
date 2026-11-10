@@ -13,61 +13,63 @@ export default function SurveyResultsContainer() {
     <div className="space-y-6">
       {/* Breadcrumb & Header Title */}
       <div>
-        <div className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">
-          HASIL / PEMANTAUAN
+        <div className="flex items-center gap-2 text-xs text-secondary">
+          <span>Hasil</span>
+          <span>/</span>
+          <span>Pemantauan</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+        <h1 className="text-[26px] font-semibold leading-[34px] text-gray-900 tracking-tight mt-1">
           Hasil Survei
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Adopsi Teknologi dan Technostress • Versi 1.0 • Penugasan 20–30 Okt 2026
+        <p className="text-sm text-secondary mt-1">
+          Adopsi Teknologi dan Technostress · Versi 1.0 · Penugasan 20–30 Okt 2026
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1 border-b border-slate-200 text-sm overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-line text-sm overflow-x-auto">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`pb-3 px-3 font-semibold transition-all relative flex items-center gap-2 ${
+          className={`pb-3 px-3.5 transition-all relative flex items-center gap-2 text-sm ${
             activeTab === "overview"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-slate-500 hover:text-slate-800"
+              ? "text-primary border-b-2 border-primary font-semibold"
+              : "text-secondary hover:text-gray-900 font-medium"
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4" />
+          <FileSpreadsheet className="size-4" />
           <span>Hasil Survei</span>
         </button>
 
         <button
           onClick={() => setActiveTab("milestone")}
-          className={`pb-3 px-3 font-semibold transition-all relative flex items-center gap-2 ${
+          className={`pb-3 px-3.5 transition-all relative flex items-center gap-2 text-sm ${
             activeTab === "milestone"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-slate-500 hover:text-slate-800"
+              ? "text-primary border-b-2 border-primary font-semibold"
+              : "text-secondary hover:text-gray-900 font-medium"
           }`}
         >
-          <Milestone className="w-4 h-4" />
+          <Milestone className="size-4" />
           <span>Penilaian & milestone</span>
         </button>
 
         <button
           onClick={() => setActiveTab("analytics")}
-          className={`pb-3 px-3 font-semibold transition-all relative flex items-center gap-2 ${
+          className={`pb-3 px-3.5 transition-all relative flex items-center gap-2 text-sm ${
             activeTab === "analytics"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-slate-500 hover:text-slate-800"
+              ? "text-primary border-b-2 border-primary font-semibold"
+              : "text-secondary hover:text-gray-900 font-medium"
           }`}
         >
-          <Brain className="w-4 h-4 text-purple-600" />
+          <Brain className="size-4 text-primary" />
           <span>Analitik & Word Cloud</span>
-          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">
+          <span className="text-[11px] bg-primary-soft text-primary px-2 py-0.5 rounded-full font-medium">
             Baru
           </span>
         </button>
       </div>
 
       {/* Tab Contents */}
-      <div className="pt-2">
+      <div className="pt-1">
         {activeTab === "overview" && (
           <SurveyOverviewTab onSwitchToAnalytics={() => setActiveTab("analytics")} />
         )}

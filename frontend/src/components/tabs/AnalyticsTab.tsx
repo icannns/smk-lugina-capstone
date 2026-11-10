@@ -7,13 +7,10 @@ import {
   RefreshCw,
   Download,
   AlertCircle,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   FileText,
-  Sparkles,
-  ArrowUpDown,
-  Filter
+  ArrowUpDown
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -58,14 +55,12 @@ export default function AnalyticsTab() {
     setIsLoading(true);
     setApiError(null);
     try {
-      // 1. Get sample data from backend or local
       const sampleResp = await fetch(`${API_BASE}/api/sample`);
       if (!sampleResp.ok) {
         throw new Error(`Gagal menghubungi API Sample: ${sampleResp.statusText}`);
       }
       const samplePayload = await sampleResp.json();
 
-      // 2. Call /api/analyze
       const stopwordsArray = customStopwords
         .split(",")
         .map((s) => s.trim().toLowerCase())
@@ -93,7 +88,7 @@ export default function AnalyticsTab() {
     } catch (err: any) {
       console.warn("Backend API tidak terjangkau, menggunakan data fallback simulasi:", err);
       setApiError(
-        "Koneksi ke server Python API (http://localhost:8000) belum terhubung. Menampilkan data hasil pengujian lokal yang tersimpan."
+        "Koneksi ke server Python API belum aktif. Menampilkan data evaluasi tersimpan."
       );
     } finally {
       setIsLoading(false);
@@ -104,7 +99,6 @@ export default function AnalyticsTab() {
     fetchAnalysis();
   }, [ngramMode, cloudTheme, maxWords]);
 
-  // Helper download base64
   const handleDownloadImage = (base64Url: string | null | undefined, fileName: string) => {
     if (!base64Url) return;
     const link = document.createElement("a");
@@ -126,7 +120,6 @@ export default function AnalyticsTab() {
       return a.name.localeCompare(b.name);
     });
 
-  // Category counts
   const totalRecords = data.summary.total_records || chartStudents.length;
   const highCount = data.summary.stress_counts?.Tinggi ?? 0;
   const medCount = data.summary.stress_counts?.Sedang ?? 0;
@@ -140,41 +133,43 @@ export default function AnalyticsTab() {
     <div className="space-y-6">
       {/* Notice / Status Banner */}
       {apiError && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 text-xs sm:text-sm text-amber-800">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-semibold">Mode Simulasi Mandiri:</span> {apiError}
-            <div className="mt-1 text-xs text-amber-700">
-              Jalankan <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-medium">python api.py</code> di folder backend untuk komputasi NLP & pembuatan gambar Word Cloud secara langsung.
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-4 flex items-start justify-between gap-3 text-xs text-amber-800 leading-relaxed">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+            <div>
+              <span className="font-semibold text-amber-900">Mode Simulasi Offline: </span>
+              {apiError} Jalankan <code className="bg-amber-100/80 px-1.5 py-0.5 rounded font-mono font-medium text-amber-900">python api.py</code> di folder backend untuk komputasi NLP & gambar Word Cloud secara langsung.
             </div>
           </div>
           <button
             onClick={fetchAnalysis}
             disabled={isLoading}
-            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
+            className="h-8 shrink-0 rounded-control border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 hover:bg-amber-100/50 flex items-center gap-1.5 transition-colors"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
             Hubungkan Ulang
           </button>
         </div>
       )}
 
-      {/* Control & Configuration Bar */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+      {/* Control & Configuration Header Card */}
+      <section className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a]">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-              <Brain className="w-5 h-5" />
+            <div className="size-10 rounded-control bg-primary-soft text-primary flex items-center justify-center shrink-0">
+              <Brain className="size-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                Analitik NLP & Technostress Komparatif
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200/50">
-                  Hybrid Contract
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-gray-900 leading-5">
+                  Analitik NLP & Technostress Komparatif
+                </h2>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-primary font-medium">
+                  Hybrid Likert + Esai
                 </span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                Deteksi pemicu stres teknologi berdasarkan skala Likert & esai kualitatif siswa
+              </div>
+              <p className="text-xs text-secondary mt-0.5">
+                Pemetaan tingkat stres teknologi siswa dan ekstraksi kata kunci komparatif
               </p>
             </div>
           </div>
@@ -182,19 +177,19 @@ export default function AnalyticsTab() {
           <div className="flex items-center gap-2 w-full md:w-auto">
             <button
               onClick={() => setShowConfig(!showConfig)}
-              className="flex-1 md:flex-initial px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-slate-700 transition-colors"
+              className="h-9 flex-1 md:flex-initial rounded-control border border-line bg-white px-3.5 text-xs font-medium text-secondary hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+              <SlidersHorizontal className="size-3.5 text-secondary" />
               <span>Pengaturan Ekstraksi</span>
-              {showConfig ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {showConfig ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
             </button>
 
             <button
               onClick={fetchAnalysis}
               disabled={isLoading}
-              className="flex-1 md:flex-initial px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
+              className="h-9 flex-1 md:flex-initial rounded-control bg-primary hover:bg-primary-hover disabled:opacity-50 text-white px-4 text-xs font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
               <span>{isLoading ? "Memproses..." : "Analisis Data"}</span>
             </button>
           </div>
@@ -202,39 +197,36 @@ export default function AnalyticsTab() {
 
         {/* Expandable Configuration Drawer */}
         {showConfig && (
-          <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            {/* Mode N-gram */}
+          <div className="mt-4 pt-4 border-t border-line grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1.5">Mode N-Gram</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Mode N-Gram</label>
               <select
                 value={ngramMode}
                 onChange={(e) => setNgramMode(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="h-9 w-full rounded-control border border-line bg-white px-3 text-xs text-gray-900 focus:outline-primary"
               >
-                <option value="both">🔤 Gabungan (Kata + Frasa)</option>
-                <option value="bigram">🔗 Frasa 2 Kata (Bigram Saja)</option>
-                <option value="unigram">📝 Kata Tunggal (Unigram Saja)</option>
+                <option value="both">Gabungan (Kata + Frasa)</option>
+                <option value="bigram">Frasa 2 Kata (Bigram Saja)</option>
+                <option value="unigram">Kata Tunggal (Unigram Saja)</option>
               </select>
             </div>
 
-            {/* Tema Kanvas Word Cloud */}
             <div>
-              <label className="block font-semibold text-slate-700 mb-1.5">Tema Kanvas</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Tema Kanvas</label>
               <select
                 value={cloudTheme}
                 onChange={(e) => setCloudTheme(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="h-9 w-full rounded-control border border-line bg-white px-3 text-xs text-gray-900 focus:outline-primary"
               >
-                <option value="white">☀️ Terang (Clean White)</option>
-                <option value="#0f172a">🌙 Gelap (Dark Slate)</option>
+                <option value="white">Terang (Clean White)</option>
+                <option value="#0f172a">Gelap (Dark Slate)</option>
               </select>
             </div>
 
-            {/* Batas Maksimal Kata */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="font-semibold text-slate-700">Maks Kata / Frasa</label>
-                <span className="font-bold text-blue-600">{maxWords}</span>
+                <label className="text-xs font-medium text-secondary">Maksimal Kata</label>
+                <span className="font-semibold text-primary">{maxWords}</span>
               </div>
               <input
                 type="range"
@@ -243,103 +235,103 @@ export default function AnalyticsTab() {
                 step={10}
                 value={maxWords}
                 onChange={(e) => setMaxWords(Number(e.target.value))}
-                className="w-full accent-blue-600 cursor-pointer"
+                className="w-full accent-primary cursor-pointer mt-1"
               />
             </div>
 
-            {/* Stopwords Tambahan */}
             <div>
-              <label className="block font-semibold text-slate-700 mb-1.5">Tambah Stopwords</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Stopwords Tambahan</label>
               <input
                 type="text"
                 placeholder="pisahkan dengan koma..."
                 value={customStopwords}
                 onChange={(e) => setCustomStopwords(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="h-9 w-full rounded-control border border-line bg-white px-3 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-primary"
               />
             </div>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs relative overflow-hidden">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Responden</div>
-          <div className="text-3xl font-extrabold text-indigo-600 mt-2">{totalRecords}</div>
-          <div className="text-xs font-medium text-slate-400 mt-1">Siswa terverifikasi</div>
-          <div className="absolute right-4 bottom-4 w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">
-            <Brain className="w-5 h-5" />
+      {/* 4 Metric Cards (Clean Lugina PjBL Style) */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Responden */}
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] flex flex-col justify-between h-32">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-normal text-secondary">Total Responden</span>
+            <span className="size-2 rounded-full bg-primary" />
           </div>
-        </div>
+          <div className="text-[30px] font-semibold leading-9 text-gray-900 tracking-tight">
+            {totalRecords}
+          </div>
+          <div className="text-xs text-secondary">
+            Siswa terverifikasi
+          </div>
+        </article>
 
-        {/* High Stress Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs relative overflow-hidden">
-          <div className="text-xs font-semibold text-rose-500 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            Stres Tinggi
+        {/* Stres Tinggi */}
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] flex flex-col justify-between h-32">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-normal text-secondary">Stres Tinggi</span>
+            <span className="size-2 rounded-full bg-rose-500" />
           </div>
-          <div className="text-3xl font-extrabold text-rose-600 mt-2">{highCount}</div>
-          <div className="text-xs font-medium text-rose-400 mt-1">
+          <div className="text-[30px] font-semibold leading-9 text-rose-600 tracking-tight">
+            {highCount}
+          </div>
+          <div className="text-xs text-secondary">
             {highPct}% responden (Skor ≥ 3.50)
           </div>
-          <div className="absolute right-4 bottom-4 w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 font-bold text-xs">
-            🔴
-          </div>
-        </div>
+        </article>
 
-        {/* Medium Stress Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs relative overflow-hidden">
-          <div className="text-xs font-semibold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Stres Sedang
+        {/* Stres Sedang */}
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] flex flex-col justify-between h-32">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-normal text-secondary">Stres Sedang</span>
+            <span className="size-2 rounded-full bg-blue-500" />
           </div>
-          <div className="text-3xl font-extrabold text-blue-600 mt-2">{medCount}</div>
-          <div className="text-xs font-medium text-blue-400 mt-1">
+          <div className="text-[30px] font-semibold leading-9 text-blue-600 tracking-tight">
+            {medCount}
+          </div>
+          <div className="text-xs text-secondary">
             {medPct}% responden (Skor 2.50 – 3.49)
           </div>
-          <div className="absolute right-4 bottom-4 w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 font-bold text-xs">
-            🔵
-          </div>
-        </div>
+        </article>
 
-        {/* Low Stress Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs relative overflow-hidden">
-          <div className="text-xs font-semibold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Stres Rendah
+        {/* Stres Rendah */}
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] flex flex-col justify-between h-32">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-normal text-secondary">Stres Rendah</span>
+            <span className="size-2 rounded-full bg-emerald-500" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-600 mt-2">{lowCount}</div>
-          <div className="text-xs font-medium text-emerald-400 mt-1">
+          <div className="text-[30px] font-semibold leading-9 text-emerald-600 tracking-tight">
+            {lowCount}
+          </div>
+          <div className="text-xs text-secondary">
             {lowPct}% responden (Skor &lt; 2.50)
           </div>
-          <div className="absolute right-4 bottom-4 w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 font-bold text-xs">
-            🟢
-          </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      {/* SEKSI 1: Grafik Sebaran Technostress Siswa */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      {/* SEKSI 1: Visualisasi Sebaran Technostress Siswa */}
+      <section className="rounded-2xl border border-line bg-white p-6 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h4 className="font-bold text-slate-900 text-base">
-              📊 1. Visualisasi Sebaran Tingkat Technostress Siswa
-            </h4>
-            <p className="text-xs text-slate-500">
-              Skor kalkulasi rata-rata kuisioner (1.00 – 5.00) dengan garis batas ambang intervensi
+            <h3 className="text-base font-semibold text-gray-900 leading-5">
+              1. Visualisasi Sebaran Tingkat Technostress Siswa
+            </h3>
+            <p className="text-xs text-secondary mt-0.5">
+              Skor rata-rata kuesioner skala 1.00 – 5.00 dengan garis batas ambang intervensi
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Sort Dropdown */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5">
+              <ArrowUpDown className="size-3.5 text-secondary" />
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 text-xs focus:outline-none"
+                className="h-9 rounded-control border border-line bg-white px-2.5 text-xs text-secondary focus:outline-primary"
               >
                 <option value="desc">Skor Tertinggi ke Terendah</option>
                 <option value="asc">Skor Terendah ke Tertinggi</option>
@@ -347,16 +339,16 @@ export default function AnalyticsTab() {
               </select>
             </div>
 
-            {/* Filter Kategori Checkboxes */}
-            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1 pl-2 border-l border-line">
               {(["Tinggi", "Sedang", "Rendah"] as const).map((cat) => {
                 const isSelected = selectedCategories.includes(cat);
                 const color =
                   cat === "Tinggi"
-                    ? "text-rose-600 border-rose-200 bg-rose-50"
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
                     : cat === "Sedang"
-                    ? "text-blue-600 border-blue-200 bg-blue-50"
-                    : "text-emerald-600 border-emerald-200 bg-emerald-50";
+                    ? "bg-blue-50 text-primary border-blue-200"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200";
                 return (
                   <button
                     key={cat}
@@ -369,8 +361,8 @@ export default function AnalyticsTab() {
                         setSelectedCategories([...selectedCategories, cat]);
                       }
                     }}
-                    className={`px-2.5 py-1 text-xs rounded-lg font-semibold border transition-all ${
-                      isSelected ? color : "bg-white text-slate-400 border-slate-200 opacity-60"
+                    className={`h-8 px-2.5 rounded-control text-xs font-medium border transition-colors ${
+                      isSelected ? color : "bg-white text-gray-400 border-line hover:bg-gray-50"
                     }`}
                   >
                     {cat}
@@ -382,36 +374,40 @@ export default function AnalyticsTab() {
         </div>
 
         {/* Recharts Horizontal Bar Chart */}
-        <div style={{ height: Math.max(380, chartStudents.length * 36) }} className="w-full">
+        <div style={{ height: Math.max(360, chartStudents.length * 32) }} className="w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartStudents}
               layout="vertical"
-              margin={{ top: 10, right: 30, left: 120, bottom: 20 }}
+              margin={{ top: 20, right: 30, left: 110, bottom: 20 }}
             >
               <XAxis
                 type="number"
                 domain={[0, 5.0]}
                 tickCount={6}
-                tick={{ fontSize: 11, fill: "#64748b" }}
+                tick={{ fontSize: 11, fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                tickLine={{ stroke: "#e5e7eb" }}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "#1e293b", fontWeight: 500 }}
-                width={110}
+                tick={{ fontSize: 11, fill: "#374151" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                tickLine={false}
+                width={105}
               />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const student = payload[0].payload as TechnostressStudent;
                     return (
-                      <div className="bg-slate-900 text-white rounded-xl p-3 shadow-xl text-xs space-y-1 z-50">
-                        <div className="font-bold text-sm">{student.name} ({student.id})</div>
+                      <div className="bg-gray-900 text-white rounded-xl p-3 shadow-lg text-xs space-y-1 z-50">
+                        <div className="font-semibold text-sm">{student.name} ({student.id})</div>
                         <div className="flex items-center gap-2">
-                          <span>Kategori:</span>
+                          <span className="text-gray-400">Kategori:</span>
                           <span
-                            className={`font-semibold px-2 py-0.5 rounded text-[10px] ${
+                            className={`font-medium px-2 py-0.5 rounded text-[10px] ${
                               student.kategori === "Tinggi"
                                 ? "bg-rose-500 text-white"
                                 : student.kategori === "Sedang"
@@ -422,35 +418,33 @@ export default function AnalyticsTab() {
                             {student.kategori}
                           </span>
                         </div>
-                        <div>Skor Likert: <span className="font-bold text-amber-300">{student.kalkulasi?.toFixed(2)}</span> / 5.00</div>
-                        <div>Skala Bulat: {student.rounded_scale}</div>
-                        <div className="text-slate-400 text-[10px] pt-1 border-t border-slate-700">Waktu: {student.post_date}</div>
+                        <div>Skor Likert: <span className="font-semibold text-amber-300">{student.kalkulasi?.toFixed(2)}</span> / 5.00</div>
+                        <div className="text-gray-400 text-[10px] pt-1 border-t border-gray-700">Waktu: {student.post_date}</div>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              {/* Reference Lines */}
               <ReferenceLine
                 x={3.5}
-                stroke="#ef4444"
+                stroke="#e11d48"
                 strokeDasharray="4 4"
-                strokeWidth={1.5}
-                label={{ value: "Ambang Tinggi (≥ 3.50)", position: "top", fill: "#ef4444", fontSize: 10, fontWeight: "bold" }}
+                strokeWidth={1.2}
+                label={{ value: "Ambang Tinggi (≥ 3.50)", position: "top", fill: "#e11d48", fontSize: 10, fontWeight: 500 }}
               />
               <ReferenceLine
                 x={2.5}
-                stroke="#10b981"
+                stroke="#059669"
                 strokeDasharray="4 4"
-                strokeWidth={1.5}
-                label={{ value: "Ambang Rendah (< 2.50)", position: "top", fill: "#10b981", fontSize: 10, fontWeight: "bold" }}
+                strokeWidth={1.2}
+                label={{ value: "Ambang Rendah (< 2.50)", position: "top", fill: "#059669", fontSize: 10, fontWeight: 500 }}
               />
-              <Bar dataKey="kalkulasi" radius={[0, 6, 6, 0]} barSize={18}>
+              <Bar dataKey="kalkulasi" radius={[0, 4, 4, 0]} barSize={14}>
                 {chartStudents.map((entry, index) => {
                   const fill =
                     entry.kategori === "Tinggi"
-                      ? "#ef4444"
+                      ? "#f43f5e"
                       : entry.kategori === "Sedang"
                       ? "#3b82f6"
                       : "#10b981";
@@ -461,13 +455,16 @@ export default function AnalyticsTab() {
           </ResponsiveContainer>
         </div>
 
-        {/* Grouped Student Pills */}
-        <div className="pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Grouped Student Panels */}
+        <div className="pt-4 border-t border-line grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Stres Tinggi */}
-          <div className="bg-rose-50/60 rounded-xl p-3 border border-rose-100">
-            <div className="text-xs font-bold text-rose-700 flex items-center justify-between mb-2">
-              <span>🔴 Stres Tinggi (Skala 4–5)</span>
-              <span className="bg-rose-200/60 text-rose-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <div className="rounded-xl border border-line bg-gray-50/50 p-3.5">
+            <div className="text-xs font-semibold text-gray-900 flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-rose-500" />
+                Stres Tinggi (Skala 4–5)
+              </span>
+              <span className="bg-rose-50 text-rose-700 border border-rose-200/60 px-2 py-0.5 rounded-full text-[10px] font-medium">
                 {data.students.filter((s) => s.kategori === "Tinggi").length} Siswa
               </span>
             </div>
@@ -475,19 +472,22 @@ export default function AnalyticsTab() {
               {data.students
                 .filter((s) => s.kategori === "Tinggi")
                 .map((s) => (
-                  <div key={s.id} className="text-xs text-slate-700 flex justify-between items-center bg-white/70 px-2 py-1 rounded">
+                  <div key={s.id} className="text-xs text-secondary flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-line/60">
                     <span>{s.name}</span>
-                    <span className="font-bold text-rose-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
+                    <span className="font-semibold text-rose-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
                   </div>
                 ))}
             </div>
           </div>
 
           {/* Stres Sedang */}
-          <div className="bg-blue-50/60 rounded-xl p-3 border border-blue-100">
-            <div className="text-xs font-bold text-blue-700 flex items-center justify-between mb-2">
-              <span>🔵 Stres Sedang (Skala 3)</span>
-              <span className="bg-blue-200/60 text-blue-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <div className="rounded-xl border border-line bg-gray-50/50 p-3.5">
+            <div className="text-xs font-semibold text-gray-900 flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-blue-500" />
+                Stres Sedang (Skala 3)
+              </span>
+              <span className="bg-blue-50 text-primary border border-blue-200/60 px-2 py-0.5 rounded-full text-[10px] font-medium">
                 {data.students.filter((s) => s.kategori === "Sedang").length} Siswa
               </span>
             </div>
@@ -495,19 +495,22 @@ export default function AnalyticsTab() {
               {data.students
                 .filter((s) => s.kategori === "Sedang")
                 .map((s) => (
-                  <div key={s.id} className="text-xs text-slate-700 flex justify-between items-center bg-white/70 px-2 py-1 rounded">
+                  <div key={s.id} className="text-xs text-secondary flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-line/60">
                     <span>{s.name}</span>
-                    <span className="font-bold text-blue-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
+                    <span className="font-semibold text-blue-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
                   </div>
                 ))}
             </div>
           </div>
 
           {/* Stres Rendah */}
-          <div className="bg-emerald-50/60 rounded-xl p-3 border border-emerald-100">
-            <div className="text-xs font-bold text-emerald-700 flex items-center justify-between mb-2">
-              <span>🟢 Stres Rendah (Skala 1–2)</span>
-              <span className="bg-emerald-200/60 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <div className="rounded-xl border border-line bg-gray-50/50 p-3.5">
+            <div className="text-xs font-semibold text-gray-900 flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                Stres Rendah (Skala 1–2)
+              </span>
+              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] font-medium">
                 {data.students.filter((s) => s.kategori === "Rendah").length} Siswa
               </span>
             </div>
@@ -515,72 +518,70 @@ export default function AnalyticsTab() {
               {data.students
                 .filter((s) => s.kategori === "Rendah")
                 .map((s) => (
-                  <div key={s.id} className="text-xs text-slate-700 flex justify-between items-center bg-white/70 px-2 py-1 rounded">
+                  <div key={s.id} className="text-xs text-secondary flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-line/60">
                     <span>{s.name}</span>
-                    <span className="font-bold text-emerald-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
+                    <span className="font-semibold text-emerald-600 text-[11px]">{s.kalkulasi?.toFixed(2)}</span>
                   </div>
                 ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SEKSI 2: Word Cloud Komparatif (2 Kolom) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">
+      {/* SEKSI 2: Word Cloud Komparatif (2 Kolom Berdampingan) */}
+      <section className="rounded-2xl border border-line bg-white p-6 shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a] space-y-5">
         <div>
-          <h4 className="font-bold text-slate-900 text-base">
-            🎨 2. Visualisasi Word Cloud Komparatif & Ekstraksi Narasi
-          </h4>
-          <p className="text-xs text-slate-500">
-            Perbandingan komparatif kata kunci kendala pada kelompok stres tinggi (merah) vs kepuasan belajar pada kelompok stres rendah (hijau)
+          <h3 className="text-base font-semibold text-gray-900 leading-5">
+            2. Visualisasi Word Cloud Komparatif & Analisis Frasa
+          </h3>
+          <p className="text-xs text-secondary mt-0.5">
+            Perbandingan kata kunci kendala pada kelompok stres tinggi vs kepuasan belajar pada kelompok stres rendah
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Card Kiri: Stres Tinggi */}
-          <div className="border border-rose-100 rounded-2xl p-5 bg-gradient-to-b from-rose-50/30 to-white flex flex-col justify-between">
+          <div className="rounded-xl border border-line bg-white p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                  <span className="font-bold text-rose-700 text-sm">
-                    Kelompok Stres Tinggi (Keluhan & Kendala Utama)
+                  <span className="size-2 rounded-full bg-rose-500" />
+                  <span className="text-sm font-semibold text-gray-900">
+                    Kelompok Stres Tinggi (Kendala Utama)
                   </span>
                 </div>
                 {data.wordclouds?.Tinggi && (
                   <button
                     onClick={() => handleDownloadImage(data.wordclouds?.Tinggi, "wordcloud_stres_tinggi.png")}
-                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                    className="h-8 rounded-control border border-line bg-white hover:bg-gray-50 text-secondary text-xs font-medium px-3 flex items-center gap-1.5 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    Unduh HD
+                    <Download className="size-3.5" />
+                    Unduh PNG
                   </button>
                 )}
               </div>
 
               {/* Tampilan Gambar Word Cloud */}
-              <div className="bg-white rounded-xl border border-slate-100 p-2 min-h-[260px] flex items-center justify-center overflow-hidden">
+              <div className="bg-gray-50/70 rounded-xl border border-line p-2 min-h-[250px] flex items-center justify-center overflow-hidden">
                 {data.wordclouds?.Tinggi ? (
                   <img
                     src={data.wordclouds.Tinggi}
                     alt="Word Cloud Stres Tinggi"
-                    className="w-full h-auto object-contain rounded-lg max-h-[320px]"
+                    className="w-full h-auto object-contain rounded-lg max-h-[300px]"
                   />
                 ) : (
                   <div className="text-center p-6 space-y-2">
-                    <div className="text-rose-400 font-medium text-xs">
+                    <div className="text-secondary font-medium text-xs">
                       {apiError ? "Jalankan backend API untuk generasi gambar HD" : "Sedang memuat gambar..."}
                     </div>
-                    {/* Visual fallback tag cloud jika backend belum menyala */}
                     <div className="flex flex-wrap gap-1.5 justify-center max-w-sm pt-2">
                       {data.top_ngrams?.high?.slice(0, 8).map((t, idx) => (
                         <span
                           key={idx}
                           style={{
-                            fontSize: `${Math.max(11, Math.min(18, 11 + t.Frekuensi))}px`,
-                            color: idx < 3 ? "#dc2626" : "#f87171"
+                            fontSize: `${Math.max(11, Math.min(16, 11 + t.Frekuensi))}px`
                           }}
-                          className="font-bold bg-rose-50/80 px-2 py-0.5 rounded"
+                          className="font-medium bg-rose-50 text-rose-700 border border-rose-200/50 px-2 py-0.5 rounded-control"
                         >
                           {t.Frasa}
                         </span>
@@ -591,22 +592,22 @@ export default function AnalyticsTab() {
               </div>
             </div>
 
-            {/* Top Frasa Bar Mini Chart */}
-            <div className="mt-4 pt-3 border-t border-rose-100/80">
-              <div className="text-xs font-bold text-rose-800 mb-2">Top 5 Frasa Keluhan Terbanyak:</div>
-              <div className="space-y-1.5">
+            {/* Top Frasa Bars */}
+            <div className="mt-4 pt-3 border-t border-line">
+              <div className="text-xs font-medium text-secondary mb-2">Top 5 Frasa Keluhan Terbanyak:</div>
+              <div className="space-y-2">
                 {data.top_ngrams?.high?.slice(0, 5).map((ngram, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs">
-                    <span className="w-28 truncate text-slate-700 font-medium">{ngram.Frasa}</span>
-                    <div className="flex-1 bg-rose-100 rounded-full h-2 overflow-hidden">
+                  <div key={idx} className="flex items-center gap-2.5 text-xs">
+                    <span className="w-28 truncate text-secondary">{ngram.Frasa}</span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                       <div
                         className="bg-rose-500 h-full rounded-full"
                         style={{
                           width: `${Math.min(100, (ngram.Frekuensi / (data.top_ngrams.high[0]?.Frekuensi || 1)) * 100)}%`
                         }}
-                      ></div>
+                      />
                     </div>
-                    <span className="font-bold text-rose-700 w-6 text-right">{ngram.Frekuensi}x</span>
+                    <span className="font-semibold text-gray-700 w-6 text-right text-[11px]">{ngram.Frekuensi}x</span>
                   </div>
                 ))}
               </div>
@@ -614,49 +615,47 @@ export default function AnalyticsTab() {
           </div>
 
           {/* Card Kanan: Stres Rendah */}
-          <div className="border border-emerald-100 rounded-2xl p-5 bg-gradient-to-b from-emerald-50/30 to-white flex flex-col justify-between">
+          <div className="rounded-xl border border-line bg-white p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span className="font-bold text-emerald-700 text-sm">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-semibold text-gray-900">
                     Kelompok Stres Rendah (Kepuasan Belajar)
                   </span>
                 </div>
                 {data.wordclouds?.Rendah && (
                   <button
                     onClick={() => handleDownloadImage(data.wordclouds?.Rendah, "wordcloud_stres_rendah.png")}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                    className="h-8 rounded-control border border-line bg-white hover:bg-gray-50 text-secondary text-xs font-medium px-3 flex items-center gap-1.5 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    Unduh HD
+                    <Download className="size-3.5" />
+                    Unduh PNG
                   </button>
                 )}
               </div>
 
               {/* Tampilan Gambar Word Cloud */}
-              <div className="bg-white rounded-xl border border-slate-100 p-2 min-h-[260px] flex items-center justify-center overflow-hidden">
+              <div className="bg-gray-50/70 rounded-xl border border-line p-2 min-h-[250px] flex items-center justify-center overflow-hidden">
                 {data.wordclouds?.Rendah ? (
                   <img
                     src={data.wordclouds.Rendah}
                     alt="Word Cloud Stres Rendah"
-                    className="w-full h-auto object-contain rounded-lg max-h-[320px]"
+                    className="w-full h-auto object-contain rounded-lg max-h-[300px]"
                   />
                 ) : (
                   <div className="text-center p-6 space-y-2">
-                    <div className="text-emerald-500 font-medium text-xs">
+                    <div className="text-secondary font-medium text-xs">
                       {apiError ? "Jalankan backend API untuk generasi gambar HD" : "Sedang memuat gambar..."}
                     </div>
-                    {/* Visual fallback tag cloud jika backend belum menyala */}
                     <div className="flex flex-wrap gap-1.5 justify-center max-w-sm pt-2">
                       {data.top_ngrams?.low?.slice(0, 8).map((t, idx) => (
                         <span
                           key={idx}
                           style={{
-                            fontSize: `${Math.max(11, Math.min(18, 11 + t.Frekuensi))}px`,
-                            color: idx < 3 ? "#059669" : "#34d399"
+                            fontSize: `${Math.max(11, Math.min(16, 11 + t.Frekuensi))}px`
                           }}
-                          className="font-bold bg-emerald-50/80 px-2 py-0.5 rounded"
+                          className="font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/50 px-2 py-0.5 rounded-control"
                         >
                           {t.Frasa}
                         </span>
@@ -667,56 +666,56 @@ export default function AnalyticsTab() {
               </div>
             </div>
 
-            {/* Top Frasa Bar Mini Chart */}
-            <div className="mt-4 pt-3 border-t border-emerald-100/80">
-              <div className="text-xs font-bold text-emerald-800 mb-2">Top 5 Frasa Positif Terbanyak:</div>
-              <div className="space-y-1.5">
+            {/* Top Frasa Bars */}
+            <div className="mt-4 pt-3 border-t border-line">
+              <div className="text-xs font-medium text-secondary mb-2">Top 5 Frasa Positif Terbanyak:</div>
+              <div className="space-y-2">
                 {data.top_ngrams?.low?.slice(0, 5).map((ngram, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs">
-                    <span className="w-28 truncate text-slate-700 font-medium">{ngram.Frasa}</span>
-                    <div className="flex-1 bg-emerald-100 rounded-full h-2 overflow-hidden">
+                  <div key={idx} className="flex items-center gap-2.5 text-xs">
+                    <span className="w-28 truncate text-secondary">{ngram.Frasa}</span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                       <div
                         className="bg-emerald-500 h-full rounded-full"
                         style={{
                           width: `${Math.min(100, (ngram.Frekuensi / (data.top_ngrams.low[0]?.Frekuensi || 1)) * 100)}%`
                         }}
-                      ></div>
+                      />
                     </div>
-                    <span className="font-bold text-emerald-700 w-6 text-right">{ngram.Frekuensi}x</span>
+                    <span className="font-semibold text-gray-700 w-6 text-right text-[11px]">{ngram.Frekuensi}x</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SEKSI 3: Inspeksi Data Mentah (Collapsible) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* SEKSI 3: Inspeksi Data Mentah (Akordeon) */}
+      <section className="rounded-2xl border border-line bg-white overflow-hidden shadow-[0_0_0_1px_#0000000f,0_1px_2px_#1018280a]">
         <button
           onClick={() => setShowRawTable(!showRawTable)}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50/60 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-slate-500" />
+            <FileText className="size-4 text-secondary" />
             <div>
-              <div className="font-bold text-slate-900 text-sm">
-                📋 Inspeksi Detail Narasi & Jawaban Esai Siswa
+              <div className="font-semibold text-gray-900 text-sm">
+                Inspeksi Detail Narasi & Jawaban Esai Siswa
               </div>
-              <div className="text-xs text-slate-400">
-                Lihat teks lengkap sebelum dan sesudah ekstraksi token NLP ({data.students.length} responden)
+              <div className="text-xs text-secondary">
+                Lihat teks esai dan hasil kalkulasi per responden ({data.students.length} responden)
               </div>
             </div>
           </div>
-          {showRawTable ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          {showRawTable ? <ChevronUp className="size-4 text-secondary" /> : <ChevronDown className="size-4 text-secondary" />}
         </button>
 
         {showRawTable && (
-          <div className="p-6 border-t border-slate-100">
+          <div className="p-6 border-t border-line">
             <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 font-semibold text-slate-600 bg-slate-50">
+                  <tr className="border-b border-line font-medium text-secondary bg-gray-50/60">
                     <th className="py-2.5 px-3">ID Siswa</th>
                     <th className="py-2.5 px-3">Nama</th>
                     <th className="py-2.5 px-3">Skor Likert</th>
@@ -724,26 +723,26 @@ export default function AnalyticsTab() {
                     <th className="py-2.5 px-3">Teks Narasi Esai Terbuka</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-gray-100">
                   {data.students.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-mono font-bold text-slate-700">{st.id}</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900 whitespace-nowrap">{st.name}</td>
-                      <td className="py-2 px-3 font-bold text-indigo-600">{st.kalkulasi?.toFixed(2)}</td>
+                    <tr key={st.id} className="hover:bg-gray-50/40">
+                      <td className="py-2 px-3 font-mono font-medium text-secondary">{st.id}</td>
+                      <td className="py-2 px-3 font-medium text-gray-900 whitespace-nowrap">{st.name}</td>
+                      <td className="py-2 px-3 font-semibold text-primary">{st.kalkulasi?.toFixed(2)}</td>
                       <td className="py-2 px-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                             st.kategori === "Tinggi"
-                              ? "bg-rose-100 text-rose-700"
+                              ? "bg-rose-50 text-rose-700"
                               : st.kategori === "Sedang"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-emerald-100 text-emerald-700"
+                              ? "bg-blue-50 text-primary"
+                              : "bg-emerald-50 text-emerald-700"
                           }`}
                         >
                           {st.kategori}
                         </span>
                       </td>
-                      <td className="py-2 px-3 text-slate-600 max-w-md truncate" title={st.essay_text}>
+                      <td className="py-2 px-3 text-secondary max-w-md truncate" title={st.essay_text}>
                         {st.essay_text || "-"}
                       </td>
                     </tr>
@@ -753,7 +752,7 @@ export default function AnalyticsTab() {
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
