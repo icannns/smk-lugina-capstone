@@ -1,6 +1,6 @@
 # Panduan Modul Siswa
 
-Modul Siswa sudah tergabung ke `main` bersama modul Guru sebagai prototipe lokal. Gunakan [panduan frontend](README.md) untuk setup dan [autentikasi bersama](SHARED-AUTHENTICATION.md) untuk login/role. Data lintas peran menggunakan store yang sama; pergantian akun dalam satu tab dijelaskan pada [README utama](../README.md#cara-mencoba-integrasi-guru-dan-siswa).
+Modul Siswa sudah tergabung ke `main` bersama modul Guru sebagai prototipe lokal. Gunakan [panduan frontend](FRONTEND.md) untuk setup dan [autentikasi bersama](SHARED-AUTHENTICATION.md) untuk login/role. Data lintas peran menggunakan store yang sama; pergantian akun dalam satu tab dijelaskan pada [README utama](../README.md#cara-mencoba-integrasi-guru-dan-siswa).
 
 ## Referensi desain dan route
 
@@ -72,4 +72,4 @@ Enrollment/pengumpulan muncul pada Data Siswa, Monitoring, Karya, Laporan, dan D
 
 S04 menggunakan redirect dashboard otomatis berdasarkan kebutuhan autentikasi bersama, meskipun hotspot desain menuju Jelajah. Refleksi survei tetap opsional meski salah satu header contoh menyebut semua wajib. Query URL, pencarian, penanganan error, dialog Escape/fokus, dan susunan mobile merupakan adaptasi frontend. Kebijakan pencabutan sertifikat, kapasitas enrollment, provisioning role, dan penyimpanan upload permanen belum ditetapkan.
 
-Pengujian terdahulu mencakup draft/refresh, enrollment, validasi berkas/avatar, survei, revisi/assessment ulang, portofolio/dokumen, serta layout 320/390/768/1440 px. Ini bukan klaim pixel-perfect atau pengganti tes baru. Jalankan [runner regresi](tests/README.md) dan alur demo di README utama saat mengubah integrasi.
+Pengujian terdahulu mencakup draft/refresh, enrollment, validasi berkas/avatar, survei, revisi/assessment ulang, portofolio/dokumen, serta layout 320/390/768/1440 px. Ini bukan klaim pixel-perfect atau pengganti tes baru. Jalankan [runner regresi](../tests/README.md) dan alur demo di README utama saat mengubah integrasi.

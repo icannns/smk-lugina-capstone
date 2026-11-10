@@ -56,13 +56,13 @@ Untuk salinan repository baru:
 
 ```bash
 git clone https://github.com/icannns/smk-lugina-capstone.git
-cd smk-lugina-capstone/frontend
+cd smk-lugina-capstone
 npm ci
 npm run dev
 ```
 
-Jika repository sudah tersedia di laptop, masuk ke folder `frontend/`, lalu
-jalankan `npm ci` dan `npm run dev`.
+Jika repository sudah tersedia di laptop, jalankan `npm ci` dan `npm run dev`
+dari root repository. Tidak perlu masuk ke folder `frontend/`.
 
 Buka alamat yang tercetak di terminal, biasanya **http://localhost:3000**.
 Untuk memilih port lain secara eksplisit:
@@ -77,7 +77,7 @@ font Inter melalui `next/font`; hasil build menyajikan font secara lokal.
 
 ### 3. Menjalankan hasil build produksi secara lokal
 
-Dari folder `frontend/`:
+Dari root repository:
 
 ```bash
 npm run build
@@ -152,25 +152,31 @@ berjalan bersamaan memerlukan backend dan database.
 
 ```text
 smk-lugina-capstone/
-├── README.md
-└── frontend/
-    ├── src/
-    │   ├── app/              # Halaman dan layout Next.js
-    │   ├── components/       # Komponen autentikasi, Guru, dan Siswa
-    │   └── lib/              # Tipe, data contoh, store, dan selector bersama
-    ├── public/               # Aset lokal
-    ├── tests/                # Tes regresi
-    └── package.json
+├── README.md                 # Gambaran produk dan cara menjalankan
+├── AGENTS.md                 # Instruksi coding agent Next.js
+├── docs/                     # Panduan teknis, modul, dan handover
+├── src/
+│   ├── app/                  # Halaman dan layout Next.js
+│   ├── components/           # Komponen autentikasi, Guru, dan Siswa
+│   └── lib/                  # Tipe, data contoh, store, dan selector bersama
+├── public/                   # Aset lokal; URL aset tidak berubah
+├── tests/                    # Tes regresi dan petunjuk pengujian
+├── package.json
+├── package-lock.json
+├── next.config.ts
+├── tsconfig.json
+├── eslint.config.mjs
+└── .gitignore
 ```
 
 Route Guru berada di `/guru/*`, route Siswa di `/siswa/*`, dan halaman autentikasi
 digunakan bersama. Store domain utama berada di
-`frontend/src/lib/guru/event-draft-store.ts`; pengelolaan sesi demo berada di
-`frontend/src/lib/auth/`.
+`src/lib/guru/event-draft-store.ts`; pengelolaan sesi demo berada di
+`src/lib/auth/`.
 
 ## Menjalankan pemeriksaan
 
-Jalankan dari `frontend/` setelah dependensi terpasang:
+Jalankan dari root repository setelah dependensi terpasang:
 
 ```bash
 npm run lint
@@ -181,7 +187,7 @@ node --test tests/audit-regressions.test.mjs
 
 Build dijalankan sebelum pemeriksaan TypeScript mandiri agar tipe rute Next.js
 seperti `LayoutProps` sudah dihasilkan. Petunjuk tes browser, role, dan Instant
-Navigation tersedia di [panduan pengujian](frontend/tests/README.md).
+Navigation tersedia di [panduan pengujian](tests/README.md).
 
 ## Referensi desain dan panduan tim
 
@@ -189,12 +195,13 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
-- [Panduan frontend](frontend/README.md).
-- [Panduan integrasi dan handover tim COMMIT](frontend/INTEGRATION-HANDOVER.md).
-- [Dokumentasi autentikasi bersama](frontend/SHARED-AUTHENTICATION.md).
-- [Dokumentasi modul Guru](frontend/TEACHER-MODULE.md).
-- [Dokumentasi modul Siswa](frontend/STUDENT-MODULE.md).
-- [Petunjuk tes regresi](frontend/tests/README.md).
+- [Panduan frontend](docs/FRONTEND.md).
+- [Panduan integrasi dan handover tim COMMIT](docs/INTEGRATION-HANDOVER.md).
+- [Dokumentasi autentikasi bersama](docs/SHARED-AUTHENTICATION.md).
+- [Dokumentasi modul Guru](docs/TEACHER-MODULE.md).
+- [Dokumentasi modul Siswa](docs/STUDENT-MODULE.md).
+- [Petunjuk tes regresi](tests/README.md).
+- [Catatan migrasi aplikasi ke root](docs/ROOT-MIGRATION.md).
 
 Untuk integrasi berikutnya, gunakan kembali tipe dan store bersama. Pertahankan
 ID event, peserta, milestone, versi tugas, dan penilaian agar data antarperan tetap

@@ -1,6 +1,6 @@
 # Panduan Modul Guru
 
-Modul Guru sudah tergabung ke `main` bersama modul Siswa sebagai prototipe lokal. [Panduan frontend](README.md) menjelaskan setup; [handover integrasi](INTEGRATION-HANDOVER.md) menjadi acuan state dan kontrak lintas tim. Angka fixture adalah data fiktif, bukan statistik sekolah yang sedang berjalan.
+Modul Guru sudah tergabung ke `main` bersama modul Siswa sebagai prototipe lokal. [Panduan frontend](FRONTEND.md) menjelaskan setup; [handover integrasi](INTEGRATION-HANDOVER.md) menjadi acuan state dan kontrak lintas tim. Angka fixture adalah data fiktif, bukan statistik sekolah yang sedang berjalan.
 
 ## Referensi desain
 
@@ -101,4 +101,4 @@ Gunakan `ManagedEvent`, `EventMilestone`, serta tipe enrollment dan assessment p
 
 Snapshot Figma memiliki perbedaan nama, tanggal, jumlah kartu, dan nilai. Implementasi mempertahankan identitas yang konsisten dan menghitung ringkasan dari data bersama. Opsi filter, mekanisme pencarian, deadline editor, serta susunan mobile tidak selalu memiliki hotspot prototype tersendiri; perilakunya adalah adaptasi UI. Jangan menafsirkan adaptasi itu sebagai kebijakan enrollment, pembobotan nilai, atau pengesahan institusi.
 
-Pemeriksaan terdahulu mencakup desktop dan ukuran 320/390/768/1440 px, alur simpan/refresh, penilaian/revisi, serta ekspor. Jalankan [tes regresi](tests/README.md) pada perubahan baru. Backend, database, OAuth, administrasi Survei, otorisasi dokumen, dan sinkronisasi multi-user menunggu integrasi yang disepakati tim.
+Pemeriksaan terdahulu mencakup desktop dan ukuran 320/390/768/1440 px, alur simpan/refresh, penilaian/revisi, serta ekspor. Jalankan [tes regresi](../tests/README.md) pada perubahan baru. Backend, database, OAuth, administrasi Survei, otorisasi dokumen, dan sinkronisasi multi-user menunggu integrasi yang disepakati tim.

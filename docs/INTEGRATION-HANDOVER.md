@@ -1,10 +1,10 @@
 # Handover Integrasi Frontend dan Tim COMMIT
 
-Frontend Guru/Siswa sudah digabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Statusnya prototipe lokal dengan mock data, bukan layanan produksi. Gunakan [README utama](../README.md) untuk gambaran produk/akun demo dan [panduan frontend](README.md) untuk struktur pengembangan.
+Frontend Guru/Siswa sudah digabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Statusnya prototipe lokal dengan mock data, bukan layanan produksi. Gunakan [README utama](../README.md) untuk gambaran produk/akun demo dan [panduan frontend](FRONTEND.md) untuk struktur pengembangan.
 
 ## Memulai integrasi
 
-Aplikasi berada di `frontend/`. Gunakan Node.js 20.9 atau lebih baru; dari folder tersebut:
+Aplikasi Next.js berada langsung di root repository. Gunakan Node.js 20.9 atau lebih baru; jalankan dari root:
 
 ```powershell
 npm ci
@@ -71,7 +71,7 @@ Gunakan [langkah Guru–Siswa](../README.md#cara-mencoba-integrasi-guru-dan-sisw
 Catatan berikut adalah hasil verifikasi implementasi pada 9 November 2026, bukan klaim tes baru pada setiap pembacaan dokumen:
 
 - Temuan fungsional B01–B10 dan komposisi visual V01–V03 telah diperbaiki dan diuji ulang. Filter/status laporan, progres event, nilai versi terbaru, catatan/review, metadata survei, pagination PDF, panjang nama profil, label milestone, dan asosiasi error form menggunakan perilaku yang diperbaiki.
-- Pengujian terdahulu meliputi 9 tes logika, 8 kelompok regresi browser, auth kedua role, alur Guru/Siswa, 153 kombinasi layar/resolusi, PDF 40 peserta dua halaman dan XLSX 43 baris. Jalankan ulang [tes repository](tests/README.md) ketika implementasi berubah; bukti lokal lama bukan pengganti.
+- Pengujian terdahulu meliputi 9 tes logika, 8 kelompok regresi browser, auth kedua role, alur Guru/Siswa, 153 kombinasi layar/resolusi, PDF 40 peserta dua halaman dan XLSX 43 baris. Jalankan ulang [tes repository](../tests/README.md) ketika implementasi berubah; bukti lokal lama bukan pengganti.
 - Fix `6712c64` memindahkan `RoleGate` dari layout ke 15 page. Diagnostic Aisyah M1 direproduksi sebelum fix; setelahnya 51 pemeriksaan navigasi lolos masing-masing pada development dan produksi, termasuk Nabila M4, tanpa diagnostic Instant Navigation atau error runtime. Validasi framework tidak dimatikan. Peringatan development tentang ukuran ikon privasi masih terpisah dari fix tersebut.
 - B11 masih berupa advisory development pada rantai `eslint-config-next → typescript-eslint → @typescript-eslint/typescript-estree → minimatch`. Audit saat verifikasi mencatat 8 paket moderate dalam satu rantai dan nol temuan production-only. Itu bukan delapan eksploit terpisah atau jaminan keamanan. Ulangi audit pada lingkungan terbaru; jangan memakai force-fix/override major tanpa kajian.
 - V04 memuat selisih kecil jarak, wrapping, kontrol tanggal/select native, dan detail visual. Audit screen reader penuh, browser/perangkat lain, kesetaraan piksel, serta performa navigasi menyeluruh belum disertifikasi.
@@ -82,12 +82,12 @@ Catatan berikut adalah hasil verifikasi implementasi pada 9 November 2026, bukan
 | Dokumen | Fungsi |
 | --- | --- |
 | [README utama](../README.md) | Gambaran, setup awal, akun demo, dan alur demonstrasi |
-| [Panduan frontend](README.md) | Struktur pengembangan dan perintah kerja |
+| [Panduan frontend](FRONTEND.md) | Struktur pengembangan dan perintah kerja |
 | [Modul Guru](TEACHER-MODULE.md) | Referensi desain/route dan alur fitur Guru, termasuk event/wizard |
 | [Modul Siswa](STUDENT-MODULE.md) | Enrollment, submission/revisi, survei, portofolio, dan profil |
 | [Autentikasi](SHARED-AUTHENTICATION.md) | Sesi, role, guard, dan batas keamanan |
-| [Pengujian](tests/README.md) | Runner yang dapat dijalankan ulang |
-| [Instruksi agent](AGENTS.md) | Aturan Next.js yang aktif |
+| [Pengujian](../tests/README.md) | Runner yang dapat dijalankan ulang |
+| [Instruksi agent](../AGENTS.md) | Aturan Next.js yang aktif |
 
 Informasi fase awal yang masih berlaku telah dikonsolidasikan ke panduan modul. Riwayat lengkap tetap tersedia pada commit lama; klaim fase yang sudah bertentangan dengan source tidak menjadi petunjuk integrasi saat ini.
 

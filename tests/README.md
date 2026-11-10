@@ -1,6 +1,6 @@
 # Panduan Pengujian Regresi Frontend
 
-Jalankan perintah dari folder `frontend/` setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif dan tidak memerlukan backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
+Jalankan perintah dari root repository setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif dan tidak memerlukan backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
 
 ## Pemeriksaan dasar dan tes logika
 
@@ -38,7 +38,7 @@ node tests/audit-browser-regressions.mjs
 
 Runner benar-benar mengunduh PDF/XLSX. Pemeriksaan browser pada runner tidak sama dengan validasi seluruh format/render pada semua aplikasi pembaca; periksa file keluaran bila kebutuhan ekspor berubah. Tanpa `AUDIT_OUTPUT_DIR`, bukti masuk ke folder temporary OS `lugina-final-audit-round-2/regressions`.
 
-Fixture terkontrol ini berbeda dari alur UI membuat event, enrollment, submit, assessment, dan revisi pada [handover](../INTEGRATION-HANDOVER.md#alur-uji-integrasi). Laporan audit lokal tidak diperlukan untuk menjalankan runner.
+Fixture terkontrol ini berbeda dari alur UI membuat event, enrollment, submit, assessment, dan revisi pada [handover](../docs/INTEGRATION-HANDOVER.md#alur-uji-integrasi). Laporan audit lokal tidak diperlukan untuk menjalankan runner.
 
 ## Regresi role dan Instant Navigation
 
