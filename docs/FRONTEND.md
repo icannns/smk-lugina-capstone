@@ -2,11 +2,11 @@
 
 Frontend Guru dan Siswa sudah tergabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Aplikasi menggunakan Next.js 16 App Router, React, TypeScript, dan Tailwind CSS, dengan mock data untuk demonstrasi lokal.
 
-[README utama](../README.md) memuat ringkasan fitur, akun demo, dan langkah mencoba integrasi Guru–Siswa. Dokumen ini menjadi panduan kerja dari folder `frontend/`.
+[README utama](../README.md) memuat ringkasan fitur, akun demo, dan langkah mencoba integrasi Guru–Siswa. Dokumen ini menjadi panduan kerja dari root repository. Semua path source dalam panduan modul dihitung dari root repository, bukan dari `docs/`.
 
 ## Instalasi dan menjalankan aplikasi
 
-Gunakan Node.js **20.9 atau lebih baru** dan npm. Dari folder `frontend/`:
+Gunakan Node.js **20.9 atau lebih baru** dan npm. Dari root repository:
 
 ```powershell
 npm ci
@@ -63,7 +63,7 @@ node node_modules/typescript/bin/tsc --noEmit --incremental false
 node --test tests/audit-regressions.test.mjs
 ```
 
-Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru, jalankan build sebelum TypeScript mandiri. Cara menyediakan Playwright dan menjalankan runner browser ada di [panduan pengujian](tests/README.md). Hasil pengujian lama bukan pengganti pemeriksaan pada perubahan baru.
+Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru, jalankan build sebelum TypeScript mandiri. Cara menyediakan Playwright dan menjalankan runner browser ada di [panduan pengujian](../tests/README.md). Hasil pengujian lama bukan pengganti pemeriksaan pada perubahan baru.
 
 ## Panduan lanjutan
 
@@ -71,4 +71,4 @@ Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru,
 - [Modul Siswa](STUDENT-MODULE.md): enrollment, tugas/revisi, survei, portofolio, dan profil.
 - [Autentikasi bersama](SHARED-AUTHENTICATION.md): role, sesi mock, dan batas keamanan.
 - [Handover integrasi](INTEGRATION-HANDOVER.md): kontrak bersama, batas eksternal, serta migrasi tim COMMIT.
-- [Instruksi coding agent](AGENTS.md): aturan Next.js yang aktif.
+- [Instruksi coding agent](../AGENTS.md): aturan Next.js yang aktif.

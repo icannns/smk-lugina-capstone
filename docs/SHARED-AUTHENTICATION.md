@@ -1,6 +1,6 @@
 # Autentikasi Bersama Guru dan Siswa
 
-Frontend di `main` menggunakan satu alur autentikasi mock untuk kedua role. Petunjuk instalasi tersedia di [panduan frontend](README.md), sedangkan kredensial fiktif yang menjadi acuan ada pada [akun demo di README utama](../README.md#akun-demo).
+Frontend di `main` menggunakan satu alur autentikasi mock untuk kedua role. Petunjuk instalasi tersedia di [panduan frontend](FRONTEND.md), sedangkan kredensial fiktif yang menjadi acuan ada pada [akun demo di README utama](../README.md#akun-demo).
 
 ## Referensi desain dan route
 
@@ -57,4 +57,4 @@ Komponen `AuthButton` lama tetap memiliki konsumen pada modul Guru; keberadaanny
 
 ## Verifikasi
 
-Gunakan [panduan pengujian](tests/README.md) untuk tes navigasi role di development dan produksi. Pemeriksaan perlu mencakup register, invalid credentials, S04, login kedua role, refresh, logout, akses langsung, dan penolakan role yang salah. Catatan hasil verifikasi sebelumnya serta batas QA ada pada [handover](INTEGRATION-HANDOVER.md).
+Gunakan [panduan pengujian](../tests/README.md) untuk tes navigasi role di development dan produksi. Pemeriksaan perlu mencakup register, invalid credentials, S04, login kedua role, refresh, logout, akses langsung, dan penolakan role yang salah. Catatan hasil verifikasi sebelumnya serta batas QA ada pada [handover](INTEGRATION-HANDOVER.md).
