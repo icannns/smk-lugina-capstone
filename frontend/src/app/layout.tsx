@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Lugina Survei - Adopsi Teknologi & Technostress",
-  description: "Platform analitik survei dan visualisasi Word Cloud Technostress siswa",
+  title: {
+    default: "Lugina PjBL — Prototipe Pembelajaran",
+    template: "%s | Lugina PjBL",
+  },
+  description:
+    "Prototipe pembelajaran Guru dan Siswa SMK Lugina Rancaekek. Gunakan data demo saja.",
 };
 
 export default function RootLayout({
@@ -12,10 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="h-full antialiased">
-      <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-800">
-        {children}
-      </body>
+    <html lang="id" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

@@ -1,0 +1,145 @@
+import type { ManagedEvent } from "./event-types";
+import type { AssessmentChanges, GuruRubric } from "./teacher-types";
+import {
+  assessmentFor,
+  eventLearning,
+  rubricScore,
+  submissionStatus,
+  certificateThreshold,
+  workStatus,
+  workLabels,
+  assessmentStatus,
+  assessmentLabels,
+  milestoneLabel,
+} from "./learning-selectors";
+import { formatEventDate } from "./event-selectors";
+export type ReportFilters = {
+  event: string;
+  survey: string;
+  student: string;
+  work: string;
+  assessment: string;
+  milestone: string;
+};
+export const emptyReportFilters: ReportFilters = {
+  event: "",
+  survey: "all",
+  student: "all",
+  work: "all",
+  assessment: "all",
+  milestone: "all",
+};
+export function reportRows(
+  event: ManagedEvent,
+  changes: AssessmentChanges,
+  rubric: GuruRubric | undefined,
+  filters: ReportFilters,
+) {
+  const data = eventLearning(event, changes, rubric),
+    milestones = event.milestones.filter(
+      (m) => filters.milestone === "all" || m.id === filters.milestone,
+    );
+  const rows = data.rows
+    .map((r) => {
+      const submissions = milestones.map(
+          (m) =>
+            r.submissions[event.milestones.findIndex((x) => x.id === m.id)],
+        ),
+        submitted = submissions.filter(Boolean).length,
+        completed = submissions.filter((s) => s?.surveyComplete).length,
+        scored = submissions.map((s) =>
+          s && submissionStatus(s, changes) === "reviewed"
+            ? rubricScore(assessmentFor(s, changes), rubric)
+            : null,
+        ),
+        reviewed = scored.filter(Boolean).length,
+        total = milestones.length;
+      return {
+        ...r,
+        certificateEligible:
+          r.score !== null &&
+          r.completed === r.total &&
+          r.score >= certificateThreshold(event),
+        submissions,
+        submitted,
+        completed,
+        reviewed,
+        total,
+        scored,
+        score:
+          total > 0 && reviewed === total
+            ? Math.round(
+                scored.reduce((s, v) => s + (v?.percent ?? 0), 0) / total,
+              )
+            : null,
+      };
+    })
+    .filter(
+      (r) =>
+        (filters.student === "all" || r.student.id === filters.student) &&
+        (filters.survey === "all" ||
+          (filters.survey === "complete" &&
+            r.submissions.length > 0 &&
+            r.submissions.every((s) => s?.surveyComplete)) ||
+          (filters.survey === "missing" &&
+            r.submissions.some((s) => !s?.surveyComplete))) &&
+        (filters.work === "all" || filters.work === workStatus(r)) &&
+        (filters.assessment === "all" ||
+          filters.assessment === assessmentStatus(r)),
+    );
+  const finished = rows.filter(
+      (r) => r.total > 0 && r.completed === r.total,
+    ).length,
+    scores = rows.flatMap((r) => (r.score === null ? [] : [r.score])),
+    total = rows.reduce((s, r) => s + r.total, 0),
+    complete = rows.reduce((s, r) => s + r.completed, 0);
+  return {
+    rows,
+    milestones,
+    finished,
+    scored: scores.length,
+    percent: total ? Math.round((complete / total) * 100) : 0,
+    average: scores.length
+      ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+      : null,
+  };
+}
+export function reportExport(
+  event: ManagedEvent,
+  data: ReturnType<typeof reportRows>,
+) {
+  return [
+    ["PROTOTIPE — DATA FIKTIF"],
+    [event.title],
+    [
+      "Nama",
+      "Progres",
+      "Pengerjaan",
+      ...data.milestones.map(
+        (m) => `${milestoneLabel(event, m.id)} (tugas · survei · nilai)`,
+      ),
+      "Skor rubrik",
+      "Nilai konversi",
+      "Status nilai",
+      "Nilai akhir",
+      "Sertifikat contoh",
+    ],
+    ...data.rows.map((r) => [
+      r.student.name,
+      `${r.completed} dari ${r.total}`,
+      workLabels[workStatus(r)],
+      ...r.submissions.map((s, i) =>
+        s
+          ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${s.surveyComplete ? "Terisi" : "Belum diisi"} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
+          : "— · — · Belum dinilai",
+      ),
+      r.scored.filter(Boolean).length
+        ? r.scored.reduce((sum, s) => sum + (s?.total ?? 0), 0)
+        : "",
+      r.scored.map((s) => s?.percent ?? "").join(", "),
+      assessmentLabels[assessmentStatus(r)],
+      r.score ?? "",
+      r.certificateEligible ? "Contoh tersedia" : "Belum memenuhi",
+    ]),
+  ];
+}
