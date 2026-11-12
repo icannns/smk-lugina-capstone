@@ -39,14 +39,18 @@ enum ReferenceSource {
 }
 
 model User {
-  id        String   @id @default(cuid()) @db.VarChar(191)
-  name      String   @db.VarChar(120)
-  email     String?  @unique @db.VarChar(320)
-  username  String?  @unique @db.VarChar(80)
-  role      Role
-  isDemo    Boolean  @default(false)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  id                String         @id @default(cuid()) @db.VarChar(191)
+  name              String         @db.VarChar(120)
+  email             String?        @unique @db.VarChar(320)
+  username          String?        @unique @db.VarChar(80)
+  role              Role
+  isDemo            Boolean        @default(false)
+  passwordHash      String?
+  passwordChangedAt DateTime?      @db.Timestamptz(3)
+  disabledAt        DateTime?      @db.Timestamptz(3)
+  loginSessions     LoginSession[]
+  createdAt         DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(3)
 
   teacher TeacherProfile?
   student StudentProfile?
@@ -373,4 +377,26 @@ model ExternalAssessmentReference {
 model DevelopmentSeed {
   id        String   @id @db.VarChar(100)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+// JWT sessions retain a database revocation/absolute-expiry record; no JWT stored.
+model LoginSession {
+  id        String    @id @default(cuid()) @db.VarChar(191)
+  userId    String    @db.VarChar(191)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+// Only HMAC bucket keys are stored, never raw email addresses/IPs.
+model AuthRateLimit {
+  key          String   @id @db.VarChar(64)
+  attempts     Int
+  windowEndsAt DateTime @db.Timestamptz(3)
+
+  @@index([windowEndsAt])
 }

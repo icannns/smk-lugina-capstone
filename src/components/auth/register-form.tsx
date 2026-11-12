@@ -5,21 +5,21 @@ import {
   passwordRules,
   registrationPasswordError,
 } from "@/lib/auth/validation";
-import { registerStudent } from "@/lib/auth/session";
+import { signIn } from "next-auth/react";
 import {
   SharedAuthInput,
   SharedAuthButton,
   DemoNotice,
   GoogleMark,
 } from "./shared-ui";
-import { useMockNavigation } from "./use-mock-navigation";
+import { useAuthNavigation } from "./use-auth-navigation";
 export function RegisterForm() {
-  const [name, setName] = useState("Dimas Saputra"),
-    [email, setEmail] = useState("dimas.baru@example.com"),
+  const [name, setName] = useState(""),
+    [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [confirm, setConfirm] = useState(""),
     [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const { busy, run, enter, google } = useMockNavigation(),
+  const { busy, run, enter, google } = useAuthNavigation(),
     rules = passwordRules(password);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,22 +39,24 @@ export function RegisterForm() {
       return;
     }
     try {
-      const result = await run(() =>
-        registerStudent({ name, email, password }),
-      );
-      if (!result) return;
-      if (result.error) {
-        setErrors({ email: result.error });
-        return;
-      }
-      if (result.account)
-        enter(result.account, true, () => {
-          setPassword("");
-          setConfirm("");
+      await run(async () => {
+        const response = await fetch("/api/auth/register", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password, confirm }),
         });
+        if (!response.ok) {
+          const data = await response.json();
+          setErrors({ save: data.error?.message ?? "Pendaftaran tidak dapat diselesaikan." });
+          return;
+        }
+        const result = await signIn("credentials", { identifier: email, password, remember: "true", redirect: false });
+        setPassword(""); setConfirm("");
+        if (result?.ok && !result.error) enter();
+        else setErrors({ save: "Akun berhasil dibuat. Silakan masuk melalui halaman Login." });
+      });
     } catch {
       setErrors({
-        save: "Pendaftaran lokal tidak dapat diselesaikan. Coba lagi.",
+        save: "Layanan pendaftaran tidak dapat dihubungi. Coba lagi.",
       });
     }
   }
@@ -69,7 +71,7 @@ export function RegisterForm() {
       </p>
       <form
         noValidate
-        autoComplete="off"
+        autoComplete="on"
         onSubmit={submit}
         aria-busy={busy}
         className="mt-[22px]"
@@ -77,12 +79,13 @@ export function RegisterForm() {
         <SharedAuthInput
           id="register-name"
           label="Nama Lengkap"
+          autoComplete="name"
           icon="name"
           required
           value={name}
           valid={Boolean(name.trim()) && !nameError(name)}
           error={errors.name}
-          placeholder="Nama lengkap contoh"
+          placeholder="Nama lengkap"
           maxLength={100}
           disabled={busy}
           onChange={(e) => {
@@ -94,6 +97,7 @@ export function RegisterForm() {
           <SharedAuthInput
             id="register-email"
             label="Email"
+            autoComplete="email"
             icon="email"
             type="email"
             required
@@ -113,12 +117,13 @@ export function RegisterForm() {
           <SharedAuthInput
             id="register-password"
             label="Kata Sandi"
+            autoComplete="new-password"
             icon="password"
             password
             required
             value={password}
             error={errors.password}
-            placeholder="Kata sandi demo"
+            placeholder="Kata sandi"
             maxLength={128}
             disabled={busy}
             onChange={(e) => {
@@ -151,12 +156,13 @@ export function RegisterForm() {
           <SharedAuthInput
             id="register-confirm"
             label="Konfirmasi Kata Sandi"
+            autoComplete="new-password"
             icon="password"
             password
             required
             value={confirm}
             error={errors.confirm}
-            placeholder="Ulangi kata sandi demo"
+            placeholder="Ulangi kata sandi"
             maxLength={128}
             disabled={busy}
             onChange={(e) => {
@@ -190,8 +196,8 @@ export function RegisterForm() {
       </form>
       <DemoNotice />
       <p className="mt-2 text-xs text-secondary">
-        Pendaftaran publik selalu membuat akun Siswa contoh. Akun Guru
-        disediakan khusus dalam daftar demo.
+        Pendaftaran publik hanya membuat akun Siswa. Akun Guru disediakan
+        melalui administrator.
       </p>
     </section>
   );

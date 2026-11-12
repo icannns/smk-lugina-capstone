@@ -23,14 +23,15 @@ function isIntegrityViolation(error: unknown): boolean {
 before(async () => { await seedDevelopmentData(database); });
 after(async () => { await database.$disconnect(); });
 
-test("seed is idempotent and creates only demonstration users, without password/auth tables", async () => {
+test("seed is idempotent and preserves existing demo identities and credential metadata", async () => {
   const initial = await database.user.findMany({ orderBy: { id: "asc" } });
   const a = await seedDevelopmentData(database), b = await seedDevelopmentData(database);
   assert.deepEqual(a, b);
   assert.deepEqual(await database.user.findMany({ orderBy: { id: "asc" } }), initial);
   assert(initial.every((u) => u.isDemo && u.email?.endsWith("@example.com")));
   const columns = await database.$queryRaw<{ column_name: string }[]>`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='User'`;
-  assert(!columns.some((c) => /password|token|salt/i.test(c.column_name)));
+  assert(columns.some((c) => c.column_name === "passwordHash"));
+  assert(!columns.some((c) => /token|salt/i.test(c.column_name)));
 });
 
 test("milestones are event-scoped; submission versions, grades and reviews retain history", async () => {

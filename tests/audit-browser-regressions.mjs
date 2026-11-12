@@ -127,7 +127,7 @@ try {
       .fill(role === "teacher" ? "rina.guru" : "dimas");
     await page
       .locator("#login-password")
-      .fill(role === "teacher" ? "DemoGuru123!" : "DemoSiswa123!");
+      .fill(role === "teacher" ? process.env.TEST_TEACHER_PASSWORD : process.env.TEST_DIMAS_PASSWORD);
     await button("Masuk").click();
     await page.waitForURL(
       role === "teacher" ? "**/guru/dashboard" : "**/siswa/dashboard",

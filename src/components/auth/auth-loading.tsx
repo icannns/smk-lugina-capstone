@@ -1,13 +1,9 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useDemoAuth, completeDemoSession } from "@/lib/auth/session";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAppAuth } from "@/lib/auth/session";
 import { accountHome } from "@/lib/auth/accounts";
-import {
-  ensureStudentProfile,
-  saveStudentProfile,
-} from "@/lib/siswa/student-actions";
-import { readEventStore } from "@/lib/guru/event-draft-store";
+import { ensureStudentProfile } from "@/lib/siswa/student-actions";
 export function SharedLoadingScreen() {
   return (
     <main
@@ -38,51 +34,14 @@ export function SharedLoadingScreen() {
   );
 }
 export function AuthenticationLoading() {
-  const auth = useDemoAuth(),
-    pathname = usePathname(),
-    router = useRouter(),
-    navigating = useRef(false);
+  const { account, ready } = useAppAuth(), router = useRouter();
   useEffect(() => {
-    if (pathname !== "/loading" || !auth.ready || navigating.current) return;
-    if (!auth.pending) {
-      router.replace(auth.account ? accountHome(auth.account) : "/login");
-      return;
-    }
-    let second = 0;
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => {
-        if (navigating.current) return;
-        navigating.current = true;
-        const account = completeDemoSession();
-        if (account?.role === "student") {
-          ensureStudentProfile(account);
-          if (account.provider === "google") {
-            const profile =
-              readEventStore().studentUI.profiles[account.studentId!];
-            if (profile)
-              saveStudentProfile({
-                ...profile,
-                name: auth.googleProfile.name,
-                phone: auth.googleProfile.phone,
-              });
-          }
-        }
-        router.replace(account ? accountHome(account) : "/login");
-      });
+    if (!ready) return;
+    const timer = requestAnimationFrame(() => {
+      if (account?.role === "student") ensureStudentProfile(account);
+      router.replace(account ? accountHome(account) : "/login");
     });
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-    };
-  }, [
-    auth.ready,
-    pathname,
-    auth.pending?.id,
-    auth.account?.id,
-    router,
-    auth.pending,
-    auth.account,
-    auth.googleProfile,
-  ]);
+    return () => cancelAnimationFrame(timer);
+  }, [ready, account, router]);
   return <SharedLoadingScreen />;
 }

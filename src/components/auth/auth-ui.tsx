@@ -7,7 +7,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
 } from "react";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/auth-demo";
+import { DemoNotice } from "./shared-ui";
 
 export function AuthHeading({
   title,
@@ -39,27 +39,7 @@ export function PrototypeNotice({
 }: {
   credentials?: boolean;
 }) {
-  return (
-    <aside
-      aria-label="Informasi prototipe"
-      className="auth-prototype mt-6 rounded-control border border-blue-100 bg-primary-soft px-3 py-2.5 text-xs leading-[18px] text-secondary"
-    >
-      <p className="font-semibold text-primary">
-        Prototipe · Simulasi autentikasi
-      </p>
-      <p>
-        Login dan Google hanya simulasi. Gunakan data fiktif; jangan masukkan
-        kredensial asli. Data tidak dikirim atau disimpan.
-      </p>
-      {credentials && (
-        <p className="mt-1 break-words">
-          Demo: <span className="font-medium">{DEMO_EMAIL}</span>
-          <br />
-          Kata sandi: <span className="font-medium">{DEMO_PASSWORD}</span>
-        </p>
-      )}
-    </aside>
-  );
+  return <DemoNotice accounts={credentials} />;
 }
 
 export function AuthButton({

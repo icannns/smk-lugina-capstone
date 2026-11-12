@@ -74,7 +74,7 @@ async function login(role) {
   await page.locator("#login-email").fill(role === "teacher" ? "rina.guru" : "dimas");
   await page
     .locator("#login-password")
-    .fill(role === "teacher" ? "DemoGuru123!" : "DemoSiswa123!");
+    .fill(role === "teacher" ? process.env.TEST_TEACHER_PASSWORD : process.env.TEST_DIMAS_PASSWORD);
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await page.waitForURL("**/" + (role === "teacher" ? "guru" : "siswa") + "/dashboard");
   await expect(page.locator("main:visible h1")).toHaveText(
@@ -133,7 +133,7 @@ try {
 
     const accountMenu = role === "teacher" ? "Menu akun Rina Marlina, S.Kom." : "Menu akun Dimas Saputra";
     await page.locator(`summary[aria-label='${accountMenu}']:visible`).click();
-    await page.getByRole("link", { name: "Keluar dari demo", exact: true }).click();
+    await page.getByRole("button", { name: "Keluar", exact: true }).click();
     await page.waitForURL("**/login");
     await arrive(home, "/login");
     result.checks.push({ check: "logout invalidates access", role });

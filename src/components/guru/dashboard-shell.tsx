@@ -10,7 +10,7 @@ import { DashboardIcon, type GuruIconAsset } from "./dashboard-ui";
 import { guruRoutes } from "@/lib/guru/guru-routes";
 import { useTeacherProfile } from "@/lib/guru/event-draft-store";
 import Image from "next/image";
-import { logoutDemo } from "@/lib/auth/session";
+import { logout } from "@/lib/auth/session";
 export type GuruPage =
   | "dashboard"
   | "students"
@@ -312,16 +312,16 @@ export function DashboardShell({
               >
                 {empty ? "Tampilkan data contoh" : "Lihat empty state"}
               </Link>
-              <Link
-                href="/login"
+              <button
+                type="button"
                 onClick={() => {
-                  logoutDemo();
+                  void logout();
                   closeAccount();
                 }}
                 className="rounded-lg px-3 py-2 text-sm text-danger hover:bg-red-50"
               >
-                Keluar dari demo
-              </Link>
+                Keluar
+              </button>
             </div>
           </details>
         </header>

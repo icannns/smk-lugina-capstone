@@ -1,7 +1,7 @@
 "use client";
-import { currentDemoAccount } from "../auth/session";
+import { currentAccount } from "../auth/session";
 import { STUDENT_NAME_MAX_LENGTH } from "./student-types";
-import type { DemoAccount } from "../auth/accounts";
+import type { AppAccount } from "../auth/accounts";
 import {
   readEventStore,
   updateStudentDomain,
@@ -32,7 +32,7 @@ export function nowWib() {
     .slice(0, 16);
 }
 function context(eventId: string) {
-  const account = currentDemoAccount(),
+  const account = currentAccount(),
     state = readEventStore(),
     event = listedEvents(state).find(
       (e) => e.id === eventId && e.status !== "draft",
@@ -40,7 +40,7 @@ function context(eventId: string) {
   if (account?.role !== "student" || !account.studentId || !event) return null;
   return { account, state, event, studentId: account.studentId };
 }
-export function ensureStudentProfile(account: DemoAccount) {
+export function ensureStudentProfile(account: AppAccount) {
   if (account.role !== "student" || !account.studentId) return;
   const state = readEventStore(),
     studentId = account.studentId;
@@ -289,7 +289,7 @@ export function submitStudentSurvey(
   return "";
 }
 export function saveStudentProfile(profile: StudentProfile) {
-  const account = currentDemoAccount();
+  const account = currentAccount();
   if (account?.role !== "student" || !account.studentId) return false;
   if (
     !profile.name.trim() ||

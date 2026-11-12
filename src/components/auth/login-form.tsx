@@ -1,21 +1,21 @@
 "use client";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { verifyDemoCredentials } from "@/lib/auth/session";
+import { signIn } from "next-auth/react";
 import {
   SharedAuthInput,
   SharedAuthButton,
   DemoNotice,
   GoogleMark,
 } from "./shared-ui";
-import { useMockNavigation } from "./use-mock-navigation";
+import { useAuthNavigation } from "./use-auth-navigation";
 export function LoginForm() {
-  const [identifier, setIdentifier] = useState("siswa@example.com"),
+  const [identifier, setIdentifier] = useState(""),
     [password, setPassword] = useState(""),
     [remember, setRemember] = useState(true),
     [errors, setErrors] = useState<Record<string, string>>({}),
     [message, setMessage] = useState("");
-  const { busy, run, enter, google } = useMockNavigation();
+  const { busy, run, enter, google } = useAuthNavigation();
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage("");
@@ -32,18 +32,18 @@ export function LoginForm() {
     }
     try {
       const account = await run(() =>
-        verifyDemoCredentials(identifier, password),
+        signIn("credentials", { identifier, password, remember: String(remember), redirect: false }),
       );
-      if (account) enter(account, remember, () => setPassword(""));
-      else if (account === null) {
-        setErrors({
-          credentials: "Email/username atau kata sandi demo tidak cocok.",
-        });
+      if (account?.ok && !account.error) { setPassword(""); enter(); }
+      else if (account) {
+        setErrors({ credentials: account.code === "rate_limited"
+          ? "Terlalu banyak percobaan. Coba lagi setelah 15 menit."
+          : "Email/username atau kata sandi tidak cocok, atau layanan belum tersedia." });
         setPassword("");
       }
     } catch {
       setErrors({
-        credentials: "Verifikasi lokal tidak dapat diselesaikan. Coba lagi.",
+        credentials: "Layanan masuk tidak dapat dihubungi. Coba lagi.",
       });
     }
   }
@@ -58,7 +58,7 @@ export function LoginForm() {
       </p>
       <form
         noValidate
-        autoComplete="off"
+        autoComplete="on"
         onSubmit={submit}
         aria-busy={busy}
         className="mt-[18px]"
@@ -67,10 +67,11 @@ export function LoginForm() {
           id="login-email"
           compact
           label="Email atau username"
+          autoComplete="username"
           icon="email"
           value={identifier}
           disabled={busy}
-          maxLength={120}
+          maxLength={320}
           required
           error={errors.identifier}
           onChange={(e) => {
@@ -83,6 +84,7 @@ export function LoginForm() {
             id="login-password"
             compact
             label="Kata Sandi"
+            autoComplete="current-password"
             icon="password"
             password
             value={password}
@@ -96,7 +98,7 @@ export function LoginForm() {
                 className="text-[13px] font-medium text-primary"
                 onClick={() =>
                   setMessage(
-                    "Pemulihan hanya simulasi; tidak ada email dikirim. Gunakan kredensial akun demo yang tercantum di bawah.",
+                    "Pemulihan kata sandi belum tersedia. Hubungi administrator; tidak ada email pemulihan yang dikirim.",
                   )
                 }
               >
@@ -119,7 +121,7 @@ export function LoginForm() {
           <span>
             Ingat saya
             <span className="block text-xs text-[#6b7280]">
-              Simpan sesi login pada tab ini.
+              Sesi hingga 8 jam; tanpa pilihan ini hingga 1 jam.
             </span>
           </span>
         </label>

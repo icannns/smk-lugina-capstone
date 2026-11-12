@@ -1,4 +1,4 @@
-import type { DemoAccount } from "../auth/accounts";
+import type { AppAccount } from "../auth/accounts";
 import type { ManagedEvent } from "../guru/event-types";
 import type { AssessmentChanges } from "../guru/teacher-types";
 import {
@@ -59,7 +59,7 @@ export function milestoneUnlocked(
   );
 }
 export function studentProfileFor(
-  account: DemoAccount,
+  account: AppAccount,
   learning: AssessmentChanges,
   ui: StudentUIState,
 ): StudentProfile {

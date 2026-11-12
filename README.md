@@ -8,10 +8,10 @@ Modul Guru dan Siswa sudah terhubung melalui data contoh bersama. Guru dapat
 menerbitkan event, Siswa mengikuti dan mengumpulkan tugas, lalu Guru memberikan
 nilai, feedback, atau permintaan revisi.
 
-> **Status saat ini: prototipe frontend dengan data fiktif untuk demonstrasi
-> lokal.** UI belum terhubung ke backend/database, autentikasi sungguhan, atau Google
-> OAuth. Gunakan akun dan data contoh; jangan masukkan kredensial atau data pribadi
-> asli.
+> **Status saat ini: autentikasi server dengan data pembelajaran prototipe.**
+> Login/Register memakai Auth.js dan PostgreSQL; data event, tugas, asesmen,
+> laporan dan portofolio masih mock. Google OAuth belum tersedia.
+> Setup akun pengujian ada pada [panduan autentikasi](docs/AUTHENTICATION-RBAC.md).
 
 Implementasi frontend Guru dan Siswa sudah masuk ke branch `main` melalui
 [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Panduan teknis
@@ -21,7 +21,7 @@ berbahasa Indonesia tersedia pada bagian [referensi dan panduan tim](#referensi-
 
 | Bagian | Fitur |
 | --- | --- |
-| Autentikasi bersama | Login, register akun Siswa contoh, simulasi Google, loading, redirect berdasarkan peran, dan logout |
+| Autentikasi bersama | Login/PostgreSQL, register Siswa, pratinjau Google non-auth, loading, redirect role database, dan logout |
 | Guru | Dashboard, pengelolaan data Siswa, daftar/detail event dan draf, wizard pembuatan event, pengelolaan rubrik, monitoring progres, penilaian dan revisi, karya Siswa, laporan PDF/XLSX, serta profil |
 | Siswa | Pencarian dan pendaftaran event, dashboard, ruang kerja dan milestone, pengumpulan tugas dan revisi, survei milestone yang sudah dikonfigurasi, portofolio, dokumen sertifikat contoh, serta profil |
 
@@ -40,7 +40,8 @@ yang sudah dikonfigurasi tetap dapat digunakan.
 - Next.js 16 dengan App Router.
 - React dan TypeScript.
 - Tailwind CSS dan komponen yang digunakan kembali.
-- Data contoh bersama dengan penyimpanan `sessionStorage` di browser.
+- Auth.js Credentials/JWT, Argon2id, PostgreSQL dan Prisma.
+- Data pembelajaran contoh bersama dengan `sessionStorage` di browser.
 - Aset desain lokal dari Figma.
 
 ## Cara menjalankan di laptop
@@ -71,8 +72,9 @@ Untuk memilih port lain secara eksplisit:
 npm run dev -- --port 3001
 ```
 
-Frontend saat ini dapat didemokan tanpa konfigurasi database, server backend,
-atau kredensial `.env`. Build pertama mungkin memerlukan internet untuk mengunduh
+Login nyata memerlukan database lokal, migrasi, AUTH_SECRET dan provisioning akun
+[pada panduan Auth](docs/AUTHENTICATION-RBAC.md). Build tetap dapat berjalan tanpa
+koneksi database. Build pertama mungkin memerlukan internet untuk mengunduh
 font Inter melalui `next/font`; hasil build menyajikan font secara lokal.
 
 ### 3. Menjalankan hasil build produksi secara lokal
@@ -88,27 +90,28 @@ Hentikan server produksi yang sedang berjalan sebelum melakukan build ulang,
 lalu jalankan kembali `npm run start` agar browser memakai berkas CSS dan
 JavaScript dari build yang sama. Mode ini tetap menggunakan data contoh.
 
-## Database development (opsional)
+## Database dan akun pengujian
 
-Fondasi PostgreSQL/Prisma, migrasi dan seed fiktif tersedia. UI tetap memakai
-mock sampai API/Auth diimplementasikan. Ikuti [panduan database](docs/DATABASE-FOUNDATION.md)
+Fondasi PostgreSQL/Prisma, migrasi dan seed fiktif tersedia. Autentikasi memakai
+database; data pembelajaran tetap mock sampai adapter REST diimplementasikan. Ikuti [panduan database](docs/DATABASE-FOUNDATION.md)
 untuk konfigurasi lokal, batas seed dan koordinasi FOMO/COMMIT. `npm ci` hanya
 menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 ## Akun demo
 
-Semua kredensial berikut merupakan **akun fiktif yang memang disediakan untuk
-pengujian**, bukan akun sekolah atau rahasia produksi.
+Identitas berikut fiktif untuk pengujian. Jalankan `npm run auth:provision`
+dengan password environment privat sesuai [panduan](docs/AUTHENTICATION-RBAC.md).
+Tidak ada password default di repository.
 
 | Peran | Username | Email | Kata sandi |
 | --- | --- | --- | --- |
-| Guru | `rina.guru` | `guru@example.com` | `DemoGuru123!` |
-| Siswa — Dimas | `dimas` | `siswa@example.com` | `DemoSiswa123!` |
-| Siswa — Aisyah | `aisyah` | `aisyah@example.com` | `DemoSiswa123!` |
+| Guru | `rina.guru` | `guru@example.com` | Dari administrator pengujian |
+| Siswa — Dimas | `dimas` | `siswa@example.com` | Dari administrator pengujian |
+| Siswa — Aisyah | `aisyah` | `aisyah@example.com` | Dari administrator pengujian |
 
 Gunakan username **atau** email pada halaman `/login`. Akun Guru diarahkan ke
 `/guru/dashboard`, sedangkan akun Siswa ke `/siswa/dashboard`. Pendaftaran publik
-hanya membuat akun Siswa contoh; tombol Google juga merupakan simulasi.
+hanya membuat akun Siswa di database; Google hanya pratinjau tanpa login.
 
 ## Cara mencoba integrasi Guru dan Siswa
 
@@ -138,8 +141,8 @@ berjalan bersamaan memerlukan backend dan database.
 
 ## Batasan prototipe
 
-- Pemeriksaan login dan peran dilakukan di browser untuk demonstrasi. Keamanan
-  penggunaan nyata memerlukan autentikasi dan otorisasi di server.
+- Login dan role diperiksa server. Email verification, reset password,
+  administrasi akun dan hardening deployment belum tersedia.
 - Event baru belum otomatis membuat instrumen survei. Pengumpulan tugas,
   penilaian, feedback, dan laporan dapat dicoba, tetapi penyelesaian tahap yang
   memerlukan survei menunggu integrasi modul Survei.
@@ -150,9 +153,8 @@ berjalan bersamaan memerlukan backend dan database.
 - Ekspor laporan PDF/XLSX benar-benar dibuat di browser. Dokumen sertifikat
   merupakan contoh penyelesaian belajar, tanpa penerbitan atau verifikasi resmi
   institusi.
-- Fondasi PostgreSQL/Prisma tersedia untuk development, tetapi belum terhubung
-  ke UI. REST API, Auth.js/RBAC, Google OAuth sungguhan, administrasi Survei dan
-  integrasi modul tim lain belum diimplementasikan.
+- Auth.js/RBAC dan endpoint read terbatas tersedia. REST CRUD data pembelajaran,
+  Google OAuth, administrasi Survei dan integrasi modul tim lain belum tersedia.
 - Catatan dependency development dan perbedaan visual kecil masih didokumentasikan
   dalam panduan handover. Prototipe ini belum dinyatakan siap untuk produksi.
 
@@ -179,7 +181,7 @@ smk-lugina-capstone/
 
 Route Guru berada di `/guru/*`, route Siswa di `/siswa/*`, dan halaman autentikasi
 digunakan bersama. Store domain utama berada di
-`src/lib/guru/event-draft-store.ts`; pengelolaan sesi demo berada di
+`src/lib/guru/event-draft-store.ts`; adaptasi sesi Auth.js berada di
 `src/lib/auth/`.
 
 ## Menjalankan pemeriksaan
@@ -203,6 +205,7 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
+- [Autentikasi PostgreSQL dan RBAC](docs/AUTHENTICATION-RBAC.md).
 - [Fondasi PostgreSQL dan Prisma](docs/DATABASE-FOUNDATION.md).
 - [Panduan frontend](docs/FRONTEND.md).
 - [Panduan integrasi dan handover tim COMMIT](docs/INTEGRATION-HANDOVER.md).
