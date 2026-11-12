@@ -1,0 +1,376 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+}
+
+enum EventStatus {
+  DRAFT
+  UPCOMING
+  ONGOING
+  ENDED
+}
+
+enum ExternalAssessmentType {
+  COMPETENCY
+  TECHNOSTRESS
+  UI_UX
+}
+
+enum ExternalAssessmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_RESULT
+  COMPLETED
+}
+
+enum ReferenceSource {
+  DEMO
+  EXTERNAL
+}
+
+model User {
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  name      String   @db.VarChar(120)
+  email     String?  @unique @db.VarChar(320)
+  username  String?  @unique @db.VarChar(80)
+  role      Role
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  teacher TeacherProfile?
+  student StudentProfile?
+
+  @@unique([id, role])
+}
+
+model TeacherProfile {
+  id            String         @id @default(cuid()) @db.VarChar(191)
+  userId        String         @unique @db.VarChar(191)
+  role          Role           @default(TEACHER)
+  phone         String?        @db.VarChar(40)
+  user          User           @relation(fields: [userId, role], references: [id, role], onDelete: Restrict, onUpdate: Restrict)
+  events        Event[]
+  rubrics       Rubric[]
+  assessments   Assessment[]
+  feedback      Feedback[]
+  surveyReviews SurveyReview[]
+
+  @@unique([userId, role])
+}
+
+model StudentProfile {
+  // Domain studentId stays distinct from the authentication User.id.
+  id                  String                        @id @default(cuid()) @db.VarChar(191)
+  userId              String                        @unique @db.VarChar(191)
+  role                Role                          @default(STUDENT)
+  phone               String?                       @db.VarChar(40)
+  user                User                          @relation(fields: [userId, role], references: [id, role], onDelete: Restrict, onUpdate: Restrict)
+  enrollments         Enrollment[]
+  externalAssessments ExternalAssessmentReference[]
+
+  @@unique([userId, role])
+}
+
+model Event {
+  id              String         @id @default(cuid()) @db.VarChar(191)
+  ownerTeacherId  String         @db.VarChar(191)
+  title           String         @db.VarChar(240)
+  status          EventStatus    @default(DRAFT)
+  caseStudyHtml   String?
+  directionsHtml  String?
+  startsAt        DateTime?      @db.Timestamptz(3)
+  endsAt          DateTime?      @db.Timestamptz(3)
+  publishedAt     DateTime?      @db.Timestamptz(3)
+  rubricVersionId String?        @db.VarChar(191)
+  createdAt       DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
+  owner           TeacherProfile @relation(fields: [ownerTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rubricVersion   RubricVersion? @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  milestones      Milestone[]
+  enrollments     Enrollment[]
+  assessments     Assessment[]
+
+  @@unique([id, rubricVersionId])
+  @@index([ownerTeacherId, status])
+  @@index([rubricVersionId])
+}
+
+model Enrollment {
+  id                  String                        @id @default(cuid()) @db.VarChar(191)
+  eventId             String                        @db.VarChar(191)
+  studentId           String                        @db.VarChar(191)
+  enrolledAt          DateTime                      @default(now()) @db.Timestamptz(3)
+  event               Event                         @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  student             StudentProfile                @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  submissions         Submission[]
+  surveyResponses     SurveyResponseReference[]
+  externalAssessments ExternalAssessmentReference[]
+
+  @@unique([eventId, studentId])
+  @@index([studentId])
+}
+
+model Milestone {
+  eventId         String                     @db.VarChar(191)
+  // M1/M2 may recur in different events; UUIDs also remain valid.
+  id              String                     @default(cuid()) @db.VarChar(191)
+  position        Int
+  title           String                     @db.VarChar(240)
+  instructions    String?
+  deadline        DateTime?                  @db.Timestamptz(3)
+  acceptedFormats String[]                   @default([])
+  event           Event                      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  submissions     Submission[]
+  surveys         MilestoneSurveyReference[]
+
+  @@id([eventId, id])
+  @@unique([eventId, position])
+}
+
+model Submission {
+  id          String              @id @default(cuid()) @db.VarChar(191)
+  eventId     String              @db.VarChar(191)
+  studentId   String              @db.VarChar(191)
+  milestoneId String              @db.VarChar(191)
+  createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  enrollment  Enrollment          @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+  milestone   Milestone           @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict, onUpdate: Restrict)
+  versions    SubmissionVersion[]
+
+  @@unique([eventId, studentId, milestoneId])
+  @@unique([id, eventId])
+  @@index([eventId, milestoneId])
+}
+
+model SubmissionVersion {
+  id           String                 @id @default(cuid()) @db.VarChar(191)
+  submissionId String                 @db.VarChar(191)
+  eventId      String                 @db.VarChar(191)
+  version      Int
+  submittedAt  DateTime               @db.Timestamptz(3)
+  note         String?
+  link         String?
+  submission   Submission             @relation(fields: [submissionId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: Restrict)
+  attachments  SubmissionAttachment[]
+  assessment   Assessment?
+  feedback     Feedback[]
+
+  @@unique([submissionId, version])
+  @@unique([id, eventId])
+  @@index([eventId, submittedAt])
+}
+
+model SubmissionAttachment {
+  versionId   String            @db.VarChar(191)
+  id          String            @default(cuid()) @db.VarChar(191)
+  name        String            @db.VarChar(255)
+  contentType String            @db.VarChar(150)
+  sizeBytes   BigInt
+  storageKey  String?
+  version     SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([versionId, id])
+}
+
+model Rubric {
+  id             String          @id @default(cuid()) @db.VarChar(191)
+  ownerTeacherId String          @db.VarChar(191)
+  title          String          @db.VarChar(240)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  owner          TeacherProfile  @relation(fields: [ownerTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  versions       RubricVersion[]
+
+  @@index([ownerTeacherId])
+}
+
+model RubricVersion {
+  id          String            @id @default(cuid()) @db.VarChar(191)
+  rubricId    String            @db.VarChar(191)
+  version     Int
+  title       String            @db.VarChar(240)
+  description String
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  rubric      Rubric            @relation(fields: [rubricId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  criteria    RubricCriterion[]
+  events      Event[]
+  assessments Assessment[]
+
+  @@unique([rubricId, version])
+}
+
+model RubricCriterion {
+  rubricVersionId String                 @db.VarChar(191)
+  id              String                 @default(cuid()) @db.VarChar(191)
+  position        Int
+  title           String                 @db.VarChar(240)
+  description     String
+  minScore        Int
+  maxScore        Int
+  rubricVersion   RubricVersion          @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  levels          RubricCriterionLevel[]
+  scores          AssessmentScore[]
+
+  @@id([rubricVersionId, id])
+  @@unique([rubricVersionId, position])
+}
+
+model RubricCriterionLevel {
+  rubricVersionId String          @db.VarChar(191)
+  criterionId     String          @db.VarChar(191)
+  score           Int
+  description     String
+  criterion       RubricCriterion @relation(fields: [rubricVersionId, criterionId], references: [rubricVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([rubricVersionId, criterionId, score])
+}
+
+// Milestone grading only. Independent dashboard assessments use the model below.
+model Assessment {
+  id                  String            @id @default(cuid()) @db.VarChar(191)
+  submissionVersionId String            @unique @db.VarChar(191)
+  eventId             String            @db.VarChar(191)
+  rubricVersionId     String            @db.VarChar(191)
+  assessedByTeacherId String            @db.VarChar(191)
+  assessedAt          DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt @db.Timestamptz(3)
+  submissionVersion   SubmissionVersion @relation(fields: [submissionVersionId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: Restrict)
+  event               Event             @relation(fields: [eventId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict)
+  rubricVersion       RubricVersion     @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assessor            TeacherProfile    @relation(fields: [assessedByTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scores              AssessmentScore[]
+
+  @@unique([id, rubricVersionId])
+  @@unique([submissionVersionId, eventId])
+  @@index([eventId, assessedAt])
+  @@index([assessedByTeacherId])
+  @@index([rubricVersionId])
+}
+
+model AssessmentScore {
+  assessmentId    String          @db.VarChar(191)
+  rubricVersionId String          @db.VarChar(191)
+  criterionId     String          @db.VarChar(191)
+  value           Decimal         @db.Decimal(10, 4)
+  assessment      Assessment      @relation(fields: [assessmentId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict)
+  criterion       RubricCriterion @relation(fields: [rubricVersionId, criterionId], references: [rubricVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([assessmentId, criterionId])
+  @@index([rubricVersionId, criterionId])
+}
+
+model Feedback {
+  id                  String            @id @default(cuid()) @db.VarChar(191)
+  submissionVersionId String            @db.VarChar(191)
+  teacherId           String            @db.VarChar(191)
+  message             String
+  revisionRequested   Boolean           @default(false)
+  revisionDeadline    DateTime?         @db.Timestamptz(3)
+  createdAt           DateTime          @default(now()) @db.Timestamptz(3)
+  submissionVersion   SubmissionVersion @relation(fields: [submissionVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  teacher             TeacherProfile    @relation(fields: [teacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([submissionVersionId, createdAt])
+  @@index([teacherId])
+}
+
+// Opaque references only; question sets, scoring and clinical interpretation
+// belong to the instrument owner (FOMO/COMMIT/team mapping is not assumed).
+model SurveyReference {
+  id                   String                     @id @default(cuid()) @db.VarChar(191)
+  provider             String                     @db.VarChar(100)
+  externalInstrumentId String                     @db.VarChar(191)
+  title                String                     @db.VarChar(240)
+  source               ReferenceSource
+  milestones           MilestoneSurveyReference[]
+
+  @@unique([provider, externalInstrumentId])
+}
+
+model MilestoneSurveyReference {
+  eventId           String                    @db.VarChar(191)
+  milestoneId       String                    @db.VarChar(191)
+  surveyReferenceId String                    @db.VarChar(191)
+  enabled           Boolean                   @default(true)
+  milestone         Milestone                 @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict, onUpdate: Restrict)
+  survey            SurveyReference           @relation(fields: [surveyReferenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  responses         SurveyResponseReference[]
+
+  @@id([eventId, milestoneId, surveyReferenceId])
+  @@index([surveyReferenceId])
+}
+
+model SurveyResponseReference {
+  id                 String                   @id @default(cuid()) @db.VarChar(191)
+  eventId            String                   @db.VarChar(191)
+  studentId          String                   @db.VarChar(191)
+  milestoneId        String                   @db.VarChar(191)
+  surveyReferenceId  String                   @db.VarChar(191)
+  revision           Int
+  externalResponseId String?                  @db.VarChar(191)
+  instrumentVersion  String?                  @db.VarChar(100)
+  completedAt        DateTime?                @db.Timestamptz(3)
+  recordedAt         DateTime                 @default(now()) @db.Timestamptz(3)
+  snapshot           Json?
+  enrollment         Enrollment               @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+  binding            MilestoneSurveyReference @relation(fields: [eventId, milestoneId, surveyReferenceId], references: [eventId, milestoneId, surveyReferenceId], onDelete: Restrict, onUpdate: Restrict)
+  reviews            SurveyReview[]
+
+  @@unique([eventId, studentId, milestoneId, surveyReferenceId, revision])
+  @@index([eventId, milestoneId, completedAt])
+  @@index([surveyReferenceId])
+}
+
+model SurveyReview {
+  id                String                  @id @default(cuid()) @db.VarChar(191)
+  responseId        String                  @db.VarChar(191)
+  reviewerTeacherId String                  @db.VarChar(191)
+  note              String?
+  reviewedAt        DateTime                @default(now()) @db.Timestamptz(3)
+  response          SurveyResponseReference @relation(fields: [responseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewer          TeacherProfile          @relation(fields: [reviewerTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([responseId, reviewerTeacherId])
+  @@index([reviewerTeacherId])
+}
+
+model ExternalAssessmentReference {
+  id                   String                   @id @default(cuid()) @db.VarChar(191)
+  type                 ExternalAssessmentType
+  title                String                   @db.VarChar(240)
+  studentId            String                   @db.VarChar(191)
+  eventId              String?                  @db.VarChar(191)
+  provider             String                   @db.VarChar(100)
+  externalAssessmentId String?                  @db.VarChar(191)
+  instrumentVersion    String?                  @db.VarChar(100)
+  status               ExternalAssessmentStatus @default(NOT_STARTED)
+  source               ReferenceSource
+  scoreValue           Decimal?                 @db.Decimal(12, 4)
+  scoreMaximum         Decimal?                 @db.Decimal(12, 4)
+  summary              String?
+  feedback             String?
+  completedAt          DateTime?                @db.Timestamptz(3)
+  recordedAt           DateTime                 @default(now()) @db.Timestamptz(3)
+  student              StudentProfile           @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  enrollment           Enrollment?              @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([provider, externalAssessmentId])
+  @@index([studentId, type, completedAt])
+  @@index([eventId, type, status])
+}
+
+model DevelopmentSeed {
+  id        String   @id @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
