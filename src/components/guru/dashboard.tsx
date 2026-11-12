@@ -32,6 +32,7 @@ import { DashboardDialog, type DashboardDialogState } from "./dashboard-dialog";
 import { EventList } from "./event-list";
 import { ReviewQueue } from "./review-queue";
 import { studentDirectory } from "@/lib/guru/student-integration";
+import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
 
 function Dashboard({ empty }: { empty: boolean }) {
   const router = useRouter();
@@ -219,6 +220,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                   </article>
                 ))}
               </section>
+              <DashboardAssessments audience="teacher" />
               {firstDraft && (
                 <section
                   aria-label="Draf event"
@@ -272,6 +274,7 @@ function Dashboard({ empty }: { empty: boolean }) {
               </p>
             </>
           )}
+          {empty && <DashboardAssessments audience="teacher" />}
         </main>
       </DashboardShell>
       <DashboardDialog

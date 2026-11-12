@@ -15,6 +15,7 @@ import { Surface } from "../guru/design-ui";
 import { EmptyRows } from "../guru/learning-ui";
 import { StudentBadge as StatusBadge } from "./siswa-ui";
 import { useStudentIdentity } from "./use-student-identity";
+import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
 export function StudentDashboard() {
   const { account } = useDemoAuth(),
     state = useEventDraftStore(),
@@ -83,7 +84,7 @@ export function StudentDashboard() {
           Jelajah Event Lainnya
         </Link>
       </header>
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div role="region" aria-label="Ringkasan event Siswa" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           [
             "Event diikuti",
@@ -111,6 +112,7 @@ export function StudentDashboard() {
           </Surface>
         ))}
       </div>
+      <div className="mb-6"><DashboardAssessments audience="student" /></div>
       <Surface className="mb-8 !p-6">
         <div className="mb-4 flex justify-between gap-3">
           <h2 className="font-semibold">Perlu Tindakan</h2>
