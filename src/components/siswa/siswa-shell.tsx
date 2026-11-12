@@ -180,7 +180,7 @@ export function SiswaShell({
             </summary>
             <div className="absolute right-0 z-40 flex w-56 flex-col rounded-xl border border-line bg-white p-2 shadow-lg">
               <p className="p-2 text-xs text-secondary">
-                Prototipe · Akun fiktif
+                Sesi Auth.js · Akun aktif
               </p>
               <Link
                 href="/siswa/profile"

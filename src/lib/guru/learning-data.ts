@@ -1,3 +1,4 @@
+import { submissionKey } from "../domain/keys";
 import { students, studentEnrollments } from "./student-data";
 import { eventEnrollments, managedEvents } from "./event-data";
 import { initialRubrics } from "./rubric-data";
@@ -26,7 +27,7 @@ export const submissionId = (
   eventId: string,
   studentId: string,
   milestoneId: string,
-) => `${eventId}:${studentId}:${milestoneId}`;
+) => submissionKey(eventId, studentId, milestoneId);
 const uiux = initialRubrics.find((r) => r.id === "uiux")!;
 const scores = (values: number[], rubric = uiux) =>
   Object.fromEntries(rubric.criteria.map((c, i) => [c.id, values[i] ?? 4]));

@@ -1,17 +1,19 @@
 # Bojong United — SMK Lugina Rancaekek
 
 Bojong United adalah proyek capstone platform pembelajaran berbasis **event dan
-proyek** untuk SMK Lugina Rancaekek. Repository ini berisi frontend untuk dua
-peran: **Guru** dan **Siswa**.
+proyek** untuk SMK Lugina Rancaekek. Repository ini berisi aplikasi Next.js
+beserta REST API untuk dua peran: **Guru** dan **Siswa**.
 
-Modul Guru dan Siswa sudah terhubung melalui data contoh bersama. Guru dapat
+Modul Guru dan Siswa terhubung melalui PostgreSQL; seed memakai data fiktif. Guru dapat
 menerbitkan event, Siswa mengikuti dan mengumpulkan tugas, lalu Guru memberikan
 nilai, feedback, atau permintaan revisi.
 
-> **Status saat ini: autentikasi server dengan data pembelajaran prototipe.**
-> Login/Register memakai Auth.js dan PostgreSQL; data event, tugas, asesmen,
-> laporan dan portofolio masih mock. Google OAuth belum tersedia.
-> Setup akun pengujian ada pada [panduan autentikasi](docs/AUTHENTICATION-RBAC.md).
+> **Status saat ini: autentikasi dan pembelajaran memakai PostgreSQL.**
+> Login/Register memakai Auth.js; event, enrollment, draf, tugas berversi,
+> nilai, feedback, profil, laporan dan portofolio sudah melalui REST API.
+> Lampiran masih metadata dan hasil provider eksternal tetap referensi DEMO.
+> Google OAuth belum tersedia. Lihat [panduan REST](docs/BACKEND-REST-API.md)
+> dan [setup autentikasi](docs/AUTHENTICATION-RBAC.md).
 
 Implementasi frontend Guru dan Siswa sudah masuk ke branch `main` melalui
 [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Panduan teknis
@@ -26,8 +28,8 @@ berbahasa Indonesia tersedia pada bagian [referensi dan panduan tim](#referensi-
 | Siswa | Pencarian dan pendaftaran event, dashboard, ruang kerja dan milestone, pengumpulan tugas dan revisi, survei milestone yang sudah dikonfigurasi, portofolio, dokumen sertifikat contoh, serta profil |
 
 Wizard pembuatan event mencakup **Informasi Event → Milestone → Rubrik →
-Sertifikat → Tinjau → Terbitkan → Selesai**. Draf dan perubahan demo disimpan pada
-sesi browser.
+Sertifikat → Tinjau → Terbitkan → Selesai**. Draf yang disimpan dan perubahan
+pembelajaran tersimpan di PostgreSQL; ketikan yang belum disimpan tetap di memori.
 
 Menu Guru **Dashboard Survei, Survei Saya, Template Survei, Hasil Survei, Kebijakan
 Privasi**, serta menu Siswa **Pengaturan** tetap tampil normal dan dapat ditekan,
@@ -41,7 +43,7 @@ yang sudah dikonfigurasi tetap dapat digunakan.
 - React dan TypeScript.
 - Tailwind CSS dan komponen yang digunakan kembali.
 - Auth.js Credentials/JWT, Argon2id, PostgreSQL dan Prisma.
-- Data pembelajaran contoh bersama dengan `sessionStorage` di browser.
+- REST API dengan RBAC, transaksi Prisma dan cache frontend yang dipisahkan per akun.
 - Aset desain lokal dari Figma.
 
 ## Cara menjalankan di laptop
@@ -93,7 +95,7 @@ JavaScript dari build yang sama. Mode ini tetap menggunakan data contoh.
 ## Database dan akun pengujian
 
 Fondasi PostgreSQL/Prisma, migrasi dan seed fiktif tersedia. Autentikasi memakai
-database; data pembelajaran tetap mock sampai adapter REST diimplementasikan. Ikuti [panduan database](docs/DATABASE-FOUNDATION.md)
+database, begitu juga alur pembelajaran inti melalui REST API. Ikuti [panduan database](docs/DATABASE-FOUNDATION.md)
 untuk konfigurasi lokal, batas seed dan koordinasi FOMO/COMMIT. `npm ci` hanya
 menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
@@ -115,8 +117,8 @@ hanya membuat akun Siswa di database; Google hanya pratinjau tanpa login.
 
 ## Cara mencoba integrasi Guru dan Siswa
 
-Gunakan **satu tab browser pada alamat dan port yang sama**, lalu bergantian
-logout/login dengan akun demo.
+Gunakan **dua profil browser/incognito terpisah** pada origin aplikasi yang sama
+untuk login Guru dan Siswa bersamaan, atau bergantian logout/login dalam satu tab.
 
 1. Masuk sebagai Guru, buat event beserta milestone dan rubrik, lalu terbitkan.
 2. Logout, kemudian masuk sebagai Dimas.
@@ -132,12 +134,13 @@ logout/login dengan akun demo.
 Versi tugas dan nilai sebelumnya tetap berada di riwayat. **Revisi baru harus
 dinilai ulang**; nilai versi lama tidak otomatis menjadi nilai versi terbaru.
 
-### Mengapa harus satu tab?
+### Sinkronisasi antarsesi
 
-Data demo tersimpan pada sesi tab. Tab baru dapat membawa salinan data awal,
-tetapi perubahan berikutnya **belum tersinkron otomatis** antartab, browser, atau
-perangkat. Data ini juga bukan penyimpanan permanen. Integrasi pengguna yang
-berjalan bersamaan memerlukan backend dan database.
+Data yang sudah disimpan dibaca dari PostgreSQL yang sama, termasuk setelah
+refresh/logout atau dari browser lain. Halaman memperbarui cache saat fokus dan
+setiap lima detik. Dua tab pada profil browser yang sama berbagi cookie login;
+untuk dua akun bersamaan gunakan profil/incognito terpisah. Draf yang belum
+menekan Simpan Draf belum dijamin bertahan setelah refresh.
 
 ## Batasan prototipe
 
@@ -153,8 +156,8 @@ berjalan bersamaan memerlukan backend dan database.
 - Ekspor laporan PDF/XLSX benar-benar dibuat di browser. Dokumen sertifikat
   merupakan contoh penyelesaian belajar, tanpa penerbitan atau verifikasi resmi
   institusi.
-- Auth.js/RBAC dan endpoint read terbatas tersedia. REST CRUD data pembelajaran,
-  Google OAuth, administrasi Survei dan integrasi modul tim lain belum tersedia.
+- REST CRUD pembelajaran dan RBAC tersedia. Google OAuth, administrasi Survei,
+  penyimpanan isi lampiran, serta koneksi provider tim lain belum tersedia.
 - Catatan dependency development dan perbedaan visual kecil masih didokumentasikan
   dalam panduan handover. Prototipe ini belum dinyatakan siap untuk produksi.
 
@@ -205,6 +208,7 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
+- [REST API, persistensi dan integrasi Guru–Siswa](docs/BACKEND-REST-API.md).
 - [Autentikasi PostgreSQL dan RBAC](docs/AUTHENTICATION-RBAC.md).
 - [Fondasi PostgreSQL dan Prisma](docs/DATABASE-FOUNDATION.md).
 - [Panduan frontend](docs/FRONTEND.md).

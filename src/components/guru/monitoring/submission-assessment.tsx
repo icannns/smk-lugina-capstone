@@ -6,7 +6,6 @@ import type {
   SubmissionVersion,
   TeacherSubmission,
 } from "@/lib/guru/teacher-types";
-import { submissionId } from "@/lib/guru/learning-data";
 import {
   assessmentFor,
   feedbackFor,
@@ -61,7 +60,7 @@ export function Assessment({
     student = teacherStudents.find((s) => s.id === studentId),
     milestone = event.milestones.find((m) => m.id === milestoneId);
   const submission = teacherSubmissions.find(
-    (s) => s.id === submissionId(event.id, studentId, milestoneId),
+    (s) => s.eventId === event.id && s.studentId === studentId && s.milestoneId === milestoneId,
   );
   const status = submissionStatus(submission, state.learning),
     saved = submission ? assessmentFor(submission, state.learning) : undefined,
@@ -110,7 +109,8 @@ export function Assessment({
       (roster.findIndex((r) => r.student.id === studentId) + 1) % roster.length
     ].student;
   const feedback = submission ? feedbackFor(submission.id, state.learning) : [];
-  function send(revision: boolean) {
+  async function send(revision: boolean) {
+    if (busy) return;
     if (!submission || !latest) return;
     if (!message.trim()) {
       setError("Tulis pesan feedback terlebih dahulu.");
@@ -129,7 +129,9 @@ export function Assessment({
       setError("Batas revisi harus berada setelah waktu sekarang (WIB).");
       return;
     }
-    addTeacherFeedback(submission.id, {
+    setNotice("");
+    setBusy(true);
+    const sent = await addTeacherFeedback(submission.id, {
       id: crypto.randomUUID(),
       message: message.trim(),
       createdAt: nowWib(),
@@ -137,6 +139,8 @@ export function Assessment({
       deadline: revision ? deadline || undefined : undefined,
       version: latest.version,
     });
+    setBusy(false);
+    if (!sent) { setError("Feedback belum tersimpan. Periksa pesan server."); return; }
     setMessage("");
     if (revision) setValues({});
     setDeadline("");
@@ -144,14 +148,14 @@ export function Assessment({
     setNotice(
       revision
         ? "Revisi diminta pada pengumpulan contoh ini."
-        : "Feedback tersimpan pada sesi demo.",
+        : "Feedback tersimpan di server.",
     );
   }
   async function save() {
     if (!submission || !latest || !score || !rubric || busy) return;
+    setNotice("");
     setBusy(true);
-    await new Promise((resolve) => setTimeout(resolve, 180));
-    saveAssessment(
+    const saved = await saveAssessment(
       {
         submissionId: submission.id,
         version: latest.version,
@@ -161,7 +165,8 @@ export function Assessment({
       rubric.id,
     );
     setBusy(false);
-    setNotice("Penilaian tersimpan pada sesi demo.");
+    if (!saved) { setError("Penilaian belum tersimpan. Periksa pesan server."); return; }
+    setNotice("Penilaian tersimpan di server.");
   }
   return (
     <TeacherPage activePage="monitoring" frame={frame}>
@@ -247,11 +252,11 @@ export function Assessment({
                   version={latest}
                   onPreview={setDialog}
                 />
-                {submission.link && (
+                {latest.link && (
                   <div className="mt-2 flex min-w-0 items-center gap-3 rounded-xl border border-line p-3">
                     <DesignIcon frame="291:23200" name="imgIcon5" />
                     <span className="min-w-0 flex-1 break-all text-sm">
-                      {submission.link}
+                      {latest.link}
                       <small className="block text-xs text-secondary">
                         Tautan eksternal contoh
                       </small>
@@ -271,10 +276,10 @@ export function Assessment({
                     </button>
                   </div>
                 )}
-                {submission.note && (
+                {latest.note && (
                   <div className="mt-3 rounded-xl border border-line p-3 text-sm">
                     <p className="mb-1 text-xs text-secondary">Catatan</p>
-                    {submission.note}
+                    {latest.note}
                   </div>
                 )}
               </>
@@ -315,7 +320,7 @@ export function Assessment({
             </div>
             <div role="tabpanel" className="p-6">
               {tab === "survey" &&
-                (submission?.surveyComplete ? (
+                (submission?.surveyRequired === false ? <p className="text-sm text-secondary">Milestone ini tidak mewajibkan survei.</p> : submission?.surveyComplete ? (
                   <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
                     {[
                       [
@@ -327,14 +332,14 @@ export function Assessment({
                       [
                         "Instrumen Survei",
                         submission.instrument ??
-                          (studentId === "dimas"
+                          (state.learning.source !== "api" && studentId === "dimas"
                             ? "Survei Pengalaman Belajar & Technostress"
                             : "—"),
                       ],
                       [
                         "Ringkasan Skor Survei",
                         submission.surveySummary ??
-                          `Skor Technostress: ${submission.surveyScore} / 5.0 (Kategori ${submission.surveyScore! >= 3 ? "Sedang" : "Rendah"})`,
+                          (state.learning.source === "api" ? "Skor provider belum tersedia" : `Skor Technostress: ${submission.surveyScore} / 5.0 (Kategori ${submission.surveyScore! >= 3 ? "Sedang" : "Rendah"})`),
                       ],
                       [
                         "Status Kelengkapan",

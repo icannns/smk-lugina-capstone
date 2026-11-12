@@ -42,6 +42,7 @@ export type TeacherSubmission = {
   milestoneId: string;
   versions: SubmissionVersion[];
   surveyComplete: boolean;
+  surveyRequired?: boolean;
   surveyScore?: number;
   surveySummary?: string;
   instrument?: string;
@@ -64,8 +65,10 @@ export type TeacherAssessment = {
   version: number;
   scores: Record<string, number>;
   savedAt: string;
+  revision?: number;
 };
 export type AssessmentChanges = {
+  source?: "api";
   assessments: Record<string, TeacherAssessment>;
   feedback: Record<string, TeacherFeedback[]>;
   submissions?: Record<string, TeacherSubmission>;

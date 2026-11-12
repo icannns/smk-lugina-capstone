@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import {
   assessmentForVersion,
+  submissionComplete,
   certificateThreshold,
   enrollmentProgress,
   feedbackFor,
@@ -146,7 +147,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
             </StatusBadge>
             <p className="text-xs text-secondary">
               {formatPeriod(event.period)} · Mode {event.mode} ·{" "}
-              {state.profile.name}
+              {event.teacherName ?? "—"}
             </p>
           </div>
         </div>
@@ -223,7 +224,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                   <StatusBadge status="revision">Revisi diminta</StatusBadge>
                 </div>
                 <p className="mb-3 text-xs text-secondary">
-                  {state.profile.name} ·{" "}
+                  {event.teacherName ?? "—"} ·{" "}
                   {formatEventDate(lastFeedback.createdAt, true)}
                 </p>
                 <p className="whitespace-pre-wrap text-sm leading-6">
@@ -237,7 +238,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                 </p>
               </div>
             )}
-            {submission && !submission.surveyComplete && !revision && (
+            {submission && submission.surveyRequired !== false && !submission.surveyComplete && !revision && (
               <StudentNotice>
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="min-w-0 flex-1 basis-64">
@@ -247,7 +248,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     <p className="mt-1">
                       {milestone.surveyActive
                         ? `Isi Form Survei Pembelajaran ${next ? `untuk membuka Milestone ${index + 2} · ${next.title}` : "untuk menyelesaikan tahap ini"}.`
-                        : "Form Survei belum disiapkan Guru. Konfigurasi survei Guru berada di luar prototipe ini."}
+                        : "Tidak ada survei wajib yang dikonfigurasi untuk milestone ini. Konfigurasi survei Guru berada di luar prototipe ini."}
                     </p>
                   </div>
                   {milestone.surveyActive && (
@@ -286,9 +287,10 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
               {!submission || revision ? (
                 <form
                   noValidate
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
-                    const problem = submitStudentWork(
+                    setNotice("");
+                    const problem = await submitStudentWork(
                       event.id,
                       milestone.id,
                       work,
@@ -424,7 +426,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                   </label>
                   <p className="mt-3 text-[11px] text-secondary">
                     Prototipe · Gunakan berkas fiktif. Hanya nama, ukuran, dan
-                    jenis file disimpan lokal; isi file tidak dikirim atau
+                    jenis file disimpan di server; isi file tidak dikirim atau
                     disimpan.
                   </p>
                   {error && (
@@ -438,9 +440,10 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     )}
                     <SiswaButton
                       variant="outline"
-                      onClick={() => {
-                        if (saveWorkDraft(event.id, milestone.id, work))
-                          setNotice("Draf tersimpan pada sesi tab ini.");
+                      onClick={async () => {
+                        setNotice("");
+                        if (await saveWorkDraft(event.id, milestone.id, work))
+                          setNotice("Draf tersimpan di server.");
                       }}
                     >
                       Simpan Draf
@@ -571,15 +574,15 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                         ],
                         [
                           `Isi Form Survei Milestone ${index + 1}`,
-                          submission.surveyComplete,
-                          submission.surveyComplete ? "Selesai" : "Belum diisi",
+                          submissionComplete(submission),
+                          submission.surveyRequired === false ? "Tidak diwajibkan" : submission.surveyComplete ? "Selesai" : "Belum diisi",
                         ],
                         [
                           next
                             ? `Milestone ${index + 2} terbuka`
                             : "Pengerjaan milestone selesai",
-                          submission.surveyComplete,
-                          submission.surveyComplete ? "Terbuka" : "Menunggu",
+                          submissionComplete(submission),
+                          submissionComplete(submission) ? "Terbuka" : "Menunggu",
                         ],
                       ].map(([label, done, text], n) => (
                         <li
@@ -611,7 +614,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     ) : !milestone.surveyActive &&
                       !submission.surveyComplete ? (
                       <p className="mt-4 text-xs text-secondary">
-                        Form Survei belum disiapkan Guru.
+                        Tidak ada survei wajib yang dikonfigurasi untuk milestone ini.
                       </p>
                     ) : null}
                   </Surface>
@@ -620,7 +623,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                   <h2 className="text-[15px] font-semibold">Ringkasan Event</h2>
                   <SummaryRows
                     rows={[
-                      ["Guru pengampu", state.profile.name],
+                      ["Guru pengampu", event.teacherName ?? "—"],
                       ["Mode milestone", event.mode],
                       ["Rubrik", rubric?.title ?? "Belum tersedia"],
                       [

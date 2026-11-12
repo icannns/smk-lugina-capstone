@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppAuth } from "@/lib/auth/session";
 import { accountHome, type AccountRole } from "@/lib/auth/accounts";
+import { WorkspaceBoundary } from "./workspace-boundary";
 import { SharedLoadingScreen } from "./auth-loading";
 export function RoleGate({
   role,
@@ -34,7 +35,7 @@ export function RoleGate({
           {warning}
         </p>
       )}
-      {children}
+      <WorkspaceBoundary key={account.id} accountId={account.id}>{children}</WorkspaceBoundary>
     </>
   );
 }

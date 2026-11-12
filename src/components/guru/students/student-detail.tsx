@@ -104,8 +104,8 @@ type Props = {
   enrollment: StudentEnrollment;
   reviewed: boolean;
   savedNote: string;
-  onSave: (text: string) => boolean;
-  onReview: () => void;
+  onSave: (text: string) => Promise<boolean>;
+  onReview: () => Promise<boolean>;
   onAction: (action: DashboardAction) => void;
 };
 
@@ -252,8 +252,8 @@ export function StudentDetail({
             <div className="mt-[22.4px] flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setSaved(onSave(note));
+                onClick={async () => {
+                  setSaved(await onSave(note));
                 }}
                 className="flex h-10 items-center justify-center rounded-control px-4 text-sm font-medium hover:bg-gray-50"
               >
@@ -282,8 +282,7 @@ export function StudentDetail({
                 role="status"
                 className="mt-3 text-xs leading-4 text-[#008236]"
               >
-                Catatan disimpan hanya pada sesi demo ini; tidak dikirim ke
-                server.
+                Catatan tersimpan di server.
               </p>
             )}
           </StudentCard>

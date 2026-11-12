@@ -69,6 +69,9 @@ model TeacherProfile {
   assessments   Assessment[]
   feedback      Feedback[]
   surveyReviews SurveyReview[]
+  contactEmail  String?        @db.VarChar(320)
+  avatar        String?
+  displayRole   String?        @db.VarChar(80)
 
   @@unique([userId, role])
 }
@@ -82,28 +85,36 @@ model StudentProfile {
   user                User                          @relation(fields: [userId, role], references: [id, role], onDelete: Restrict, onUpdate: Restrict)
   enrollments         Enrollment[]
   externalAssessments ExternalAssessmentReference[]
+  contactEmail        String?                       @db.VarChar(320)
+  avatar              String?
+  displayRole         String?                       @db.VarChar(80)
 
   @@unique([userId, role])
 }
 
 model Event {
-  id              String         @id @default(cuid()) @db.VarChar(191)
-  ownerTeacherId  String         @db.VarChar(191)
-  title           String         @db.VarChar(240)
-  status          EventStatus    @default(DRAFT)
-  caseStudyHtml   String?
-  directionsHtml  String?
-  startsAt        DateTime?      @db.Timestamptz(3)
-  endsAt          DateTime?      @db.Timestamptz(3)
-  publishedAt     DateTime?      @db.Timestamptz(3)
-  rubricVersionId String?        @db.VarChar(191)
-  createdAt       DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
-  owner           TeacherProfile @relation(fields: [ownerTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  rubricVersion   RubricVersion? @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  milestones      Milestone[]
-  enrollments     Enrollment[]
-  assessments     Assessment[]
+  id                String               @id @default(cuid()) @db.VarChar(191)
+  ownerTeacherId    String               @db.VarChar(191)
+  title             String               @db.VarChar(240)
+  status            EventStatus          @default(DRAFT)
+  caseStudyHtml     String?
+  directionsHtml    String?
+  startsAt          DateTime?            @db.Timestamptz(3)
+  endsAt            DateTime?            @db.Timestamptz(3)
+  publishedAt       DateTime?            @db.Timestamptz(3)
+  rubricVersionId   String?              @db.VarChar(191)
+  createdAt         DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime             @updatedAt @db.Timestamptz(3)
+  owner             TeacherProfile       @relation(fields: [ownerTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rubricVersion     RubricVersion?       @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  milestones        Milestone[]
+  enrollments       Enrollment[]
+  assessments       Assessment[]
+  revision          Int                  @default(0)
+  wizardState       Json?
+  certificateConfig Json?
+  attachments       Json?
+  criterionBindings MilestoneCriterion[]
 
   @@unique([id, rubricVersionId])
   @@index([ownerTeacherId, status])
@@ -111,15 +122,18 @@ model Event {
 }
 
 model Enrollment {
-  id                  String                        @id @default(cuid()) @db.VarChar(191)
-  eventId             String                        @db.VarChar(191)
-  studentId           String                        @db.VarChar(191)
-  enrolledAt          DateTime                      @default(now()) @db.Timestamptz(3)
-  event               Event                         @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  student             StudentProfile                @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  submissions         Submission[]
-  surveyResponses     SurveyResponseReference[]
-  externalAssessments ExternalAssessmentReference[]
+  id                    String                        @id @default(cuid()) @db.VarChar(191)
+  eventId               String                        @db.VarChar(191)
+  studentId             String                        @db.VarChar(191)
+  enrolledAt            DateTime                      @default(now()) @db.Timestamptz(3)
+  event                 Event                         @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  student               StudentProfile                @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  submissions           Submission[]
+  surveyResponses       SurveyResponseReference[]
+  externalAssessments   ExternalAssessmentReference[]
+  teacherNote           String                        @default("")
+  workDrafts            SubmissionDraft[]
+  prototypeCertificates PrototypeCertificateClaim[]
 
   @@unique([eventId, studentId])
   @@index([studentId])
@@ -137,6 +151,9 @@ model Milestone {
   event           Event                      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   submissions     Submission[]
   surveys         MilestoneSurveyReference[]
+  attachments     Json?
+  workDrafts      SubmissionDraft[]
+  criteria        MilestoneCriterion[]
 
   @@id([eventId, id])
   @@unique([eventId, position])
@@ -169,6 +186,7 @@ model SubmissionVersion {
   attachments  SubmissionAttachment[]
   assessment   Assessment?
   feedback     Feedback[]
+  requestId    String?                @unique @db.VarChar(191)
 
   @@unique([submissionId, version])
   @@unique([id, eventId])
@@ -225,6 +243,7 @@ model RubricCriterion {
   rubricVersion   RubricVersion          @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   levels          RubricCriterionLevel[]
   scores          AssessmentScore[]
+  milestones      MilestoneCriterion[]
 
   @@id([rubricVersionId, id])
   @@unique([rubricVersionId, position])
@@ -254,6 +273,7 @@ model Assessment {
   rubricVersion       RubricVersion     @relation(fields: [rubricVersionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   assessor            TeacherProfile    @relation(fields: [assessedByTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   scores              AssessmentScore[]
+  revision            Int               @default(0)
 
   @@unique([id, rubricVersionId])
   @@unique([submissionVersionId, eventId])
@@ -399,4 +419,49 @@ model AuthRateLimit {
   windowEndsAt DateTime @db.Timestamptz(3)
 
   @@index([windowEndsAt])
+}
+
+// Unsubmitted text/link/attachment metadata, scoped to the actual enrollment.
+model SubmissionDraft {
+  eventId     String     @db.VarChar(191)
+  studentId   String     @db.VarChar(191)
+  milestoneId String     @db.VarChar(191)
+  text        String     @default("")
+  link        String     @default("")
+  files       Json
+  surveyDraft Json?
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+  enrollment  Enrollment @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+  milestone   Milestone  @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([eventId, studentId, milestoneId])
+}
+
+// Current UI applies the event rubric to each milestone; no new weighting policy.
+model MilestoneCriterion {
+  eventId         String          @db.VarChar(191)
+  milestoneId     String          @db.VarChar(191)
+  rubricVersionId String          @db.VarChar(191)
+  criterionId     String          @db.VarChar(191)
+  event           Event           @relation(fields: [eventId, rubricVersionId], references: [id, rubricVersionId], onDelete: Restrict, onUpdate: Restrict)
+  milestone       Milestone       @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict, onUpdate: Restrict)
+  criterion       RubricCriterion @relation(fields: [rubricVersionId, criterionId], references: [rubricVersionId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([eventId, milestoneId, criterionId])
+  @@index([rubricVersionId, criterionId])
+}
+
+// Prototype learning-completion document, not official competency certification.
+model PrototypeCertificateClaim {
+  id           String     @id @default(cuid()) @db.VarChar(191)
+  eventId      String     @db.VarChar(191)
+  studentId    String     @db.VarChar(191)
+  studentName  String     @db.VarChar(120)
+  score        Int
+  claimedAt    DateTime   @default(now()) @db.Timestamptz(3)
+  downloadedAt DateTime?  @db.Timestamptz(3)
+  enrollment   Enrollment @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([eventId, studentId])
+  @@index([studentId])
 }

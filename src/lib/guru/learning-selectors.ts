@@ -1,4 +1,4 @@
-import type { ManagedEvent } from "./event-types";
+import type { EventMilestone, ManagedEvent } from "./event-types";
 import type {
   AssessmentChanges,
   GuruRubric,
@@ -9,7 +9,6 @@ import {
   initialFeedback,
   teacherSubmissions,
   teacherStudents,
-  submissionId,
 } from "./learning-data";
 export function workStatus(row: {
   submitted: number;
@@ -47,6 +46,7 @@ export function milestoneLabel(
   return index < 0 ? "Milestone" : `M${index + 1}`;
 }
 export function allStudents(changes: AssessmentChanges) {
+  if (changes.source === "api") return changes.students ?? [];
   const extra = changes.students ?? [],
     byId = new Map(extra.map((s) => [s.id, s]));
   return [
@@ -55,6 +55,7 @@ export function allStudents(changes: AssessmentChanges) {
   ];
 }
 export function allEnrollments(changes: AssessmentChanges) {
+  if (changes.source === "api") return changes.enrollments ?? [];
   const extra = changes.enrollments ?? [];
   return [
     ...eventEnrollments,
@@ -67,6 +68,7 @@ export function allEnrollments(changes: AssessmentChanges) {
   ];
 }
 export function allSubmissions(changes: AssessmentChanges) {
+  if (changes.source === "api") return Object.values(changes.submissions ?? {});
   const extra = changes.submissions ?? {};
   return [
     ...teacherSubmissions.map((s) => extra[s.id] ?? s),
@@ -103,14 +105,14 @@ export function assessmentFor(
       (f) =>
         f.revision &&
         f.version === latest.version &&
-        (!saved || f.createdAt > saved.savedAt),
+        (changes.source === "api" || !saved || f.createdAt > saved.savedAt),
     )
   )
     return undefined;
   return saved?.scores ?? latest.scores;
 }
 export function feedbackFor(id: string, changes: AssessmentChanges) {
-  return [...(initialFeedback[id] ?? []), ...(changes.feedback[id] ?? [])];
+  return [...(changes.source === "api" ? [] : initialFeedback[id] ?? []), ...(changes.feedback[id] ?? [])];
 }
 export function submissionStatus(
   submission: TeacherSubmission | undefined,
@@ -124,12 +126,12 @@ export function submissionStatus(
       (f) =>
         f.revision &&
         f.version === latest.version &&
-        (!saved || f.createdAt > saved.savedAt),
+        (changes.source === "api" || !saved || f.createdAt > saved.savedAt),
     )
   )
     return "revision";
   if (assessmentFor(submission, changes)) return "reviewed";
-  return submission.surveyComplete ? "pending" : "survey";
+  return submissionComplete(submission) ? "pending" : "survey";
 }
 export const submissionLabels = {
   missing: "Belum dikumpulkan",
@@ -166,7 +168,7 @@ export function enrollmentProgress(
 ) {
   const submissions = event.milestones.map((m) =>
     allSubmissions(changes).find(
-      (s) => s.id === submissionId(event.id, studentId, m.id),
+      (s) => s.eventId === event.id && s.studentId === studentId && s.milestoneId === m.id,
     ),
   );
   const scored = submissions.map((s) =>
@@ -184,7 +186,7 @@ export function enrollmentProgress(
     },
     submissions,
     submitted,
-    completed: submissions.filter((s) => s?.surveyComplete).length,
+    completed: submissions.filter((s) => submissionComplete(s)).length,
     reviewed,
     total: event.milestones.length,
     score:
@@ -211,7 +213,7 @@ export function eventLearning(
     reviewed = rows.reduce((s, r) => s + r.reviewed, 0);
   const scores = rows.flatMap((r) => (r.score === null ? [] : [r.score]));
   const completed = rows.reduce(
-    (sum, r) => sum + r.submissions.filter((s) => s?.surveyComplete).length,
+    (sum, r) => sum + r.submissions.filter((s) => submissionComplete(s)).length,
     0,
   );
   return {
@@ -222,7 +224,7 @@ export function eventLearning(
     reviewed,
     pending: submitted - reviewed,
     finished: rows.filter(
-      (r) => r.total > 0 && r.submissions.every((s) => s?.surveyComplete),
+      (r) => r.total > 0 && r.submissions.every((s) => submissionComplete(s)),
     ).length,
     assessed: rows.filter((r) => r.score !== null).length,
     percent: total ? Math.round((completed / total) * 100) : 0,
@@ -240,4 +242,15 @@ export function monitoringHref(
   if (studentId) q.set("student", studentId);
   if (milestoneId) q.set("milestone", milestoneId);
   return `/guru/monitoring?${q}`;
+}
+
+export function submissionComplete(submission: TeacherSubmission | undefined) {
+  return Boolean(submission && (submission.surveyRequired === false || submission.surveyComplete));
+}
+
+export function milestoneRequiresSurvey(milestone: EventMilestone, submission?: TeacherSubmission) {
+  return submission?.surveyRequired ?? milestone.surveyActive !== false;
+}
+export function milestoneSurveyLabel(milestone: EventMilestone, submission?: TeacherSubmission) {
+  return !milestoneRequiresSurvey(milestone, submission) ? "Tidak diwajibkan" : submission?.surveyComplete ? "Terisi" : "Belum diisi";
 }

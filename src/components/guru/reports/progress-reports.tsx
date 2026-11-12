@@ -11,6 +11,7 @@ import {
 } from "@/lib/guru/report-selectors";
 import {
   allStudents,
+  milestoneSurveyLabel,
   allEnrollments,
   workStatus,
   workLabels,
@@ -378,7 +379,7 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
                         {r.submissions.map((s, i) => (
                           <td key={i} className="px-4 text-[11px]">
                             {s
-                              ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${s.surveyComplete ? "Terisi" : "Belum diisi"} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
+                              ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${milestoneSurveyLabel(data.milestones[i], s)} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
                               : "— · — · Belum dinilai"}
                           </td>
                         ))}

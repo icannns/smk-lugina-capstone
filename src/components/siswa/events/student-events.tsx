@@ -158,7 +158,7 @@ export function StudentEvents() {
                 {[
                   ["Milestone", e.milestones.length],
                   ["Mode", e.mode],
-                  ["Pengampu", state.profile.name.split(",")[0]],
+                  ["Pengampu", (e.teacherName ?? "—").split(",")[0]],
                 ].map(([key, v]) => (
                   <div key={key}>
                     <dt className="mb-1 text-secondary">{key}</dt>
@@ -236,7 +236,7 @@ function StudentEventDetail({ event }: { event: ManagedEvent }) {
     [success, setSuccess] = useState(false),
     [error, setError] = useState("");
   const frame = confirm ? "370:2171" : enrolled ? "370:2352" : "370:2001",
-    participants = allEnrollments(state.learning).filter(
+    participants = event.participantCount ?? allEnrollments(state.learning).filter(
       (e) => e.eventId === event.id,
     ).length;
   return (
@@ -259,7 +259,7 @@ function StudentEventDetail({ event }: { event: ManagedEvent }) {
                 : `Terbuka · ${event.status === "ongoing" ? "Berlangsung" : event.status === "upcoming" ? "Segera Dimulai" : "Berakhir"}`}
             </StatusBadge>
             <p className="text-xs text-secondary">
-              {event.period} · Pengampu: {state.profile.name}
+              {event.period} · Pengampu: {event.teacherName ?? "—"}
             </p>
           </div>
         </div>
@@ -403,8 +403,8 @@ function StudentEventDetail({ event }: { event: ManagedEvent }) {
               Batal
             </SiswaButton>
             <SiswaButton
-              onClick={() => {
-                const result = enrollStudent(event.id);
+              onClick={async () => {
+                const result = await enrollStudent(event.id);
                 setError(result);
                 if (!result) {
                   setSuccess(true);

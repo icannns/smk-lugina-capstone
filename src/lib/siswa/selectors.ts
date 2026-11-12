@@ -3,13 +3,13 @@ import type { ManagedEvent } from "../guru/event-types";
 import type { AssessmentChanges } from "../guru/teacher-types";
 import {
   allSubmissions,
+  submissionComplete,
   allEnrollments,
   allStudents,
   eventLearning,
   submissionStatus,
   certificateThreshold,
 } from "../guru/learning-selectors";
-import { submissionId } from "../guru/learning-data";
 import type { StudentProfile, StudentUIState } from "./student-types";
 export const workHref = (eventId: string, milestone?: string) =>
   `/siswa/workspace?event=${encodeURIComponent(eventId)}${milestone ? `&milestone=${encodeURIComponent(milestone)}` : ""}`;
@@ -42,9 +42,7 @@ export function milestoneUnlocked(
     (index === 0 ||
       Boolean(
         submissions.find(
-          (s) =>
-            s.id ===
-            submissionId(event.id, studentId, event.milestones[index]?.id),
+          (s) => s.eventId === event.id && s.studentId === studentId && s.milestoneId === event.milestones[index]?.id,
         ),
       ) ||
       event.milestones
@@ -52,8 +50,8 @@ export function milestoneUnlocked(
         .every((m) =>
           submissions.some(
             (s) =>
-              s.id === submissionId(event.id, studentId, m.id) &&
-              s.surveyComplete,
+              s.eventId === event.id && s.studentId === studentId && s.milestoneId === m.id &&
+              submissionComplete(s),
           ),
         ))
   );

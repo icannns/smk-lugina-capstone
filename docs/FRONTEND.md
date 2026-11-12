@@ -1,5 +1,13 @@
 # Panduan Pengembangan Frontend Bojong United
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 Frontend Guru dan Siswa sudah tergabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Aplikasi menggunakan Next.js 16 App Router, React, TypeScript, dan Tailwind CSS, dengan mock data untuk demonstrasi lokal.
 
 [README utama](../README.md) memuat ringkasan fitur, akun demo, dan langkah mencoba integrasi Guru–Siswa. Dokumen ini menjadi panduan kerja dari root repository. Semua path source dalam panduan modul dihitung dari root repository, bukan dari `docs/`.

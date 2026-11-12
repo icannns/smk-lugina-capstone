@@ -11,7 +11,6 @@ import {
   deleteEventDraft,
   restoreDeletedEventDraft,
 } from "@/lib/guru/event-draft-store";
-import { snapshotDate } from "@/lib/guru/dashboard-data";
 import type { ManagedEvent } from "@/lib/guru/event-types";
 import {
   eventLearning,
@@ -94,7 +93,7 @@ function Dashboard({ empty }: { empty: boolean }) {
       waitingDays: Math.max(
         0,
         Math.floor(
-          (Date.parse("2025-04-02T08:15+07:00") -
+          (Date.parse(draftState.serverTime) -
             Date.parse(`${s.versions.at(-1)!.submittedAt}+07:00`)) /
             86400000,
         ),
@@ -136,7 +135,7 @@ function Dashboard({ empty }: { empty: boolean }) {
   const createButton = (
     <div className={empty ? "w-[137.25px]" : "w-[148px] shrink-0"}>
       <DashboardPrimaryButton
-        onClick={() => router.push(wizardHref(beginEventDraft()))}
+        onClick={async () => { const id = await beginEventDraft(); if (id) router.push(wizardHref(id)); }}
       >
         {empty && <DashboardIcon name="plus" empty />}Create Event
       </DashboardPrimaryButton>
@@ -161,7 +160,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                 {teacher.greeting}
               </h1>
               <p className="mt-1 text-sm leading-5 text-secondary">
-                {snapshotDate}
+                {draftState.serverTime ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(draftState.serverTime)) + " WIB" : "—"}
                 {!empty &&
                   " — Pantau aktivitas event dan perkembangan belajar siswa."}
               </p>
@@ -238,7 +237,7 @@ function Dashboard({ empty }: { empty: boolean }) {
                       onClick={() =>
                         setAction({
                           title: "Hapus draf event?",
-                          description: `Hapus draf contoh “${firstDraft.title || "Draf tanpa judul"}” dari sesi demo? Perubahan juga berlaku di Event Management; tidak ada data server yang dihapus.`,
+                          description: `Hapus draf contoh “${firstDraft.title || "Draf tanpa judul"}” dari database? Perubahan juga berlaku di Event Management.`,
                           figmaNode: "291:18301",
                           deleteDraft: true,
                         })
@@ -280,10 +279,10 @@ function Dashboard({ empty }: { empty: boolean }) {
       <DashboardDialog
         action={action}
         onClose={() => setAction(null)}
-        onDelete={() => {
+        onDelete={async () => {
           if (!firstDraft) return;
           setUndoDraft(firstDraft);
-          deleteEventDraft(firstDraft.id);
+          if (!await deleteEventDraft(firstDraft.id)) return;
           setDeleted(true);
           setAction(null);
         }}
@@ -293,12 +292,12 @@ function Dashboard({ empty }: { empty: boolean }) {
           role="status"
           className="fixed bottom-5 right-5 z-30 max-w-[calc(100%-40px)] rounded-2xl border border-line bg-white p-4 shadow-lg"
         >
-          <p className="text-sm">Draf contoh dihapus dari sesi demo.</p>
+          <p className="text-sm">Draf dihapus dari database.</p>
           <div className="mt-2 flex flex-wrap gap-4">
             <button
               type="button"
-              onClick={() => {
-                if (undoDraft) restoreDeletedEventDraft(undoDraft);
+              onClick={async () => {
+                if (undoDraft && !await restoreDeletedEventDraft(undoDraft)) return;
                 setDeleted(false);
               }}
               className="text-sm font-medium text-primary hover:underline"

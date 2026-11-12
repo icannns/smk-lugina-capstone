@@ -48,10 +48,9 @@ export function EventManagement() {
   function change(patch: Partial<EventFilters>) {
     window.history.replaceState(null, "", eventHref({ ...filters, ...patch }));
   }
-  function wizard(resume?: ManagedEvent) {
-    router.push(
-      wizardHref(resume?.id ?? beginEventDraft(), resume?.wizard?.step),
-    );
+  async function wizard(resume?: ManagedEvent) {
+    const id = resume?.id ?? await beginEventDraft();
+    if (id) router.push(wizardHref(id, resume?.wizard?.step));
   }
   return (
     <>
@@ -130,11 +129,11 @@ export function EventManagement() {
           kind="delete"
           event={deleteEvent}
           onClose={() => setDeleteEvent(null)}
-          onDelete={() => {
-            deleteEventDraft(deleteEvent.id);
+          onDelete={async () => {
+            if (!await deleteEventDraft(deleteEvent.id)) return;
             setDeleteEvent(null);
             setNotice(
-              "Draf contoh dihapus dari sesi tab ini. Tidak ada data server yang dihapus.",
+              "Draf dihapus dari database.",
             );
             window.history.pushState(
               null,
@@ -150,11 +149,11 @@ export function EventManagement() {
           kind="deadline"
           milestone={deadline.milestone}
           onClose={() => setDeadline(null)}
-          onSave={(value) => {
-            updateEventDeadline(deadline.eventId, deadline.milestone.id, value);
+          onSave={async (value) => {
+            if (!await updateEventDeadline(deadline.eventId, deadline.milestone.id, value)) return;
             setDeadline(null);
             setNotice(
-              "Deadline contoh diperbarui pada sesi tab ini (WIB) dan terhubung ke Monitoring.",
+              "Deadline diperbarui di server (WIB) dan terhubung ke Monitoring.",
             );
           }}
         />

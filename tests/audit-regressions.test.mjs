@@ -127,43 +127,37 @@ test("B03: zero, partial, full current grades and historical revision are distin
   assert.equal(data.rows.length, 1);
   assert.equal(reportExport(event, data)[3].at(-3), "Belum dinilai");
 });
-test("B04: notes and review markers rehydrate in the existing single session store", () => {
-  const values = new Map();
-  globalThis.window = {};
-  globalThis.sessionStorage = {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-  };
-  const path = require.resolve("../src/lib/guru/event-draft-store.ts");
-  delete require.cache[path];
-  let store = require(path);
-  assert.equal(
-    store.saveStudentNote("wireframe-aisyah", "Catatan fiktif tersimpan."),
-    true,
-  );
-  assert.equal(store.markStudentReviewed("wireframe-aisyah"), true);
-  assert.equal(values.size, 1);
-  delete require.cache[path];
-  store = require(path);
-  assert.equal(
-    store.readEventStore().studentReviews.notes["wireframe-aisyah"],
-    "Catatan fiktif tersimpan.",
-  );
-  assert.equal(
-    store.readEventStore().studentReviews.reviews["wireframe-aisyah"],
-    true,
-  );
-  assert.deepEqual(parseStudentReviews(undefined).notes, {});
-  assert.deepEqual(
-    parseStudentReviews({
-      notes: { invalid: 5, valid: "demo" },
-      reviews: { invalid: "yes", valid: true },
-    }).notes,
-    { valid: "demo" },
-  );
-  delete globalThis.window;
-  delete globalThis.sessionStorage;
+test("B04: API cache rehydrates notes/reviews and isolates account switches without session fallback", async () => {
+  const store = require("../src/lib/guru/event-draft-store.ts");
+  const originalFetch = globalThis.fetch;
+  const server = structuredClone(store.readEventStore());
+  server.accountId = "teacher-rina";
+  server.studentReviews.notes["wireframe-aisyah"] = "Catatan dari PostgreSQL";
+  server.studentReviews.reviews["wireframe-aisyah"] = true;
+  let available = true;
+  globalThis.fetch = async () => available
+    ? new Response(JSON.stringify(server), {status:200})
+    : new Response(JSON.stringify({error:{message:"Database unavailable"}}), {status:503});
+  let disconnect;
+  try {
+    disconnect = store.connectWorkspace("teacher-rina");
+    await store.refreshWorkspace();
+    assert.equal(store.readEventStore().studentReviews.notes["wireframe-aisyah"], "Catatan dari PostgreSQL");
+    assert.equal(store.readEventStore().studentReviews.reviews["wireframe-aisyah"], true);
+    available = false;
+    assert.equal(await store.saveStudentNote("wireframe-aisyah", "Jangan tampilkan sukses"), false);
+    assert.match(store.readEventStore().storageError, /unavailable/);
+    assert.equal(store.readEventStore().studentReviews.notes["wireframe-aisyah"], "Catatan dari PostgreSQL");
+    disconnect(); disconnect = store.connectWorkspace("student-dimas");
+    assert.equal(Object.keys(store.readEventStore().studentReviews.notes).length, 0);
+    available = true;
+    await assert.rejects(store.refreshWorkspace(), /Identitas sesi/);
+    assert.equal(Object.keys(store.readEventStore().studentReviews.notes).length, 0);
+    assert.equal(store.readEventStore().learning.source, "api");
+    assert.deepEqual(parseStudentReviews(undefined).notes, {});
+  } finally { disconnect?.(); globalThis.fetch = originalFetch; }
 });
+
 test("B05: actual response timestamp and new metadata override legacy task metadata", () => {
   const state = { assessments: {}, feedback: {} },
     id = "kantin:dimas:M2",
@@ -298,4 +292,27 @@ test("B09: new survey responses invalidate a prior review including same-minute 
     directory().enrollments.find((e) => e.id === "kantin-aisyah").reviewed,
     true,
   );
+});
+
+test("API source never merges fixtures and compound display keys cannot collide", () => {
+  const { submissionKey, enrollmentKey } = require("../src/lib/domain/keys.ts");
+  assert.notEqual(submissionKey("a:b", "c", "M1"), submissionKey("a", "b:c", "M1"));
+  assert.notEqual(enrollmentKey("a:b", "c"), enrollmentKey("a", "b:c"));
+  const api = {source:"api", students:[], enrollments:[], submissions:{}, assessments:{}, feedback:{}};
+  assert.deepEqual(learning.allStudents(api), []);
+  assert.deepEqual(learning.allEnrollments(api), []);
+  assert.deepEqual(learning.allSubmissions(api), []);
+  assert.deepEqual(learning.feedbackFor("kantin:dimas:M1", api), []);
+});
+
+test("Optional surveys are not reported as missing responses and never fabricate completion", () => {
+  const state = fixture();
+  state.source = "api";
+  state.submissions[submission.id].surveyRequired = false;
+  assert.equal(reportRows(event, state, rubric, {...filters, survey:"missing"}).rows.length, 0);
+  assert.equal(reportRows(event, state, rubric, {...filters, survey:"complete"}).rows.length, 0);
+  const all = reportRows(event, state, rubric, filters);
+  assert.equal(all.rows[0].completed, 1);
+  assert(reportExport(event, all)[3][3].includes("Tidak diwajibkan"));
+  assert.equal(state.submissions[submission.id].surveyComplete, false);
 });
