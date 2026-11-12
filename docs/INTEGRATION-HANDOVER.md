@@ -1,5 +1,13 @@
 # Handover Integrasi Frontend dan Tim COMMIT
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 Frontend Guru/Siswa sudah digabung ke `main` melalui [PR #1](https://github.com/icannns/smk-lugina-capstone/pull/1). Statusnya prototipe lokal dengan mock data, bukan layanan produksi. Gunakan [README utama](../README.md) untuk gambaran produk/akun demo dan [panduan frontend](FRONTEND.md) untuk struktur pengembangan.
 
 ## Memulai integrasi

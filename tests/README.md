@@ -1,114 +1,117 @@
-# Panduan Pengujian Regresi Frontend
+# Panduan Pengujian
 
-Jalankan perintah dari root repository setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif. Tes browser kini memerlukan PostgreSQL lokal dan akun yang diprovisikan; tes selector/unit frontend tetap tanpa backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
+Jalankan dari root repository. Hasil fase sebelumnya tidak otomatis membuktikan
+perubahan sekarang. Tidak ada password default atau fallback ke mock store
+browser. Jangan menyimpan cookie, password, `.env`, screenshot, atau dump DB ke Git.
 
-## Pemeriksaan dasar dan tes logika
+## Pemeriksaan dasar
 
 ```powershell
+npm ci
+npm run db:validate
 npm run lint
 npm run build
 node node_modules/typescript/bin/tsc --noEmit --incremental false
-node --test tests/audit-regressions.test.mjs
+node --test tests/audit-regressions.test.mjs tests/assessment-results.test.mjs
+npm run test:auth
+npm run test:db:safety
 ```
 
-Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru, selesaikan build sebelum TypeScript mandiri. Runner Node menguji selector, serializer, session store, label milestone, dan penulis PDF yang sebenarnya melalui compiler TypeScript proyek. Tidak ada implementasi mock paralel untuk mengganti fungsi yang diuji. Saat ini terdapat sembilan tes logika.
+Build menghasilkan tipe route Next.js seperti `LayoutProps`; pada checkout baru,
+selesaikan build sebelum TypeScript mandiri. Delapan belas tes Node memakai fungsi
+selector/serializer/cache/PDF/renderer asli dengan fixture unit eksplisit. Fixture
+unit bukan fallback aplikasi. Tiga tes Auth memeriksa Argon2id/validasi dan tiga
+tes safety memeriksa penolakan target DB yang tidak diizinkan.
 
-## Persiapan runner browser
+## REST dan persistensi Phase 3
 
-Jalankan server hasil build secara terpisah dengan `npm run start`. Hentikan server produksi sebelum build ulang untuk mencegah URL CSS lama. Gunakan instalasi Playwright yang tersedia di lingkungan pengujian; dependensi runtime aplikasi tidak perlu ditambah.
+Diperlukan PostgreSQL lokal disposable dengan nama `bojong_united_test` atau
+suffix underscore/alphanumeric, empat migrasi terpasang, seed development,
+serta tiga akun Phase 2 yang diprovisikan. Jangan memakai DB produksi atau DB
+tim bersama. Panduan setup: [REST](../docs/BACKEND-REST-API.md),
+[database](../docs/DATABASE-FOUNDATION.md), [Auth](../docs/AUTHENTICATION-RBAC.md).
 
-```powershell
-$env:PLAYWRIGHT_MODULE = 'C:/path/to/node_modules/@playwright/test'
-$env:PLAYWRIGHT_CHANNEL = 'msedge'
-node tests/audit-browser-regressions.mjs
-```
+Isi environment privat: DATABASE_URL, AUTH_SECRET, AUTH_URL, NODE_ENV=test,
+ALLOW_DEV_SEED=true, TEST_TEACHER_PASSWORD, TEST_DIMAS_PASSWORD,
+TEST_AISYAH_PASSWORD. Provisioning memerlukan ALLOW_DEV_ACCOUNT_PROVISION=true.
+Gunakan password yang sama untuk provision dan browser runner; tidak ada rotasi
+password akun lama otomatis. `AUTH_URL` harus sesuai alamat server pengujian.
 
-`PLAYWRIGHT_MODULE` dapat dihilangkan bila `@playwright/test` sudah dapat di-resolve. Channel default adalah Edge. Path di atas merupakan contoh yang harus disesuaikan, bukan path mesin yang wajib digunakan.
+Jalankan server terpisah: `npm run dev -- --port 3004` atau setelah build,
+`npm run start -- --port 3004`. Hentikan server produksi sebelum build ulang
+agar JavaScript/CSS berasal dari build yang sama.
 
-| Variabel | Fungsi/default |
+| Environment runner | Arti |
 | --- | --- |
-| `PLAYWRIGHT_MODULE` | Lokasi modul Playwright bila tidak tersedia pada resolusi Node normal |
-| `PLAYWRIGHT_CHANNEL` | Channel browser; default `msedge` |
-| `AUDIT_BASE_URL` | Alamat server; default `http://localhost:3000` |
-| `AUDIT_OUTPUT_DIR` | Folder bukti di luar repository; gunakan lokasi berbeda untuk tiap server/run yang ingin disimpan |
+| PLAYWRIGHT_MODULE | Path ke `@playwright/test` bila tidak tersedia melalui resolusi Node normal |
+| PLAYWRIGHT_CHANNEL | Default `msedge`; browser channel harus sudah terpasang |
+| AUDIT_BASE_URL | Default http://localhost:3000; set sesuai port server |
+| AUDIT_OUTPUT_DIR | Folder bukti di luar Git; gunakan subfolder berbeda untuk setiap suite/run |
 
-## Regresi temuan audit
-
-`audit-browser-regressions.mjs` membuat konteks browser baru dengan fixture enrollment 40 orang, termasuk nilai historis dan revisi terbaru yang belum dinilai. Delapan kelompok pengujian mencakup B01–B10: filter pengerjaan, label nol/sebagian/seluruh nilai, catatan/review yang bertahan, progres event, metadata/waktu survei, antrean Dashboard, label M1 alih-alih UUID, error form, serta nama panjang pada ukuran 320/768/1440 px.
-
-Runner benar-benar mengunduh PDF/XLSX. Pemeriksaan browser pada runner tidak sama dengan validasi seluruh format/render pada semua aplikasi pembaca; periksa file keluaran bila kebutuhan ekspor berubah. Tanpa `AUDIT_OUTPUT_DIR`, bukti masuk ke folder temporary OS `lugina-final-audit-round-2/regressions`.
-
-Fixture terkontrol ini berbeda dari alur UI membuat event, enrollment, submit, assessment, dan revisi pada [handover](../docs/INTEGRATION-HANDOVER.md#alur-uji-integrasi). Laporan audit lokal tidak diperlukan untuk menjalankan runner.
-
-## Regresi role dan Instant Navigation
-
-`role-navigation-regressions.mjs` menguji seluruh page Guru/Siswa tanpa login, dengan role yang benar, dengan role salah, dan setelah logout. Tes juga memeriksa Aisyah M1 serta Nabila M4 melalui URL langsung dan klik dari Monitoring. Runner gagal jika mendapati diagnostic Instant Navigation, console error, page error, atau respons HTTP gagal. Inventaris route gagal ketika page terlindungi baru belum memiliki skenario.
-
-Gunakan konfigurasi Playwright yang sama, lalu uji development dan produksi:
+Dengan konfigurasi tersebut, jalankan **berurutan**:
 
 ```powershell
-$env:AUDIT_BASE_URL = 'http://localhost:3000'
-node tests/role-navigation-regressions.mjs
-
-# Dengan npm run dev yang berjalan pada port 3001:
-$env:AUDIT_BASE_URL = 'http://localhost:3001'
-node tests/role-navigation-regressions.mjs
+npm run test:rest
+npm run test:rest:browser
+npx tsx tests/audit-browser-regressions.mjs
+npx tsx tests/assessment-dashboard-regressions.mjs
+npx tsx tests/role-navigation-regressions.mjs
+npm run test:auth:browser
 ```
 
-Setiap run saat ini memuat 51 pemeriksaan. Tanpa override, hasil masuk ke temporary OS `lugina-role-navigation-regressions`. Peringatan ukuran gambar development dicatat terpisah dari diagnostic Instant Navigation. Sesuaikan port dengan server yang benar-benar aktif.
+| Suite | Cakupan |
+| --- | --- |
+| rest-api-regressions (12 kelompok) | Auth nyata, RBAC/ownership/IDOR, validasi, CSRF/XSS, draft CRUD/revision, konkurensi enrollment/submission, urutan milestone, publish idempoten, penilaian/feedback/revisi, progres/laporan, klaim contoh, survei DEMO/review berversi, profil |
+| rest-browser-integration (11 kelompok) | UI wizard → publish → sesi Siswa terpisah → enroll → draf/tugas → nilai/feedback → revisi v2 → nilai/laporan/portofolio → klaim/PDF → survei DEMO/review → profil; refresh/fresh browser dan kegagalan API tanpa sukses palsu/fallback |
+| audit-browser-regressions (7 kelompok) | Fixture DB event 40 peserta, survei belum lengkap, nilai historis vs revisi terbaru, UUID internal, catatan Guru, PDF dua halaman/XLSX nyata, error/fokus rubrik, nama profil 110/120 karakter, layout 320/768/1440 |
+| assessment-dashboard-regressions (25 cek) | Tiga jenis hasil Guru dan dua Siswa dari referensi DB; filter, pagination, modal/fokus keyboard, data Dimas/Aisyah terpisah, akun baru kosong, layout 320/768/1440 |
+| role-navigation-regressions (51 cek) | Seluruh page Guru/Siswa tanpa login, role benar/salah, logout, Aisyah M1/M4 lewat URL dan klik, diagnostic Instant Navigation, HTTP/console/runtime |
+| auth-browser-regressions (15 kelompok) | Login tiga akun, invalid credentials, cookie/sesi, register API/UI/Google non-auth, CSRF/role injection, IDOR, logout/replay, expiry/nonaktif, rate limit, layar auth 320/768/1440 |
 
-## Hasil asesmen dashboard
+Suite REST/browser memakai API nyata, bukan injeksi sessionStorage. Untuk membuat
+fixture yang tidak tersedia di UI, runner DB menggunakan koneksi development
+berguard: Guru kedua, 39 peserta fiktif tanpa credential, versi historis, respons
+survei versi kedua, dan referensi DEMO untuk pagination. Tidak ada endpoint
+backdoor/test di aplikasi. Fixture diberi ID unik atau namespace QA, tetap berada
+hanya di DB test untuk inspeksi. Akun Dimas dipulihkan setelah tes nama panjang.
 
-Tes tambahan untuk section Uji Kompetensi, Technostress, dan Asesmen UI/UX:
+Auth runner mengubah sementara expiry/nonaktif/grant akun test untuk menguji
+revocation; jalankan terakhir dan jangan bersamaan dengan runner lain.
+Rate-limit test memakai identitas acak sehingga tidak mengunci akun asli.
+Tes role membutuhkan fixture Dimas/Aisyah yang diprovisikan, bukan Nabila mock.
+
+## Migrasi dan integritas DB
+
+Gunakan DB replay baru, **berbeda dari DB REST/browser**. Pasang empat migrasi,
+jalankan seed dua kali, lalu `npm run test:db`. Sepuluh tes memeriksa unique/FK,
+scope event/milestone, riwayat versi/nilai/review, trigger snapshot, ownership,
+peran profil dan batas retensi. Test fixture murni mengharapkan tiga akun demo;
+jangan menjalankannya terhadap DB yang sudah berisi fixture browser tambahan.
+
+Untuk drift:
 
 ```powershell
-node --test tests/assessment-results.test.mjs
-# Dengan server aplikasi aktif dan variabel Playwright seperti di atas:
-node tests/assessment-dashboard-regressions.mjs
+npx prisma migrate status
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+# SHADOW_DATABASE_URL menunjuk DB disposable lain, tidak sama dengan DB aplikasi:
+npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
 ```
 
-Tujuh tes Node memeriksa scope akun, ID/enrollment bersama, nilai nol versus hasil
-belum tersedia, filter/ringkasan, pembatalan request saat pergantian akun, serta
-render loading/error/empty, dan pilihan catatan terbaru pada kartu ringkasan.
-Runner browser memeriksa posisi ringkasan, buka/tutup daftar, filter, pagination, dialog
-keyboard/fokus, akun Dimas/Aisyah/akun baru, dan layout 320/768/1440 px. Error dan
-loading diuji lewat renderer React; mock lokal tidak berpura-pura menghubungi
-server yang gagal. Petunjuk kontrak dan batas fitur ada pada
-[panduan asesmen dashboard](../docs/DASHBOARD-ASSESSMENTS.md).
+Exit 0 pada diff berarti tidak ada perbedaan schema Prisma yang terdeteksi.
+CHECK/trigger SQL tetap diperiksa melalui tes integritas. Untuk upgrade Phase 2,
+verifikasi ID dan hash password tiga akun sebelum/sesudah migrasi tanpa mencetak
+hash/credential ke log publik. Jangan mengedit tiga migrasi lama.
 
-## Batas dan bukti pengujian
+## Bukti ekspor dan batas verifikasi
 
-Browser memakai sesi terisolasi; sesi browser pengguna tidak dipakai. Simpan bukti di luar Git. Tes ini tidak menyertifikasi keamanan server, perilaku screen reader, sinkronisasi antarperangkat, seluruh browser, atau kesetaraan piksel Figma. Untuk perubahan lintas modul, ulangi alur Guru–Siswa dan periksa data Reports/Portfolio yang sama; untuk backend mendatang, tambahkan tes pengguna/sesi terpisah.
+Runner benar-benar mengunduh PDF/XLSX dan certificate prototype PDF. PDF 40
+peserta diperiksa jumlah halaman/posisi teks serta peserta terakhir; XLSX dapat
+diperiksa dengan ZIP CRC/XML parser dan 43 baris (judul/header + 40 peserta).
+Bukti harus menyebut pemeriksaan yang benar-benar dilakukan, bukan menyamakan
+unduhan dengan uji seluruh aplikasi pembaca dokumen.
 
-## Fondasi PostgreSQL/Prisma
-
-`npm run test:db:safety` menjalankan tiga tes guard tanpa database.
-`npm run test:db` menjalankan sepuluh tes integritas PostgreSQL nyata: diperlukan
-DB lokal **test terpisah**, migration deploy, NODE_ENV=test dan
-ALLOW_DEV_SEED=true. DATABASE_URL harus menunjuk `bojong_united_test` (boleh
-suffix); DB development manual ditolak. Seed hanya membuat fixture, tidak
-menghapus atau mereset data. Jangan jalankan terhadap produksi/shared database.
-
-Langkah setup, perlindungan seed, batasan dan SQL CHECK/trigger tersedia pada
-[panduan database](../docs/DATABASE-FOUNDATION.md#pengujian). Tes frontend di atas
-masih memakai browser mock dan tidak membuktikan integrasi REST/database.
-
-## Auth.js dan RBAC server (Phase 2)
-
-`npm run test:auth` menguji Argon2id dan validasi server tanpa DB.
-`npm run test:auth:browser` menguji API/browser nyata terhadap DB test disposable:
-login 3 akun, invalid credentials, registration/CSRF, privilege escalation,
-resource ownership, data isolation, logout/replay, expiry dan rate limit.
-Konfigurasikan NODE_ENV=test, ALLOW_DEV_SEED=true, DATABASE_URL test,
-AUDIT_BASE_URL, PLAYWRIGHT_MODULE dan ketiga TEST_*_PASSWORD secara privat.
-Runner membuat fixture test dan mengubah expiry, sehingga menolak DB non-test.
-
-Provisioning: [panduan Auth/RBAC](../docs/AUTHENTICATION-RBAC.md). Ketiga runner
-browser frontend existing juga membaca TEST_TEACHER_PASSWORD,
-TEST_DIMAS_PASSWORD dan TEST_AISYAH_PASSWORD; tidak ada fallback password demo.
-Logout kini tombol `Keluar`, bukan link `Keluar dari demo`. Registrasi pengujian
-memakai email unik agar rerun tidak konflik dengan user DB yang sudah dibuat.
-
-Jalankan tes database Phase 1 pada DB fixture terpisah dari DB browser Auth,
-karena pemeriksaan fixture murni mengharapkan hanya tiga pengguna demo awal.
-Jangan simpan credential, storage state cookie, atau bukti QA ke Git.
+Browser testing memakai Edge/Chromium lokal; bukan uji seluruh browser, screen
+reader, beban produksi, penetrasi independen, atau klaim identik piksel Figma.
+Provider FOMO/COMMIT, pengiriman file biner, dan deployment produksi tidak diuji
+karena belum diimplementasikan. Catatan hasil aktual fase ini ada pada
+[panduan REST](../docs/BACKEND-REST-API.md#hasil-verifikasi-fase-ini).

@@ -1,389 +1,49 @@
+import "dotenv/config";
 import assert from "node:assert/strict";
-import { createRequire, Module } from "node:module";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import path from "node:path";
+import {createRequire} from "node:module";
+import {randomBytes} from "node:crypto";
+import {mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import os from "node:os";
-
-const require = createRequire(import.meta.url);
-const { chromium, expect } = require(
-  process.env.PLAYWRIGHT_MODULE || "@playwright/test",
-);
-const ts = require("typescript");
-Module._extensions[".ts"] = (module, filename) =>
-  module._compile(
-    ts.transpileModule(readFileSync(filename, "utf8"), {
-      compilerOptions: {
-        module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ES2022,
-        esModuleInterop: true,
-      },
-    }).outputText,
-    filename,
-  );
-const { readEventStore } = require("../src/lib/guru/event-draft-store.ts");
-const { managedEvents } = require("../src/lib/guru/event-data.ts");
-const state = { ...structuredClone(readEventStore()), version: 1 };
-const eventId = "round2-regression-event",
-  milestoneId = "5820e400-e29b-41d4-a716-446655440000";
-const event = {
-  ...managedEvents[0],
-  id: eventId,
-  title: "Event Regresi Fiktif Round 2",
-  startAt: "2026-11-01T08:00",
-  endAt: "2027-01-31T23:59",
-  milestones: [{ ...managedEvents[0].milestones[0], id: milestoneId }],
-};
-state.published[eventId] = event;
-state.learning.enrollments = Array.from({ length: 40 }, (_, i) => ({
-  id: `${eventId}-${i ? "fictional-" + i : "dimas"}`,
-  eventId,
-  studentId: i ? `fictional-${i}` : "dimas",
-  method: "self",
-}));
-state.learning.students = state.learning.enrollments.slice(1).map((e, i) => ({
-  id: e.studentId,
-  name: `Peserta Fiktif ${String(i + 1).padStart(2, "0")} ${"NamaPanjang".repeat(i === 38 ? 15 : 0)}`.trim(),
-  email: `fictional${i}@example.com`,
-}));
-const submissionId = `${eventId}:dimas:${milestoneId}`;
-state.learning.submissions = {
-  [submissionId]: {
-    id: submissionId,
-    eventId,
-    studentId: "dimas",
-    milestoneId,
-    surveyComplete: false,
-    versions: [
-      {
-        version: 1,
-        submittedAt: "2026-11-08T09:00",
-        file: "old-demo.pdf",
-        scores: Object.fromEntries(
-          state.rubrics.uiux.criteria.map((c) => [c.id, 4]),
-        ),
-      },
-      { version: 2, submittedAt: "2026-11-09T09:00", file: "new-demo.pdf" },
-    ],
-  },
-};
-
-const output =
-  process.env.AUDIT_OUTPUT_DIR ||
-  path.join(os.tmpdir(), "lugina-final-audit-round-2", "regressions");
-mkdirSync(output, { recursive: true });
-const base = process.env.AUDIT_BASE_URL || "http://localhost:3000",
-  errors = [],
-  failed = [],
-  checks = [];
-const browser = await chromium.launch({
-  channel: process.env.PLAYWRIGHT_CHANNEL || "msedge",
-  headless: true,
-});
-try {
-  const context = await browser.newContext({
-    viewport: { width: 1440, height: 1024 },
-    acceptDownloads: true,
-  });
-  await context.addInitScript((fixture) => {
-    if (!sessionStorage.getItem("round2-fixture")) {
-      sessionStorage.setItem(
-        "lugina.teacher.event-drafts.v1",
-        JSON.stringify(fixture),
-      );
-      sessionStorage.setItem("round2-fixture", "yes");
-    }
-  }, state);
-  const page = await context.newPage();
-  page.setDefaultTimeout(10000);
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => {
-    if (m.type() === "error") errors.push(m.text());
-  });
-  page.on("response", (r) => {
-    if (r.status() >= 400) failed.push([r.url(), r.status()]);
-  });
-  const main = () => page.locator("main:visible").last(),
-    button = (name, root = main()) =>
-      root.getByRole("button", { name, exact: true });
-  const go = async (url) => {
-    await page.goto(base + url);
-    await main().waitFor();
-  };
-  const shot = async (name) => {
-    await page.evaluate(() => document.fonts.ready);
-    await page.screenshot({
-      path: path.join(output, `${name}.png`),
-      fullPage: true,
-    });
-  };
-  const ok = (id, detail) => {
-    checks.push({ id, detail, status: "PASS" });
-    console.log("PASS", id, detail);
-  };
-  async function login(role) {
-    await go("/login");
-    await page
-      .locator("#login-email")
-      .fill(role === "teacher" ? "rina.guru" : "dimas");
-    await page
-      .locator("#login-password")
-      .fill(role === "teacher" ? process.env.TEST_TEACHER_PASSWORD : process.env.TEST_DIMAS_PASSWORD);
-    await button("Masuk").click();
-    await page.waitForURL(
-      role === "teacher" ? "**/guru/dashboard" : "**/siswa/dashboard",
-    );
-  }
-  async function surveyCount() {
-    await go("/guru/dashboard");
-    return Number(
-      await main()
-        .locator('section[aria-labelledby="survey-title"] span')
-        .first()
-        .innerText(),
-    );
-  }
-  await login("teacher");
-  await go(`/guru/reports?event=${eventId}&work=working`);
-  await expect(main().locator("tbody tr")).toHaveCount(1);
-  await expect(
-    main().locator("tbody").getByText("Dalam pengerjaan", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    main().locator("tbody").getByText("Belum dinilai", { exact: true }),
-  ).toBeVisible();
-  await expect(main().locator("thead")).toContainText("M1 (tugas");
-  assert(!(await main().innerText()).includes(milestoneId));
-  await shot("report-working-zero-grade-readable-label");
-  ok(
-    "B01/B03/B08",
-    "Submitted + survey-incomplete learner stays in working filter; zero latest grades; UUID hidden.",
-  );
-  await go(`/guru/work?event=${eventId}`);
-  const row = main().locator("tbody tr").filter({ hasText: "Dimas Saputra" });
-  await expect(row.getByText("Belum dinilai", { exact: true })).toHaveCount(2);
-  await page
-    .getByLabel("Status penilaian", { exact: true })
-    .selectOption("none");
-  await expect(main().locator("tbody tr")).toHaveCount(20);
-  await page
-    .getByLabel("Status penilaian", { exact: true })
-    .selectOption("partial");
-  await expect(main().locator("tbody tr")).toHaveCount(0);
-  await go(`/guru/monitoring?event=${eventId}`);
-  assert(!(await main().innerText()).includes(milestoneId));
-  ok(
-    "B03/B08-WORK",
-    "Karya distinguishes zero from partial; Monitoring labels use M1.",
-  );
-
-  await go("/guru/students?event=wireframe&student=aisyah");
-  await page
-    .getByRole("textbox", {
-      name: "Catatan Guru untuk Aisyah Putri",
-      exact: true,
-    })
-    .fill("Catatan regresi fiktif Round 2.");
-  await button("Simpan Catatan").click();
-  await button("Tandai Sudah Ditinjau").click();
-  await go("/guru/dashboard");
-  await go("/guru/students?event=wireframe&student=aisyah");
-  await expect(
-    page.getByRole("textbox", {
-      name: "Catatan Guru untuk Aisyah Putri",
-      exact: true,
-    }),
-  ).toHaveValue("Catatan regresi fiktif Round 2.");
-  await expect(button("Tandai Sudah Ditinjau")).toBeDisabled();
-  await page.reload();
-  await expect(
-    page.getByRole("textbox", {
-      name: "Catatan Guru untuk Aisyah Putri",
-      exact: true,
-    }),
-  ).toHaveValue("Catatan regresi fiktif Round 2.");
-  await expect(button("Tandai Sudah Ditinjau")).toBeDisabled();
-  ok(
-    "B04",
-    "Note and review survive navigation and full refresh in existing session store.",
-  );
-
-  const beforeCount = await surveyCount();
-  await login("student");
-  await go("/siswa/survey?event=kantin&milestone=M2&mode=form");
-  await page.locator("#survey-first-4").check();
-  await page.locator("#survey-second-5").check();
-  await page
-    .locator("#survey-reflection")
-    .fill("Refleksi fiktif Round 2 terbaru.");
-  await button("Kirim Jawaban Survei").click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Ya, Kirim Jawaban", exact: true })
-    .click();
-  await expect(
-    main().getByRole("heading", {
-      name: "Hasil Pengiriman Survei",
-      exact: true,
-    }),
-  ).toBeVisible();
-  const stored = await page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("lugina.teacher.event-drafts.v1")),
-  );
-  const response = stored.studentUI.surveyResponses["kantin:dimas:M2"];
-  await login("teacher");
-  assert.equal(await surveyCount(), beforeCount + 1);
-  await go("/guru/events?event=kantin");
-  await expect(main()).toContainText("35 dari 80 tugas & survei selesai");
-  await expect(main()).toContainText("39 dari 80 tugas telah dikumpulkan");
-  await expect(main().getByRole("progressbar")).toHaveAttribute(
-    "aria-valuenow",
-    "44",
-  );
-  await shot("event-progress-current");
-  await go("/guru/students?event=kantin&student=dimas");
-  const surveyCard = main()
-    .locator("section")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "M2 · User Flow & Wireframe",
-        exact: true,
-      }),
-    })
-    .last();
-  const expectedDate = new Intl.DateTimeFormat("id-ID", {
-    timeZone: "Asia/Jakarta",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(response.submittedAt + "+07:00"));
-  await expect(surveyCard).toContainText(expectedDate);
-  await expect(surveyCard).toContainText(
-    response.submittedAt.slice(11).replace(":", "."),
-  );
-  await expect(surveyCard).toContainText(
-    "Survei Adopsi Teknologi dan Technostress (Versi 1.0)",
-  );
-  await expect(surveyCard).toContainText(
-    "Ringkasan terhubung ke tampilan Guru dalam sesi demo.",
-  );
-  await expect(surveyCard).toContainText("Refleksi fiktif Round 2 terbaru.");
-  await shot("actual-survey-metadata");
-  await button("Tandai Sudah Ditinjau").click();
-  assert.equal(await surveyCount(), beforeCount - 1);
-  await page.reload();
-  assert.equal(await surveyCount(), beforeCount - 1);
-  ok(
-    "B02/B05/B09",
-    "New survey increments review total, current metadata/time displayed, review decrements total, progress is 35/80=44% with 39 tasks.",
-  );
-
-  await go(`/guru/reports?event=${eventId}&assessment=none`);
-  await expect(main()).toContainText("40");
-  await expect(main().locator("tbody tr")).toHaveCount(20);
-  const downloadPdf = page.waitForEvent("download");
-  await button("Unduh PDF").click();
-  await (await downloadPdf).saveAs(path.join(output, "report-40-students.pdf"));
-  const pdf = readFileSync(path.join(output, "report-40-students.pdf"), "utf8");
-  assert((pdf.match(/\/Type \/Page\b/g) ?? []).length > 1);
-  assert(pdf.includes("Peserta Fiktif 39"));
-  for (const match of pdf.matchAll(/1 0 0 1 50 (\d+) Tm/g))
-    assert(Number(match[1]) >= 46);
-  const downloadXlsx = page.waitForEvent("download");
-  await button("Unduh Excel").click();
-  await (
-    await downloadXlsx
-  ).saveAs(path.join(output, "report-40-students.xlsx"));
-  ok(
-    "B06-40",
-    "Actual 40-enrollment PDF paginates, retains last long-name row; XLSX generated for independent structural check.",
-  );
-
-  await go("/guru/rubrics?mode=create");
-  await page.locator("#rubric-name").fill("Rubrik Aksesibilitas Round 2");
-  await button("Simpan Rubrik").click();
-  const fields = main().locator('textarea[aria-invalid="true"]');
-  await expect(fields).toHaveCount(5);
-  assert.equal(
-    await page.evaluate(() =>
-      document.activeElement?.getAttribute("aria-label"),
-    ),
-    "Kriteria 2 skor 1",
-  );
-  for (const field of await fields.all()) {
-    const id = await field.getAttribute("aria-describedby");
-    assert(id);
-    await expect(page.locator(`[id="${id}"]`)).toBeVisible();
-  }
-  await page
-    .getByRole("textbox", { name: "Nama kriteria 2", exact: true })
-    .fill("");
-  await button("Simpan Rubrik").click();
-  assert.equal(
-    await page.evaluate(() =>
-      document.activeElement?.getAttribute("aria-label"),
-    ),
-    "Nama kriteria 2",
-  );
-  await shot("rubric-field-errors-focus");
-  ok(
-    "B10",
-    "Five score errors associated with invalid fields; first invalid field receives focus, including criterion name.",
-  );
-
-  await login("student");
-  await go("/siswa/profile");
-  for (const length of [110, 120]) {
-    const name = "N".repeat(length);
-    await page.locator("#student-profile-name").fill(name);
-    await button("Simpan Perubahan").click();
-    await go("/siswa/dashboard");
-    await go("/siswa/profile");
-    await expect(page.locator("#student-profile-name")).toHaveValue(name);
-    await page.reload();
-    await expect(page.locator("#student-profile-name")).toHaveValue(name);
-  }
-  ok(
-    "B07",
-    "110 and 120 character accepted names retain every character after navigation and refresh.",
-  );
-  for (const width of [320, 768, 1440]) {
-    await page.setViewportSize({ width, height: 1024 });
-    for (const route of [
-      "/siswa/dashboard",
-      "/siswa/profile",
-      "/siswa/portfolio?event=kantin",
-    ]) {
-      await go(route);
-      assert(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-        `Long-name overflow: ${route} at ${width}`,
-      );
-    }
-  }
-  ok(
-    "B07-RESPONSIVE",
-    "A persisted 120-character unbroken name wraps on Dashboard/Portfolio at 320, 768 and 1440 px.",
-  );
-  assert.deepEqual(errors, []);
-  assert.deepEqual(failed, []);
-  writeFileSync(
-    path.join(output, "results.json"),
-    JSON.stringify(
-      {
-        checks,
-        errors,
-        failed,
-        surveyBefore: beforeCount,
-        response,
-        pdfPages: (pdf.match(/\/Type \/Page\b/g) ?? []).length,
-      },
-      null,
-      2,
-    ),
-  );
-  console.log(JSON.stringify({ passed: checks.length, output }));
-} finally {
-  await browser.close();
-}
+import path from "node:path";
+import {requireDevelopmentDatabase} from "../prisma/development-safety.ts";
+import {createDatabaseClient} from "../src/server/db/client.ts";
+const target=requireDevelopmentDatabase(process.env);assert(target.databaseName.startsWith("bojong_united_test"));
+const database=createDatabaseClient(target.connectionString),require=createRequire(import.meta.url),{chromium,expect}=require(process.env.PLAYWRIGHT_MODULE||"@playwright/test");
+const base=process.env.AUDIT_BASE_URL||"http://localhost:3000";assert(["localhost","127.0.0.1"].includes(new URL(base).hostname));
+const output=process.env.AUDIT_OUTPUT_DIR||path.join(os.tmpdir(),"lugina-persisted-audit-regressions");mkdirSync(output,{recursive:true});
+const suffix=randomBytes(5).toString("hex"),eventId=`audit-${suffix}`,milestoneId=crypto.randomUUID(),checks=[],errors=[],failed=[];
+// Test-only DB fixture. No mock browser store, test API, real student data, or production writes.
+await database.$transaction(async tx=>{
+ const rubric=await tx.rubricVersion.findFirstOrThrow({where:{rubricId:"uiux"},include:{criteria:true}});
+ await tx.event.create({data:{id:eventId,ownerTeacherId:"rina",title:`Event Regresi PostgreSQL ${suffix}`,status:"ONGOING",startsAt:new Date("2026-01-01Z"),endsAt:new Date("2030-12-31Z"),publishedAt:new Date(),rubricVersionId:rubric.id}});
+ await tx.milestone.create({data:{eventId,id:milestoneId,title:"Milestone UUID Regresi",position:1,deadline:new Date("2030-12-01Z"),acceptedFormats:["Teks"]}});
+ await tx.milestoneCriterion.createMany({data:rubric.criteria.map(c=>({eventId,milestoneId,rubricVersionId:rubric.id,criterionId:c.id}))});
+ await tx.milestoneSurveyReference.create({data:{eventId,milestoneId,surveyReferenceId:"demo-learning-survey"}});
+ await tx.enrollment.create({data:{eventId,studentId:"dimas"}});
+ for(let i=1;i<=39;i++){const id=`audit-${suffix}-${i}`;await tx.user.create({data:{id:`user-${id}`,name:`Peserta Fiktif ${String(i).padStart(2,"0")} ${i===39?"NamaPanjang".repeat(9):""}`.trim(),email:`${id}@example.com`,role:"STUDENT",isDemo:true,student:{create:{id}}}});await tx.enrollment.create({data:{eventId,studentId:id}});}
+ const submission=await tx.submission.create({data:{eventId,studentId:"dimas",milestoneId}});
+ const v1=await tx.submissionVersion.create({data:{submissionId:submission.id,eventId,version:1,submittedAt:new Date("2026-11-08T09:00+07:00"),note:"Riwayat pekerjaan fiktif"}});
+ const assessment=await tx.assessment.create({data:{submissionVersionId:v1.id,eventId,rubricVersionId:rubric.id,assessedByTeacherId:"rina"}});
+ await tx.assessmentScore.createMany({data:rubric.criteria.map(c=>({assessmentId:assessment.id,rubricVersionId:rubric.id,criterionId:c.id,value:4}))});
+ await tx.submissionVersion.create({data:{submissionId:submission.id,eventId,version:2,submittedAt:new Date(),note:"Revisi belum dinilai"}});
+},{timeout:30000});
+const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||"msedge",headless:true}),context=await browser.newContext({viewport:{width:1440,height:1024},acceptDownloads:true}),page=await context.newPage();page.setDefaultTimeout(15000);
+page.on("pageerror",e=>errors.push(e.message));page.on("response",r=>{if(r.status()>=400)failed.push([r.url(),r.status()])});
+const main=()=>page.locator("main:visible").last(),button=name=>page.getByRole("button",{name,exact:true});
+const ok=name=>{checks.push(name);console.log("PASS",name)};
+async function go(route){await page.goto(base+route);await expect(page.locator("main:visible").last()).not.toHaveAttribute("aria-label","Memuat ruang belajar");}
+async function login(identifier,password){await go("/login");await page.locator("#login-email").fill(identifier);await page.locator("#login-password").fill(password);await button("Masuk").click();await page.waitForURL(identifier==="rina.guru"?"**/guru/dashboard":"**/siswa/dashboard");await expect(page.getByRole("heading",{name:identifier==="rina.guru"?"Selamat pagi, Rina":"Halo, Dimas",exact:true})).toBeVisible();}
+let studentLoggedIn=false;
+try{
+ await login("rina.guru",process.env.TEST_TEACHER_PASSWORD);
+ await go(`/guru/reports?event=${eventId}&work=working`);await expect(main().locator("tbody tr")).toHaveCount(1);await expect(main().locator("tbody")).toContainText("Dalam pengerjaan");await expect(main().locator("tbody")).toContainText("Belum dinilai");await expect(main().locator("thead")).toContainText("M1 (tugas");assert(!(await main().innerText()).includes(milestoneId));ok("B01/B03/B08: DB-backed incomplete survey and ungraded revision remain working; UUID remains internal");
+ await go(`/guru/work?event=${eventId}`);const dimas=main().locator("tbody tr").filter({hasText:"Dimas Saputra"});await expect(dimas.getByText("Belum dinilai",{exact:true})).toHaveCount(2);await page.getByLabel("Status penilaian",{exact:true}).selectOption("partial");await expect(main().locator("tbody tr")).toHaveCount(0);ok("B03: historical grade is not the current revision grade in Student Work filters");
+ await go(`/guru/students?event=${eventId}&student=dimas`);const note=page.getByRole("textbox",{name:"Catatan Guru untuk Dimas Saputra",exact:true});await note.fill("Catatan regresi PostgreSQL.");await button("Simpan Catatan").click();await expect(main()).toContainText("Catatan tersimpan");await page.reload();await expect(note).toHaveValue("Catatan regresi PostgreSQL.");ok("B04: Teacher note survives actual DB write and full refresh");
+ await go(`/guru/reports?event=${eventId}&assessment=none`);await expect(main().locator("tbody tr")).toHaveCount(20);const pd=page.waitForEvent("download");await button("Unduh PDF").click();const pdfPath=path.join(output,"report-40-students.pdf");await(await pd).saveAs(pdfPath);const pdf=readFileSync(pdfPath,"utf8");assert((pdf.match(/\/Type \/Page\b/g)||[]).length>1);assert(pdf.includes("Peserta Fiktif 39"));for(const m of pdf.matchAll(/1 0 0 1 50 (\d+) Tm/g))assert(Number(m[1])>=46);const xd=page.waitForEvent("download");await button("Unduh Excel").click();await(await xd).saveAs(path.join(output,"report-40-students.xlsx"));ok("B06: real 40-enrollment PDF paginates and preserves final long-name row; XLSX downloaded");
+ await go("/guru/rubrics?mode=create");await page.locator("#rubric-name").fill("Rubrik Regresi API");await button("Simpan Rubrik").click();const invalid=main().locator('textarea[aria-invalid="true"]');await expect(invalid).toHaveCount(5);assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute("aria-label")),"Kriteria 2 skor 1");for(const f of await invalid.all()){const id=await f.getAttribute("aria-describedby");assert(id);await expect(page.locator(`[id="${id}"]`)).toBeVisible();}ok("B10: rubric validation identifies and focuses accessible score errors");
+ await page.locator("summary[aria-label^='Menu akun']:visible").click();await button("Keluar").click();await page.waitForURL("**/login");await login("dimas",process.env.TEST_DIMAS_PASSWORD);studentLoggedIn=true;
+ for(const length of [110,120]){await go("/siswa/profile");await page.locator("#student-profile-name").fill("N".repeat(length));await button("Simpan Perubahan").click();await expect(main()).toContainText("Perubahan profil berhasil disimpan.");await page.reload();await expect(page.locator("#student-profile-name")).toHaveValue("N".repeat(length));}ok("B07: 110/120-character profile names survive server persistence and reload");
+ for(const width of [320,768,1440]){await page.setViewportSize({width,height:1024});for(const route of ["/siswa/dashboard","/siswa/profile",`/siswa/portfolio?event=${eventId}`]){await go(route);await page.evaluate(()=>document.fonts.ready);await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),{message:route+width}).toBe(true);}await page.screenshot({path:path.join(output,`long-name-${width}.png`),fullPage:true});}ok("B07 responsive: long-name Dashboard/Profile/Portfolio at 320/768/1440");
+ assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);writeFileSync(path.join(output,"results.json"),JSON.stringify({checks,errors,failed,pdfPages:(pdf.match(/\/Type \/Page\b/g)||[]).length,eventId},null,2));console.log(JSON.stringify({passed:checks.length}));
+}catch(error){await page.screenshot({path:path.join(output,"failure.png"),fullPage:true});writeFileSync(path.join(output,"overflow.json"),JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent?.slice(0,80),right:e.getBoundingClientRect().right}))),null,2));writeFileSync(path.join(output,"failure.json"),JSON.stringify({error:String(error),checks,errors,failed},null,2));throw error;}
+finally{if(studentLoggedIn)await context.request.put(base+"/api/profile",{headers:{Origin:base},data:{name:"Dimas Saputra",email:"dimas@example.com",phone:""}});await browser.close();await database.$disconnect();}

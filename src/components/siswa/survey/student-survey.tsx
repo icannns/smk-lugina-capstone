@@ -116,9 +116,10 @@ function Survey({
       Number(Boolean(answers.first)) +
       Number(Boolean(answers.second)) +
       Number(Boolean(answers.reflection.trim()));
-  function save() {
-    if (saveSurveyDraft(event.id, m.id, answers))
-      setNotice("Draf jawaban tersimpan pada sesi tab ini.");
+  async function save() {
+    setNotice("");
+    if (await saveSurveyDraft(event.id, m.id, answers))
+      setNotice("Draf jawaban tersimpan di server.");
   }
   return (
     <SiswaShell frame={frame} active="dashboard">
@@ -263,7 +264,7 @@ function Survey({
                       ? formatEventDate(response.submittedAt, true)
                       : "Tidak tersedia",
                   ],
-                  ["Status Respons", "Terkunci pada sesi demo"],
+                  ["Status Respons", "Terkunci di server"],
                   [
                     "Pertanyaan Terjawab",
                     response
@@ -436,7 +437,7 @@ function Survey({
           </div>
           <footer className="mt-5 flex flex-wrap items-center justify-between gap-4">
             <p className="text-xs text-secondary">
-              Jawaban Anda akan dikunci setelah dikirim pada sesi demo ini.
+              Jawaban Anda akan dikunci setelah dikirim ke server.
             </p>
             <div className="flex flex-wrap gap-3">
               <SiswaButton variant="outline" onClick={save}>
@@ -544,7 +545,7 @@ function Survey({
           onClose={() => setConfirm(false)}
         >
           <p className="text-sm leading-6 text-secondary">
-            Jawaban untuk Milestone {index + 1} akan dikunci pada sesi demo ini
+            Jawaban untuk Milestone {index + 1} akan dikunci di server
             dan tidak dapat diubah. Pastikan kedua pertanyaan wajib sudah diisi
             sesuai pengalaman contoh.
           </p>
@@ -553,8 +554,8 @@ function Survey({
               Periksa Kembali
             </SiswaButton>
             <SiswaButton
-              onClick={() => {
-                const problem = submitStudentSurvey(event.id, m.id, answers);
+              onClick={async () => {
+                const problem = await submitStudentSurvey(event.id, m.id, answers);
                 setError(problem);
                 setConfirm(false);
                 if (!problem)

@@ -109,7 +109,7 @@ try {
     if (role === "teacher") {
       for (const [student, milestone, name] of [
         ["aisyah", "M1", "Aisyah Putri"],
-        ["nabila", "M4", "Nabila Zahra"],
+        ["aisyah", "M4", "Aisyah Putri"],
       ]) {
         const target = `/guru/monitoring?event=kantin&student=${student}&milestone=${milestone}`;
         for (const mode of ["direct", "client"]) {

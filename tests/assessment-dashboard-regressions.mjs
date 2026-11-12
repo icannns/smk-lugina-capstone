@@ -1,3 +1,6 @@
+import "dotenv/config";
+import {requireDevelopmentDatabase} from "../prisma/development-safety.ts";
+import {createDatabaseClient} from "../src/server/db/client.ts";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -9,6 +12,13 @@ const { chromium, expect } = require(process.env.PLAYWRIGHT_MODULE || "@playwrig
 const base = process.env.AUDIT_BASE_URL || "http://localhost:3000";
 const output = process.env.AUDIT_OUTPUT_DIR || path.join(os.tmpdir(), "lugina-assessment-dashboard-regressions");
 mkdirSync(output, { recursive: true });
+const target = requireDevelopmentDatabase(process.env);
+assert(target.databaseName.startsWith("bojong_united_test"));
+const database = createDatabaseClient(target.connectionString);
+for (let i = 0; i < 3; i++) await database.externalAssessmentReference.upsert({
+  where: {id: `qa-assessment-paging-${i}`},
+  create: {id: `qa-assessment-paging-${i}`, type:"COMPETENCY", title:`Uji Kompetensi Paging Fiktif ${i+1}`, studentId:"dimas", eventId:"kantin", provider:"qa-demo", source:"DEMO", status:"NOT_STARTED"}, update:{}
+});
 const result = { checks: [], images: [], errors: [], failed: [] };
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "msedge", headless: true });
 const types = ["competency", "technostress", "uiux"];
@@ -70,6 +80,10 @@ try {
     async function responsiveShot(role) {
       await results().scrollIntoViewIfNeeded();
       await page.evaluate(() => document.fonts.ready);
+      if (!await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)) {
+        await page.screenshot({path:path.join(output,`overflow-${role}-${width}.png`),fullPage:true});
+        writeFileSync(path.join(output,"overflow.json"),JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent?.slice(0,90),width:e.clientWidth,scroll:e.scrollWidth}))),null,2));
+      }
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${role} page overflow ${width}`);
       await page.screenshot({ path: path.join(output, `${role}-${width}.png`), fullPage: true });
       await results().screenshot({ path: path.join(output, `${role}-summary-${width}.png`) });
@@ -114,10 +128,13 @@ try {
     await open("competency");
     const competency = section("competency");
     const next = competency.getByRole("button", { name: "Halaman berikutnya — Uji Kompetensi", exact: true });
-    await next.click(); await expect(competency.getByText("6–6 dari 6 catatan", { exact: true })).toBeVisible();
-    await expect(next).toBeDisabled();
-    await competency.getByRole("button", { name: "Halaman sebelumnya — Uji Kompetensi", exact: true }).click();
-    const counter = competency.locator('span[aria-label="Halaman 1 dari 2"]');
+    const references = await (await context.request.get(base + "/api/assessment-results")).json();
+    const count = references.records.filter(r => r.type === "COMPETENCY").length;
+    if (count > 5) {
+      await next.click(); await expect(next).toBeDisabled();
+      await competency.getByRole("button", { name: "Halaman sebelumnya — Uji Kompetensi", exact: true }).click();
+    } else await expect(next).toHaveCount(0);
+    const counter = competency.locator('span[aria-label^="Halaman 1 dari"]');
     const counterGeometry = await counter.evaluate((e) => ({ height: e.getBoundingClientRect().height, lineHeight: Number.parseFloat(getComputedStyle(e).lineHeight) }));
     assert(counterGeometry.height <= counterGeometry.lineHeight + 1, "Pagination counter must stay on one line");
     if (width === 320) await competency.getByRole("status").screenshot({ path: path.join(output, "guru-pagination-320.png") });
@@ -180,4 +197,4 @@ try {
 } catch (error) {
   writeFileSync(path.join(output, "failure.json"), JSON.stringify({ error: String(error), ...result }, null, 2));
   throw error;
-} finally { await browser.close(); }
+} finally { await browser.close(); await database.$disconnect(); }

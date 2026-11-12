@@ -410,7 +410,7 @@ function RubricEditor({
     [rows[i], rows[i + delta]] = [rows[i + delta], rows[i]];
     setRubric({ ...rubric, criteria: rows });
   }
-  function save() {
+  async function save() {
     setAttempted(true);
     if (Object.keys(errors).length) {
       document
@@ -424,9 +424,9 @@ function RubricEditor({
         ?.focus();
       return;
     }
-    if (!saveRubric({ ...rubric, updated: localDate() })) {
+    if (!await saveRubric({ ...rubric, updated: localDate() })) {
       setNotice(
-        "Rubrik terkunci atau penyimpanan sesi tidak tersedia. Periksa status penyimpanan.",
+        "Rubrik terkunci atau penyimpanan server gagal. Periksa pesan error.",
       );
       return;
     }

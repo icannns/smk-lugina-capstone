@@ -50,7 +50,7 @@ function AssessmentDashboardContent({ scope }: { scope: AssessmentScope }) {
     <section aria-label={teacher ? "Hasil asesmen Guru" : "Hasil asesmen saya"} className="min-w-0 space-y-4">
       <div>
         <h2 className="text-lg font-semibold leading-[26px]">{teacher ? "Hasil Asesmen" : "Hasil Asesmen Saya"}</h2>
-        <p className="mt-1 text-xs leading-[18px] text-secondary">Data contoh · Pilih jenis asesmen untuk melihat hasil dan riwayat. Belum terhubung ke API.</p>
+        <p className="mt-1 text-xs leading-[18px] text-secondary">Referensi PostgreSQL · Data demo ditandai. Layanan FOMO/COMMIT eksternal belum terhubung.</p>
       </div>
       {state.status !== "ready" ? <AssessmentLoadState state={state} onRetry={retry} /> :
         <>

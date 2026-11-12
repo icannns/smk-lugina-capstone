@@ -1,5 +1,13 @@
 # Panduan Modul Siswa
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 Modul Siswa sudah tergabung ke `main` bersama modul Guru sebagai prototipe lokal. Gunakan [panduan frontend](FRONTEND.md) untuk setup dan [autentikasi bersama](SHARED-AUTHENTICATION.md) untuk login/role. Data lintas peran menggunakan store yang sama; pergantian akun dalam satu tab dijelaskan pada [README utama](../README.md#cara-mencoba-integrasi-guru-dan-siswa).
 
 ## Referensi desain dan route

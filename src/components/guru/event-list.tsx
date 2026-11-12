@@ -251,7 +251,7 @@ export function EventList({
           {Math.min(currentPage * pageSize, filtered.length)} dari{" "}
           {filtered.length} event
         </p>
-        <nav aria-label="Halaman event" className="flex items-center gap-1.5">
+        <nav aria-label="Halaman event" className="flex min-w-0 flex-wrap items-center gap-1.5">
           <label className="mr-1">
             <span className="sr-only">Event per halaman</span>
             <select

@@ -1,5 +1,13 @@
 # Fondasi Database — Backend Phase 1
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 > Pembaruan Phase 2: autentikasi sudah memakai database; lihat
 > [Auth.js/RBAC](AUTHENTICATION-RBAC.md). Dokumen ini menjelaskan fondasi
 > Phase 1 (22 model); migrasi Auth menambah 2 model tanpa mengubah migrasi awal.

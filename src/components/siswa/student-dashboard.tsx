@@ -1,4 +1,5 @@
 "use client";
+import { enrollmentKey } from "@/lib/domain/keys";
 import Link from "next/link";
 import { useState } from "react";
 import { useAppAuth } from "@/lib/auth/session";
@@ -55,7 +56,7 @@ export function StudentDashboard() {
     ),
   );
   const certificateActions = certificates.filter(
-    ({ event }) => !state.studentUI.certificates[`${event.id}:${studentId}`],
+    ({ event }) => !state.studentUI.certificates[enrollmentKey(event.id,studentId ?? "")],
   );
   const visible = mine.filter(
     ({ event, row }) =>
@@ -137,7 +138,7 @@ export function StudentDashboard() {
                   Milestone {event.milestones.indexOf(milestone) + 1} ·{" "}
                   {milestone.title}
                 </h3>
-                <p className="mt-1 text-xs text-secondary">
+                <p className="mt-1 break-words text-xs text-secondary">
                   {event.title} ·{" "}
                   {status === "revision"
                     ? `Batas revisi ${feedback?.deadline ? formatEventDate(feedback.deadline, true) : "belum ditentukan"}`
@@ -163,7 +164,7 @@ export function StudentDashboard() {
             </span>
             <div className="min-w-0 flex-1 basis-64">
               <h3 className="text-sm font-medium">{event.title}</h3>
-              <p className="mt-1 text-xs text-secondary">
+              <p className="mt-1 break-words text-xs text-secondary">
                 Nilai akhir: {row.score} · Dokumen penyelesaian belajar contoh
               </p>
             </div>
@@ -207,7 +208,7 @@ export function StudentDashboard() {
             progress = row.total
               ? Math.round((row.completed / row.total) * 100)
               : 0,
-            index = row.submissions.findIndex((s) => s && !s.surveyComplete),
+            index = row.submissions.findIndex((s) => s && s.surveyRequired !== false && !s.surveyComplete),
             active =
               index >= 0
                 ? index
@@ -230,9 +231,9 @@ export function StudentDashboard() {
                   Nilai: {row.score ?? "belum ada"}
                 </span>
               </div>
-              <h3 className="font-semibold">{event.title}</h3>
-              <p className="mt-1 text-xs text-secondary">
-                {state.profile.name.split(",")[0]} ·{" "}
+              <h3 className="break-words font-semibold">{event.title}</h3>
+              <p className="mt-1 break-words text-xs text-secondary">
+                {(event.teacherName ?? "—").split(",")[0]} ·{" "}
                 {event.period.split(",")[0]}
               </p>
               <div className="mb-2 mt-4 flex justify-between text-xs">

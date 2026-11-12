@@ -56,7 +56,7 @@ export function EventDialog(props: Props) {
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-semibold leading-4 ${deleting ? "bg-red-50 text-danger" : "bg-primary-soft text-primary"}`}
         >
-          {deleting ? "Konfirmasi Penghapusan" : "Prototipe · Perubahan lokal"}
+          {deleting ? "Konfirmasi Penghapusan" : "Penyimpanan melalui server"}
         </span>
         <h2 id={title} className="text-lg font-bold leading-[22px]">
           {deleting ? "Hapus Draf Event?" : "Ubah deadline"}
@@ -96,9 +96,7 @@ export function EventDialog(props: Props) {
             }}
           >
             <p id={description} className="text-sm leading-5 text-secondary">
-              {props.milestone.title}. Waktu dalam WIB. Perubahan hanya berlaku
-              pada sesi demo ini dan digunakan juga oleh Monitoring. Tidak ada
-              perubahan server.
+              {props.milestone.title}. Waktu dalam WIB. Perubahan disimpan di PostgreSQL dan digunakan juga oleh Monitoring.
             </p>
             <label className="mt-4 block text-sm font-medium">
               Deadline (WIB)

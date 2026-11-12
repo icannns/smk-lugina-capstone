@@ -100,7 +100,7 @@ export function MilestoneWorkCard({
                     >
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-sm font-medium">
-                          {state.profile.name}
+                          {event.teacherName ?? "Guru"}
                         </span>
                         <span className="text-xs text-secondary">
                           {formatEventDate(f.createdAt, true)} · Versi{" "}

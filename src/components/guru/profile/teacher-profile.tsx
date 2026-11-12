@@ -70,8 +70,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
     if (busy) return;
     const next: Record<string, string> = {};
     if (!profile.name.trim()) next.name = "Nama lengkap wajib diisi.";
-    if (!/^[^\s@]+@example\.com$/i.test(profile.email.trim()))
-      next.email = "Gunakan email fiktif @example.com untuk prototipe.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()))
+      next.email = "Masukkan email kontak yang valid.";
     if (profile.phone && !/^[+\d\s()-]{6,30}$/.test(profile.phone))
       next.phone = "Gunakan format nomor contoh yang valid.";
     setErrors(next);
@@ -80,8 +80,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
       return;
     }
     setBusy(true);
-    await new Promise((resolve) => setTimeout(resolve, 180));
-    const saved = saveTeacherProfile({
+    const saved = await saveTeacherProfile({
       ...profile,
       name: profile.name.trim(),
       email: profile.email.trim(),
@@ -90,7 +89,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
     if (saved) router.push("/guru/dashboard?profile=saved");
     else {
       setErrors({
-        save: "Profil hanya tersimpan di memori; penyimpanan sesi tidak tersedia.",
+        save: "Profil belum tersimpan di server. Periksa pesan error.",
       });
       setBusy(false);
     }
@@ -254,8 +253,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </form>
       </Surface>
       <p className="mt-4 max-w-[768px] text-xs text-secondary">
-        Prototipe · Gunakan identitas dan foto contoh. Perubahan diproses lokal
-        dan hanya disimpan pada sesi tab ini.
+        Prototipe · Gunakan identitas dan foto contoh. Perubahan profil disimpan di server setelah tombol Simpan ditekan.
       </p>
       {image && (
         <AvatarCrop
@@ -324,7 +322,7 @@ export function AvatarCrop({
         Potong foto contoh
       </h2>
       <p className="mb-4 mt-1 text-xs text-secondary">
-        Pemrosesan lokal. Gambar tidak diunggah ke server.
+        Pemotongan lokal. Gambar disimpan ke server saat Simpan Profil.
       </p>
       <canvas
         ref={canvas}

@@ -29,14 +29,14 @@ export function studentDirectory(
   const enrollments: StudentEnrollment[] = eventEnrollments.flatMap((e) => {
     const event = active.find((x) => x.id === e.eventId);
     if (!event) return [];
-    const original = studentEnrollments.find((x) => x.id === e.id);
+    const original = learning.source === "api" ? undefined : studentEnrollments.find((x) => x.id === e.id);
     const milestones = event.milestones.map((m) => {
       const submission = teacherSubmissions.find(
-          (s) => s.id === submissionId(e.eventId, e.studentId, m.id),
+          (s) => s.eventId === e.eventId && s.studentId === e.studentId && s.milestoneId === m.id,
         ),
         complete = submission?.surveyComplete ?? false,
         previous = original?.milestones.find((x) => x.id === m.id),
-        response = submission && studentUI.surveyResponses[submission.id];
+        response = submission && studentUI.surveyResponses[submissionId(e.eventId,e.studentId,m.id)];
       return {
         id: m.id,
         title: m.title,

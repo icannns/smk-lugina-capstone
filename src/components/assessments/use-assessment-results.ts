@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockAssessmentRepository } from "@/lib/assessments/repository";
+import { databaseAssessmentRepository } from "@/lib/assessments/http-repository";
 import type { AssessmentQueryState, AssessmentScope } from "@/lib/assessments/types";
 
 export function useAssessmentResults(scope: AssessmentScope | null) {
@@ -16,7 +16,7 @@ export function useAssessmentResults(scope: AssessmentScope | null) {
     const requestedScope: AssessmentScope = role === "teacher"
       ? { role: "teacher" }
       : { role: "student", studentId: studentId! };
-    mockAssessmentRepository.list(requestedScope, controller.signal).then(
+    databaseAssessmentRepository.list(requestedScope, controller.signal).then(
       (records) => {
         if (!controller.signal.aborted)
           setQuery({ key, attempt, state: { status: "ready", records } });

@@ -79,5 +79,5 @@ const months = [
 export function formatEventDate(value: string, time = false) {
   const [date, clock] = value.split("T");
   const [year, month, day] = date.split("-").map(Number);
-  return `${day} ${months[month - 1]} ${year}${time && clock ? `, ${clock.replace(":", ".")} WIB` : ""}`;
+  return `${day} ${months[month - 1]} ${year}${time && clock ? `, ${clock.slice(0, 5).replace(":", ".")} WIB` : ""}`;
 }

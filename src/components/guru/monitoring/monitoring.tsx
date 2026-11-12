@@ -45,7 +45,7 @@ export function Monitoring() {
   if (params.get("student"))
     return (
       <Assessment
-        key={`${event.id}:${params.get("student")}:${params.get("milestone")}`}
+        key={JSON.stringify([event.id,params.get("student"),params.get("milestone")])}
         event={event}
         studentId={params.get("student")!}
         milestoneId={params.get("milestone") ?? event.milestones[0]?.id}

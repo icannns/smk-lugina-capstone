@@ -1,5 +1,13 @@
 # Autentikasi Bersama Guru dan Siswa
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 Autentikasi kini menggunakan Auth.js, PostgreSQL, Argon2id dan RBAC server.
 Panduan konfigurasi, provisioning akun tester, keamanan dan tes berada di
 [AUTHENTICATION-RBAC.md](AUTHENTICATION-RBAC.md).

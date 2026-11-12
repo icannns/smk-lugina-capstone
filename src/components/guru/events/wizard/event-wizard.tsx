@@ -68,7 +68,7 @@ function EventWizardSession() {
     if (id) bootstrapped.current = false;
     else if (!bootstrapped.current) {
       bootstrapped.current = true;
-      router.replace(wizardHref(beginEventDraft()));
+      void beginEventDraft().then((nextId) => { if (nextId) router.replace(wizardHref(nextId)); });
     }
   }, [id, router]);
   if (!ready || !id)
@@ -77,7 +77,7 @@ function EventWizardSession() {
         className="grid min-h-dvh place-items-center text-sm text-secondary"
         aria-busy="true"
       >
-        Memuat draf contoh…
+        {state.storageError ? <div role="alert">{state.storageError}<Link href="/guru/events" className="block text-primary">Kembali ke daftar event</Link></div> : "Memuat draf…"}
       </main>
     );
   if (!raw)
@@ -85,7 +85,7 @@ function EventWizardSession() {
       <main className="mx-auto max-w-2xl p-8">
         <h1 className="text-2xl font-semibold">Draf tidak ditemukan</h1>
         <p className="mt-3 text-sm text-secondary">
-          Draf ini telah dihapus atau tidak tersedia pada sesi tab ini.
+          Draf ini telah dihapus atau tidak tersedia untuk akun ini.
         </p>
         <Link
           href="/guru/events?tab=draft"
@@ -174,19 +174,23 @@ function EventWizardSession() {
             ? infoErrors
             : {};
   function change(patch: Partial<ManagedEvent>) {
+    if (state.pending) return;
     changeEventDraft({ ...event, ...patch });
     setNotice("");
   }
-  function go(step: WizardStep) {
+  async function go(step: WizardStep) {
+    if (state.pending) return;
+    setNotice("");
     setAttemptedAdvanced(false);
-    change({ wizard: { ...event.wizard!, step } });
+    if (!await saveEventDraft({ ...event, wizard: { ...event.wizard!, step } })) return;
     window.history.pushState(null, "", wizardHref(id!, step));
     window.scrollTo({ top: 0 });
     requestAnimationFrame(() =>
       document.getElementById("wizard-title")?.focus(),
     );
   }
-  function next() {
+  async function next() {
+    if (state.pending) return;
     const found =
       step === "review"
         ? {
@@ -228,7 +232,7 @@ function EventWizardSession() {
       return;
     }
     if (step === "review") {
-      publishEvent(event);
+      if (!await publishEvent(event)) return;
       window.history.replaceState(null, "", wizardHref(event.id, "done"));
       window.scrollTo({ top: 0 });
     } else go(order[activeIndex + 1]);
@@ -236,7 +240,7 @@ function EventWizardSession() {
   function boundary(title: string) {
     setAction({
       title,
-      description: `${title} merupakan bagian modul Survei yang dikerjakan terpisah. Wizard ini hanya menyimpan pengaturan event contoh; tidak membuat formulir atau respons survei. Data isian event tetap tersimpan pada sesi tab ini.`,
+      description: `${title} merupakan bagian modul Survei yang dikerjakan terpisah. Wizard ini hanya menyimpan pengaturan event contoh; tidak membuat formulir atau respons survei. Data isian event disimpan ke server melalui Simpan Draf atau perpindahan langkah.`,
     });
   }
   const overrides =
@@ -306,7 +310,7 @@ function EventWizardSession() {
                     />
                     <button
                       type="button"
-                      disabled={index > 4}
+                      disabled={state.pending > 0 || index > 4}
                       aria-current={active ? "step" : undefined}
                       title={
                         index > 4
@@ -350,6 +354,7 @@ function EventWizardSession() {
               Periksa kolom wajib yang ditandai sebelum melanjutkan.
             </p>
           )}
+          <fieldset disabled={state.pending > 0} aria-busy={state.pending > 0} className="min-w-0">
           <form
             id="event-wizard-form"
             noValidate
@@ -446,12 +451,13 @@ function EventWizardSession() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  const success = saveEventDraft(event);
+                onClick={async () => {
+                  setNotice("");
+                  const success = await saveEventDraft(event);
                   setNotice(
                     success
-                      ? "Draf contoh tersimpan di sesi tab ini."
-                      : "Draf hanya tersimpan di memori. Penyimpanan sesi tidak tersedia.",
+                      ? "Draf tersimpan di PostgreSQL."
+                      : "Draf belum tersimpan. Periksa pesan error dan coba lagi.",
                   );
                 }}
                 className={`h-10 rounded-control bg-white px-4 text-sm font-medium ${isMilestones ? "border border-line" : ""}`}
@@ -472,6 +478,7 @@ function EventWizardSession() {
               </div>
             </div>
           </div>
+          </fieldset>
           {notice && (
             <div
               role="status"

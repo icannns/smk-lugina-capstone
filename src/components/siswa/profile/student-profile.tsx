@@ -73,14 +73,16 @@ function ProfileForm({ initial }: { initial: Profile }) {
       setBusy(false);
     }
   }
-  function save(e: FormEvent) {
+  async function save(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
+    setSuccess(false);
     const next: Record<string, string> = {};
     if (!profile.name.trim()) next.name = "Nama lengkap wajib diisi.";
     else if (profile.name.length > STUDENT_NAME_MAX_LENGTH)
       next.name = `Nama maksimal ${STUDENT_NAME_MAX_LENGTH} karakter.`;
-    if (!/^[^\s@]+@example\.com$/i.test(profile.email.trim()))
-      next.email = "Gunakan email fiktif @example.com.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()))
+      next.email = "Masukkan email kontak yang valid.";
     if (profile.phone && !/^[+\d\s()-]{6,30}$/.test(profile.phone))
       next.phone = "Gunakan format nomor contoh yang valid.";
     setErrors(next);
@@ -90,7 +92,10 @@ function ProfileForm({ initial }: { initial: Profile }) {
         ?.focus();
       return;
     }
-    if (saveStudentProfile(profile)) {
+    setBusy(true);
+    const saved = await saveStudentProfile(profile);
+    setBusy(false);
+    if (saved) {
       setSuccess(true);
     } else
       setErrors({
@@ -162,7 +167,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
                 Perubahan profil berhasil disimpan.
               </p>
               <p className="mt-1 text-xs">
-                Nama dan informasi profil telah diperbarui pada sesi demo ini.
+                Nama dan informasi profil telah diperbarui di server.
               </p>
             </div>
             <button
@@ -309,7 +314,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </Surface>
         <p className="mt-4 text-xs text-secondary">
           Prototipe · Gunakan identitas dan foto fiktif. Perubahan hanya
-          disimpan pada sesi tab ini.
+          disimpan di server setelah Simpan ditekan.
         </p>
       </div>
       {image && (

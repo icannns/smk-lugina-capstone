@@ -2,6 +2,9 @@ import type { ManagedEvent } from "./event-types";
 import type { AssessmentChanges, GuruRubric } from "./teacher-types";
 import {
   assessmentFor,
+  milestoneRequiresSurvey,
+  milestoneSurveyLabel,
+  submissionComplete,
   eventLearning,
   rubricScore,
   submissionStatus,
@@ -46,7 +49,7 @@ export function reportRows(
             r.submissions[event.milestones.findIndex((x) => x.id === m.id)],
         ),
         submitted = submissions.filter(Boolean).length,
-        completed = submissions.filter((s) => s?.surveyComplete).length,
+        completed = submissions.filter(submissionComplete).length,
         scored = submissions.map((s) =>
           s && submissionStatus(s, changes) === "reviewed"
             ? rubricScore(assessmentFor(s, changes), rubric)
@@ -74,19 +77,15 @@ export function reportRows(
             : null,
       };
     })
-    .filter(
-      (r) =>
-        (filters.student === "all" || r.student.id === filters.student) &&
+    .filter((r) => {
+      const required = r.submissions.filter((s, i) => milestoneRequiresSurvey(milestones[i], s));
+      return (filters.student === "all" || r.student.id === filters.student) &&
         (filters.survey === "all" ||
-          (filters.survey === "complete" &&
-            r.submissions.length > 0 &&
-            r.submissions.every((s) => s?.surveyComplete)) ||
-          (filters.survey === "missing" &&
-            r.submissions.some((s) => !s?.surveyComplete))) &&
+          (filters.survey === "complete" && required.length > 0 && required.every((s) => s?.surveyComplete)) ||
+          (filters.survey === "missing" && required.some((s) => !s?.surveyComplete))) &&
         (filters.work === "all" || filters.work === workStatus(r)) &&
-        (filters.assessment === "all" ||
-          filters.assessment === assessmentStatus(r)),
-    );
+        (filters.assessment === "all" || filters.assessment === assessmentStatus(r));
+    });
   const finished = rows.filter(
       (r) => r.total > 0 && r.completed === r.total,
     ).length,
@@ -130,7 +129,7 @@ export function reportExport(
       workLabels[workStatus(r)],
       ...r.submissions.map((s, i) =>
         s
-          ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${s.surveyComplete ? "Terisi" : "Belum diisi"} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
+          ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${milestoneSurveyLabel(data.milestones[i], s)} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
           : "— · — · Belum dinilai",
       ),
       r.scored.filter(Boolean).length

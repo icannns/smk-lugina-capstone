@@ -17,6 +17,9 @@ export type EventAttachment = {
   type: string;
 };
 export type ManagedEvent = {
+  revision?: number;
+  teacherName?: string;
+  participantCount?: number;
   id: string;
   title: string;
   status: EventStatus | "draft";

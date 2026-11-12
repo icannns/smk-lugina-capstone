@@ -1,4 +1,5 @@
 "use client";
+import { enrollmentKey } from "@/lib/domain/keys";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -6,6 +7,8 @@ import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import { eventDescriptions } from "@/lib/guru/event-data";
 import {
   assessmentFor,
+  milestoneRequiresSurvey,
+  submissionComplete,
   enrollmentProgress,
   rubricScore,
   submissionLabels,
@@ -221,7 +224,7 @@ function PortfolioEvent({
     rubric = state.rubrics[event.rubricId ?? ""],
     row = enrollmentProgress(event, studentId, state.learning, rubric),
     conditions = certificateConditions(event, row, state.learning),
-    claim = state.studentUI.certificates[`${event.id}:${studentId}`],
+    claim = state.studentUI.certificates[enrollmentKey(event.id,studentId)],
     [preview, setPreview] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
@@ -241,8 +244,11 @@ function PortfolioEvent({
         : row.score !== null
           ? "370:4426"
           : "370:5414";
-  function download() {
+  async function download() {
     if (!claim) return;
+    setNotice(""); setError("");
+    const result = await claimStudentCertificate(event.id);
+    if (result.error) { setError(result.error); return; }
     prototypePdf(
       "Dokumen Penyelesaian Belajar Contoh",
       [
@@ -256,8 +262,8 @@ function PortfolioEvent({
       ],
       `sertifikat-prototipe-${event.id}.pdf`,
     );
-    markCertificateDownloaded(event.id);
-    setNotice("PDF contoh telah dibuat. Periksa unduhan browser.");
+    const recorded = await markCertificateDownloaded(event.id);
+    setNotice(recorded ? "PDF contoh dibuat dan catatan unduh tersimpan. Periksa unduhan browser." : "PDF contoh dibuat, tetapi catatan unduh gagal disimpan. Periksa pesan server.");
   }
   return (
     <SiswaShell frame={preview ? "370:5945" : frame} active="portfolio">
@@ -390,9 +396,9 @@ function PortfolioEvent({
               >
                 {project && (
                   <span
-                    className={`mb-3 grid size-9 shrink-0 place-items-center rounded-full text-xs font-medium sm:absolute sm:left-6 sm:top-6 sm:mb-0 ${s?.surveyComplete ? "bg-[#00a63e] text-white" : "bg-gray-100 text-secondary"}`}
+                    className={`mb-3 grid size-9 shrink-0 place-items-center rounded-full text-xs font-medium sm:absolute sm:left-6 sm:top-6 sm:mb-0 ${submissionComplete(s) ? "bg-[#00a63e] text-white" : "bg-gray-100 text-secondary"}`}
                   >
-                    {s?.surveyComplete ? (
+                    {submissionComplete(s) ? (
                       <SiswaIcon frame="370:4833" name="imgIcon2" />
                     ) : (
                       i + 1
@@ -407,9 +413,9 @@ function PortfolioEvent({
                     <h2 className="font-semibold">{m.title}</h2>
                   </div>
                   <StatusBadge
-                    status={project && s?.surveyComplete ? "complete" : status}
+                    status={project && submissionComplete(s) ? "complete" : status}
                   >
-                    {project && s?.surveyComplete
+                    {project && submissionComplete(s)
                       ? "Pengerjaan milestone selesai"
                       : submissionLabels[status]}
                   </StatusBadge>
@@ -432,7 +438,7 @@ function PortfolioEvent({
                       <StatusBadge
                         status={s?.surveyComplete ? "complete" : "missing"}
                       >
-                        {s?.surveyComplete
+                        {!milestoneRequiresSurvey(m, s) ? "Survei tidak diwajibkan" : s?.surveyComplete
                           ? "Form terkirim"
                           : "Form belum terkirim"}
                       </StatusBadge>
@@ -655,8 +661,8 @@ function PortfolioEvent({
             </p>
           </div>
           <p className="mt-4 text-xs leading-5 text-secondary">
-            Nama dibekukan pada saat klaim. Dokumen ini disimpan pada sesi tab
-            dan dapat diunduh sebagai PDF contoh; tidak ada penerbitan resmi
+            Nama dibekukan pada saat klaim. Catatan dokumen disimpan di server
+            dan PDF contoh dibuat di browser; tidak ada penerbitan resmi
             atau verifikasi eksternal.
           </p>
           <div className="mt-5 flex flex-wrap justify-end gap-3">
@@ -667,12 +673,12 @@ function PortfolioEvent({
               <SiswaButton onClick={download}>Unduh PDF</SiswaButton>
             ) : (
               <SiswaButton
-                onClick={() => {
-                  const r = claimStudentCertificate(event.id);
+                onClick={async () => {
+                  const r = await claimStudentCertificate(event.id);
                   setError(r.error ?? "");
                   if (r.claim) {
                     setNotice(
-                      "Dokumen belajar contoh berhasil diklaim pada sesi ini.",
+                      "Catatan dokumen belajar prototipe tersimpan di server.",
                     );
                     setPreview(false);
                   }

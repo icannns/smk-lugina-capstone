@@ -1,5 +1,13 @@
 # Hasil Asesmen Dashboard — Frontend Fase 1
 
+> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
+> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
+> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
+> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
+> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+
+
 Tambahan ini berada pada `/guru/dashboard` dan `/siswa/dashboard` dalam aplikasi
 di root repository, branch
 `feature/dashboard-assessment-results`, berbasis main `277d178`. Tidak ada

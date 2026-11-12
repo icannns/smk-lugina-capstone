@@ -294,9 +294,9 @@ export function DashboardShell({
             </summary>
             <div className="absolute right-0 top-[calc(100%+8px)] flex w-64 flex-col rounded-2xl border border-line bg-white p-2 shadow-lg">
               <p className="px-3 py-2 text-xs leading-5 text-secondary">
-                Prototipe · Data contoh Figma
+                Data pembelajaran PostgreSQL
                 <br />
-                Tidak terhubung ke backend.
+                Lampiran masih berupa metadata.
               </p>
               <Link
                 href="/guru/profile"
