@@ -9,7 +9,7 @@ menerbitkan event, Siswa mengikuti dan mengumpulkan tugas, lalu Guru memberikan
 nilai, feedback, atau permintaan revisi.
 
 > **Status saat ini: prototipe frontend dengan data fiktif untuk demonstrasi
-> lokal.** Belum menggunakan backend, database, autentikasi sungguhan, atau Google
+> lokal.** UI belum terhubung ke backend/database, autentikasi sungguhan, atau Google
 > OAuth. Gunakan akun dan data contoh; jangan masukkan kredensial atau data pribadi
 > asli.
 
@@ -47,7 +47,7 @@ yang sudah dikonfigurasi tetap dapat digunakan.
 
 ### 1. Siapkan kebutuhan
 
-- Node.js **20.9 atau lebih baru**, beserta npm.
+- Node.js **20.19+, 22.12+, atau 24+**, beserta npm (sesuai dukungan Prisma).
 - Git dan akses GitHub ke repository ini karena repository bersifat privat.
 
 ### 2. Ambil proyek dan jalankan frontend
@@ -87,6 +87,13 @@ npm run start
 Hentikan server produksi yang sedang berjalan sebelum melakukan build ulang,
 lalu jalankan kembali `npm run start` agar browser memakai berkas CSS dan
 JavaScript dari build yang sama. Mode ini tetap menggunakan data contoh.
+
+## Database development (opsional)
+
+Fondasi PostgreSQL/Prisma, migrasi dan seed fiktif tersedia. UI tetap memakai
+mock sampai API/Auth diimplementasikan. Ikuti [panduan database](docs/DATABASE-FOUNDATION.md)
+untuk konfigurasi lokal, batas seed dan koordinasi FOMO/COMMIT. `npm ci` hanya
+menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 ## Akun demo
 
@@ -143,8 +150,9 @@ berjalan bersamaan memerlukan backend dan database.
 - Ekspor laporan PDF/XLSX benar-benar dibuat di browser. Dokumen sertifikat
   merupakan contoh penyelesaian belajar, tanpa penerbitan atau verifikasi resmi
   institusi.
-- Backend, database, Google OAuth sungguhan, administrasi Survei, dan modul tim
-  lain seperti COMMIT belum diimplementasikan dalam frontend ini.
+- Fondasi PostgreSQL/Prisma tersedia untuk development, tetapi belum terhubung
+  ke UI. REST API, Auth.js/RBAC, Google OAuth sungguhan, administrasi Survei dan
+  integrasi modul tim lain belum diimplementasikan.
 - Catatan dependency development dan perbedaan visual kecil masih didokumentasikan
   dalam panduan handover. Prototipe ini belum dinyatakan siap untuk produksi.
 
@@ -195,6 +203,7 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
+- [Fondasi PostgreSQL dan Prisma](docs/DATABASE-FOUNDATION.md).
 - [Panduan frontend](docs/FRONTEND.md).
 - [Panduan integrasi dan handover tim COMMIT](docs/INTEGRATION-HANDOVER.md).
 - [Dokumentasi autentikasi bersama](docs/SHARED-AUTHENTICATION.md).

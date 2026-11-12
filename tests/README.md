@@ -79,3 +79,16 @@ server yang gagal. Petunjuk kontrak dan batas fitur ada pada
 ## Batas dan bukti pengujian
 
 Browser memakai sesi terisolasi; sesi browser pengguna tidak dipakai. Simpan bukti di luar Git. Tes ini tidak menyertifikasi keamanan server, perilaku screen reader, sinkronisasi antarperangkat, seluruh browser, atau kesetaraan piksel Figma. Untuk perubahan lintas modul, ulangi alur Guru–Siswa dan periksa data Reports/Portfolio yang sama; untuk backend mendatang, tambahkan tes pengguna/sesi terpisah.
+
+## Fondasi PostgreSQL/Prisma
+
+`npm run test:db:safety` menjalankan tiga tes guard tanpa database.
+`npm run test:db` menjalankan sepuluh tes integritas PostgreSQL nyata: diperlukan
+DB lokal **test terpisah**, migration deploy, NODE_ENV=test dan
+ALLOW_DEV_SEED=true. DATABASE_URL harus menunjuk `bojong_united_test` (boleh
+suffix); DB development manual ditolak. Seed hanya membuat fixture, tidak
+menghapus atau mereset data. Jangan jalankan terhadap produksi/shared database.
+
+Langkah setup, perlindungan seed, batasan dan SQL CHECK/trigger tersedia pada
+[panduan database](../docs/DATABASE-FOUNDATION.md#pengujian). Tes frontend di atas
+masih memakai browser mock dan tidak membuktikan integrasi REST/database.
