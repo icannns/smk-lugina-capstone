@@ -1,6 +1,6 @@
 # Panduan Pengujian Regresi Frontend
 
-Jalankan perintah dari root repository setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif dan tidak memerlukan backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
+Jalankan perintah dari root repository setelah dependensi terpasang melalui `npm ci`. Tes menggunakan data fiktif. Tes browser kini memerlukan PostgreSQL lokal dan akun yang diprovisikan; tes selector/unit frontend tetap tanpa backend. Hasil tes lama tidak otomatis berlaku setelah perubahan baru.
 
 ## Pemeriksaan dasar dan tes logika
 
@@ -92,3 +92,23 @@ menghapus atau mereset data. Jangan jalankan terhadap produksi/shared database.
 Langkah setup, perlindungan seed, batasan dan SQL CHECK/trigger tersedia pada
 [panduan database](../docs/DATABASE-FOUNDATION.md#pengujian). Tes frontend di atas
 masih memakai browser mock dan tidak membuktikan integrasi REST/database.
+
+## Auth.js dan RBAC server (Phase 2)
+
+`npm run test:auth` menguji Argon2id dan validasi server tanpa DB.
+`npm run test:auth:browser` menguji API/browser nyata terhadap DB test disposable:
+login 3 akun, invalid credentials, registration/CSRF, privilege escalation,
+resource ownership, data isolation, logout/replay, expiry dan rate limit.
+Konfigurasikan NODE_ENV=test, ALLOW_DEV_SEED=true, DATABASE_URL test,
+AUDIT_BASE_URL, PLAYWRIGHT_MODULE dan ketiga TEST_*_PASSWORD secara privat.
+Runner membuat fixture test dan mengubah expiry, sehingga menolak DB non-test.
+
+Provisioning: [panduan Auth/RBAC](../docs/AUTHENTICATION-RBAC.md). Ketiga runner
+browser frontend existing juga membaca TEST_TEACHER_PASSWORD,
+TEST_DIMAS_PASSWORD dan TEST_AISYAH_PASSWORD; tidak ada fallback password demo.
+Logout kini tombol `Keluar`, bukan link `Keluar dari demo`. Registrasi pengujian
+memakai email unik agar rerun tidak konflik dengan user DB yang sudah dibuat.
+
+Jalankan tes database Phase 1 pada DB fixture terpisah dari DB browser Auth,
+karena pemeriksaan fixture murni mengharapkan hanya tiga pengguna demo awal.
+Jangan simpan credential, storage state cookie, atau bukti QA ke Git.

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
-import { logoutDemo } from "@/lib/auth/session";
+import { logout } from "@/lib/auth/session";
 import assets from "@/lib/siswa/design-assets.json";
 import navigation from "@/lib/siswa/design-navigation.json";
 import { useStudentIdentity } from "./use-student-identity";
@@ -188,13 +188,13 @@ export function SiswaShell({
               >
                 Profil Siswa
               </Link>
-              <Link
-                href="/login"
-                onClick={logoutDemo}
+              <button
+                type="button"
+                onClick={() => void logout()}
                 className="rounded-lg p-2 text-sm text-danger hover:bg-red-50"
               >
-                Keluar dari demo
-              </Link>
+                Keluar
+              </button>
             </div>
           </details>
         </header>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useDemoAuth } from "@/lib/auth/session";
+import { useAppAuth } from "@/lib/auth/session";
 import { allStudents } from "@/lib/guru/learning-selectors";
 import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import { assessmentLabels, scopedAssessments } from "@/lib/assessments/selectors";
@@ -12,7 +12,7 @@ import { useAssessmentResults } from "./use-assessment-results";
 import { AssessmentSummaryCard } from "./assessment-summary-card";
 
 export function DashboardAssessments({ audience }: { audience: "teacher" | "student" }) {
-  const { account } = useDemoAuth();
+  const { account } = useAppAuth();
   // Key the entire presentation to the account, resetting filters/details on logout.
   if (!account || account.role !== audience) return null;
   const scope: AssessmentScope | null = audience === "teacher"
@@ -39,7 +39,7 @@ function AssessmentDashboardContent({ scope }: { scope: AssessmentScope }) {
   }
   const { state, retry } = useAssessmentResults(scope);
   const store = useEventDraftStore();
-  const { account } = useDemoAuth();
+  const { account } = useAppAuth();
   const teacher = scope.role === "teacher";
   const names = new Map(allStudents(store.learning).map((student) => [student.id, store.studentUI.profiles[student.id]?.name ?? student.name]));
   if (scope.role === "student" && account) names.set(scope.studentId, store.studentUI.profiles[scope.studentId]?.name ?? account.name);

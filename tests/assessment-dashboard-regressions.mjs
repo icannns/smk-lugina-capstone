@@ -17,6 +17,7 @@ try {
   for (const width of [1440, 768, 320]) {
     const context = await browser.newContext({ viewport: { width, height: 1000 } });
     const page = await context.newPage();
+    const registrationPassword = process.env.TEST_DIMAS_PASSWORD;
     page.on("pageerror", (e) => result.errors.push(e.message));
     page.on("console", (m) => { if (m.type() === "error") result.errors.push(m.text()); });
     page.on("response", (r) => { if (r.status() >= 400) result.failed.push([r.url(), r.status()]); });
@@ -28,7 +29,7 @@ try {
     async function login(username) {
       await page.goto(`${base}/login`);
       await page.locator("#login-email").fill(username);
-      await page.locator("#login-password").fill(username === "rina.guru" ? "DemoGuru123!" : "DemoSiswa123!");
+      await page.locator("#login-password").fill(username === "rina.guru" ? process.env.TEST_TEACHER_PASSWORD : username === "aisyah" ? process.env.TEST_AISYAH_PASSWORD : process.env.TEST_DIMAS_PASSWORD);
       await page.getByRole("button", { name: "Masuk", exact: true }).click();
       await page.waitForURL(username === "rina.guru" ? "**/guru/dashboard" : "**/siswa/dashboard");
       await summary("competency").waitFor();
@@ -52,7 +53,7 @@ try {
     }
     async function logout() {
       await page.locator("summary[aria-label^='Menu akun']:visible").click();
-      await page.getByRole("link", { name: "Keluar dari demo", exact: true }).click();
+      await page.getByRole("button", { name: "Keluar", exact: true }).click();
       await page.waitForURL("**/login");
     }
     async function detail(type) {
@@ -79,8 +80,9 @@ try {
           await close(type);
         }
       }
+      await expect.poll(() => page.locator("img").evaluateAll((items) => items.filter((i) => i.checkVisibility()).every((i) => i.complete && i.naturalWidth > 0)), { timeout: 10000 }).toBe(true);
       const images = await page.locator("img").evaluateAll((items) => items.filter((i) => i.checkVisibility()).map((i) => ({ src: i.getAttribute("src"), loaded: i.complete && i.naturalWidth > 0, width: i.getBoundingClientRect().width, height: i.getBoundingClientRect().height, declaredWidth: i.getAttribute("width"), declaredHeight: i.getAttribute("height") })));
-      assert(images.every((i) => i.loaded && i.width > 0 && i.height > 0));
+      assert(images.every((i) => i.loaded && i.width > 0 && i.height > 0), JSON.stringify(images.filter((i) => !i.loaded || i.width <= 0 || i.height <= 0)));
       result.images.push({ role, width, images });
     }
     await login("rina.guru");
@@ -158,9 +160,9 @@ try {
     if (width === 1440) {
       await logout(); await page.goto(`${base}/register`);
       await page.locator("#register-name").fill("Siswa Asesmen Contoh");
-      await page.locator("#register-email").fill("asesmen.baru@example.com");
-      await page.locator("#register-password").fill("ContohDaftar123!");
-      await page.locator("#register-confirm").fill("ContohDaftar123!");
+      await page.locator("#register-email").fill(`asesmen.${Date.now()}@example.com`);
+      await page.locator("#register-password").fill(registrationPassword);
+      await page.locator("#register-confirm").fill(registrationPassword);
       await page.getByRole("button", { name: "Daftar Sekarang", exact: true }).click();
       await page.waitForURL("**/siswa/dashboard");
       await expect(summary("competency").getByText(/Belum ada uji kompetensi/)).toBeVisible();

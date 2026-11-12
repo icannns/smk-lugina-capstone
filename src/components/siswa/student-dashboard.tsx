@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useDemoAuth } from "@/lib/auth/session";
+import { useAppAuth } from "@/lib/auth/session";
 import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import {
   eventLearning,
@@ -17,7 +17,7 @@ import { StudentBadge as StatusBadge } from "./siswa-ui";
 import { useStudentIdentity } from "./use-student-identity";
 import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
 export function StudentDashboard() {
-  const { account } = useDemoAuth(),
+  const { account } = useAppAuth(),
     state = useEventDraftStore(),
     [filter, setFilter] = useState("all"),
     studentId = account?.studentId;

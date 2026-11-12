@@ -1,15 +1,13 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import { GOOGLE_ACCOUNT } from "@/lib/auth/accounts";
-import { prepareGoogleStudent } from "@/lib/auth/session";
 import { nameError, phoneError } from "@/lib/auth-demo";
 import { SharedAuthInput, SharedAuthButton, DemoNotice } from "./shared-ui";
-import { useMockNavigation } from "./use-mock-navigation";
+import { useAuthNavigation } from "./use-auth-navigation";
 export function GoogleRegisterForm() {
-  const [name, setName] = useState(GOOGLE_ACCOUNT.name),
+  const [name, setName] = useState(""),
     [phone, setPhone] = useState(""),
     [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const { busy, enter } = useMockNavigation();
+  const { busy } = useAuthNavigation();
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const next = { name: nameError(name), phone: phoneError(phone) };
@@ -20,7 +18,7 @@ export function GoogleRegisterForm() {
         ?.focus();
       return;
     }
-    enter(prepareGoogleStudent(name, phone));
+    setErrors({ unavailable: "Google OAuth belum tersedia. Gunakan pendaftaran email atau hubungi administrator." });
   }
   return (
     <section
@@ -32,25 +30,25 @@ export function GoogleRegisterForm() {
         Lengkapi Data Akun
       </h1>
       <p className="mt-1 text-sm leading-[17px] text-[#6b7280]">
-        Simulasi akun Google. Lengkapi nama contoh untuk profil dan dokumen
-        penyelesaian belajar.
+        Pratinjau desain pendaftaran Google. OAuth belum tersedia; form ini
+        tidak membuat akun atau sesi login.
       </p>
       <div className="mt-3.5 flex h-20 items-center justify-between gap-2 overflow-hidden rounded-xl border border-[#cce0fa] bg-[#f6faff] pl-5">
         <div className="flex min-w-0 items-center gap-3.5">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-base font-bold text-white">
-            DS
+            G
           </span>
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold">
-              {GOOGLE_ACCOUNT.name}
+              Akun Google belum terhubung
             </p>
             <p className="break-all text-[13px] text-[#6b7280]">
-              {GOOGLE_ACCOUNT.email}
+              Belum ada identitas terverifikasi
             </p>
           </div>
         </div>
         <span className="flex h-full shrink-0 items-center bg-[#e0faed] px-2.5 text-xs font-bold text-[#10b981]">
-          Simulasi ✓
+          Belum tersedia
         </span>
       </div>
       <form
@@ -98,6 +96,7 @@ export function GoogleRegisterForm() {
           </SharedAuthButton>
         </div>
       </form>
+      {errors.unavailable && <p role="status" className="mt-3 text-sm text-secondary">{errors.unavailable}</p>}
       <DemoNotice />
     </section>
   );

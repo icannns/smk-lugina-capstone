@@ -1,5 +1,9 @@
 # Fondasi Database — Backend Phase 1
 
+> Pembaruan Phase 2: autentikasi sudah memakai database; lihat
+> [Auth.js/RBAC](AUTHENTICATION-RBAC.md). Dokumen ini menjelaskan fondasi
+> Phase 1 (22 model); migrasi Auth menambah 2 model tanpa mengubah migrasi awal.
+
 ## Status dan batas implementasi
 
 Fondasi PostgreSQL + Prisma tersedia tanpa mengganti frontend. Halaman Guru dan

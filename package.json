@@ -16,7 +16,10 @@
     "db:migrate:status": "prisma migrate status --config prisma.config.ts",
     "db:seed": "prisma db seed --config prisma.config.ts",
     "test:db:safety": "tsx --test tests/database-safety.test.ts",
-    "test:db": "tsx --test tests/database.integration.test.ts"
+    "test:db": "tsx --test tests/database.integration.test.ts",
+    "auth:provision": "tsx prisma/provision-test-accounts.ts",
+    "test:auth": "tsx --test tests/auth-validation.test.ts",
+    "test:auth:browser": "tsx tests/auth-browser-regressions.mjs"
   },
   "engines": {
     "node": "^20.19 || ^22.12 || >=24.0"
@@ -24,7 +27,9 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "argon2": "0.45.2",
     "next": "16.4.3",
+    "next-auth": "5.0.0-beta.32",
     "pg": "8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",

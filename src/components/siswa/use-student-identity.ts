@@ -1,11 +1,11 @@
 "use client";
 import { useEffect } from "react";
-import { useDemoAuth } from "@/lib/auth/session";
+import { useAppAuth } from "@/lib/auth/session";
 import { useEventDraftStore } from "@/lib/guru/event-draft-store";
 import { ensureStudentProfile } from "@/lib/siswa/student-actions";
 import { studentProfileFor } from "@/lib/siswa/selectors";
 export function useStudentIdentity() {
-  const { account } = useDemoAuth(),
+  const { account } = useAppAuth(),
     state = useEventDraftStore(),
     hasProfile = Boolean(state.studentUI.profiles[account?.studentId ?? ""]);
   useEffect(() => {

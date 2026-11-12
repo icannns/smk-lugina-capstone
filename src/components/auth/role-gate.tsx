@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useDemoAuth } from "@/lib/auth/session";
+import { useAppAuth } from "@/lib/auth/session";
 import { accountHome, type AccountRole } from "@/lib/auth/accounts";
 import { SharedLoadingScreen } from "./auth-loading";
 export function RoleGate({
@@ -11,7 +11,7 @@ export function RoleGate({
   role: AccountRole;
   children: ReactNode;
 }) {
-  const { account, ready, warning } = useDemoAuth(),
+  const { account, ready, warning } = useAppAuth(),
     router = useRouter(),
     pathname = usePathname(),
     prefix = role === "teacher" ? "/guru" : "/siswa",

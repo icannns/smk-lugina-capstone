@@ -5,7 +5,6 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
-import { useDemoAuth } from "@/lib/auth/session";
 export function SharedAuthInput({
   id,
   label,
@@ -49,7 +48,7 @@ export function SharedAuthInput({
           type={
             password ? (visible ? "text" : "password") : (props.type ?? "text")
           }
-          autoComplete="off"
+          autoComplete={props.autoComplete ?? "off"}
           spellCheck={false}
           aria-invalid={Boolean(error)}
           aria-describedby={
@@ -139,40 +138,11 @@ export function SharedAuthButton({
   );
 }
 export function DemoNotice({ accounts = false }: { accounts?: boolean }) {
-  const { warning } = useDemoAuth();
-  return (
-    <aside
-      aria-label="Informasi autentikasi prototipe"
-      className="mt-6 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-[11px] leading-[17px] text-secondary"
-    >
-      <p className="font-semibold text-primary">
-        Prototipe · Autentikasi bersama Guru &amp; Siswa
-      </p>
-      <p>
-        Gunakan identitas dan kredensial fiktif. Google hanya simulasi. Tidak
-        ada kredensial yang dikirim atau kata sandi yang disimpan dalam bentuk
-        teks.
-      </p>
-      {accounts && (
-        <details className="mt-1">
-          <summary className="cursor-pointer font-medium text-primary">
-            Akun demo untuk mencoba kedua peran
-          </summary>
-          <p className="mt-1">Guru: guru@example.com · DemoGuru123!</p>
-          <p>Siswa: siswa@example.com · DemoSiswa123!</p>
-          <p>
-            Username alternatif: rina.guru atau dimas. Role berasal dari record
-            akun.
-          </p>
-        </details>
-      )}
-      {warning && (
-        <p role="alert" className="mt-2 text-amber-800">
-          {warning}
-        </p>
-      )}
-    </aside>
-  );
+  return <aside aria-label="Informasi autentikasi" className="mt-6 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-[11px] leading-[17px] text-secondary">
+    <p className="font-semibold text-primary">Autentikasi server · Data pembelajaran contoh</p>
+    <p>Email/kata sandi diverifikasi di server. Data event dan asesmen pada halaman pembelajaran masih mock. Google OAuth belum tersedia.</p>
+    {accounts && <p className="mt-1">Akun pengujian dan kata sandi diberikan administrator secara terpisah.</p>}
+  </aside>;
 }
 export function GoogleMark() {
   return (
