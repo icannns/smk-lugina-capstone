@@ -57,6 +57,25 @@ node tests/role-navigation-regressions.mjs
 
 Setiap run saat ini memuat 51 pemeriksaan. Tanpa override, hasil masuk ke temporary OS `lugina-role-navigation-regressions`. Peringatan ukuran gambar development dicatat terpisah dari diagnostic Instant Navigation. Sesuaikan port dengan server yang benar-benar aktif.
 
+## Hasil asesmen dashboard
+
+Tes tambahan untuk section Uji Kompetensi, Technostress, dan Asesmen UI/UX:
+
+```powershell
+node --test tests/assessment-results.test.mjs
+# Dengan server aplikasi aktif dan variabel Playwright seperti di atas:
+node tests/assessment-dashboard-regressions.mjs
+```
+
+Tujuh tes Node memeriksa scope akun, ID/enrollment bersama, nilai nol versus hasil
+belum tersedia, filter/ringkasan, pembatalan request saat pergantian akun, serta
+render loading/error/empty, dan pilihan catatan terbaru pada kartu ringkasan.
+Runner browser memeriksa posisi ringkasan, buka/tutup daftar, filter, pagination, dialog
+keyboard/fokus, akun Dimas/Aisyah/akun baru, dan layout 320/768/1440 px. Error dan
+loading diuji lewat renderer React; mock lokal tidak berpura-pura menghubungi
+server yang gagal. Petunjuk kontrak dan batas fitur ada pada
+[panduan asesmen dashboard](../docs/DASHBOARD-ASSESSMENTS.md).
+
 ## Batas dan bukti pengujian
 
 Browser memakai sesi terisolasi; sesi browser pengguna tidak dipakai. Simpan bukti di luar Git. Tes ini tidak menyertifikasi keamanan server, perilaku screen reader, sinkronisasi antarperangkat, seluruh browser, atau kesetaraan piksel Figma. Untuk perubahan lintas modul, ulangi alur Guru–Siswa dan periksa data Reports/Portfolio yang sama; untuk backend mendatang, tambahkan tes pengguna/sesi terpisah.
