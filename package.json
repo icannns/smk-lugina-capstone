@@ -21,7 +21,8 @@
     "test:auth": "tsx --test tests/auth-validation.test.ts",
     "test:auth:browser": "tsx tests/auth-browser-regressions.mjs",
     "test:rest": "tsx tests/rest-api-regressions.mjs",
-    "test:rest:browser": "tsx tests/rest-browser-integration.mjs"
+    "test:rest:browser": "tsx tests/rest-browser-integration.mjs",
+    "test:uiux": "tsx tests/ui-ux-api-regressions.mjs"
   },
   "engines": {
     "node": "^20.19 || ^22.12 || >=24.0"

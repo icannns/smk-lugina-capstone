@@ -84,3 +84,7 @@ export function filterAssessments(
       .some((value) => value.toLocaleLowerCase("id-ID").includes(term))),
   );
 }
+
+export function assessmentOriginLabel(record: AssessmentRecord) {
+  return record.source === "mock" ? "Data contoh" : record.origin === "INTERNAL" ? "Hasil internal" : "Hasil tersimpan";
+}

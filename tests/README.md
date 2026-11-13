@@ -115,3 +115,19 @@ reader, beban produksi, penetrasi independen, atau klaim identik piksel Figma.
 Provider FOMO/COMMIT, pengiriman file biner, dan deployment produksi tidak diuji
 karena belum diimplementasikan. Catatan hasil aktual fase ini ada pada
 [panduan REST](../docs/BACKEND-REST-API.md#hasil-verifikasi-fase-ini).
+
+## UI/UX Assessment internal — Phase 4A
+
+`npm run test:uiux` menguji create/read/filter/history, validasi metadata dan nilai,
+Auth.js/RBAC, idempotency, duplikasi/concurrent writes, status terminal, history
+append-only PostgreSQL, dan hasil pada kedua dashboard dengan sesi berbeda.
+Variabel runner sama dengan tes REST di atas. Source INTERNAL tetap terpisah dari
+DEMO, provider eksternal dan nilai rubrik milestone.
+
+Runner membuat hasil UI/UX internal baru yang menjadi hasil terkini secara sah;
+jalankan suite regresi dashboard seed terlebih dahulu atau gunakan DB disposable
+terpisah untuk suite yang mengharapkan fixture awal 79/84/88. Jangan mereset data
+atau mengganti respons API dengan mock hanya untuk mempertahankan angka seed.
+Kontrak dan hasil verifikasi: [UI/UX API](../docs/UI-UX-ASSESSMENT-API.md).
+
+Tes unit adapter paginated: `npx tsx --test tests/assessment-http.test.ts` (tanpa DB).

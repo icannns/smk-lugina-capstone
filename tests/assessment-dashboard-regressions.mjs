@@ -107,10 +107,11 @@ try {
     assert.equal(await results().locator("[data-assessment-type]").count(), 0);
     const teacherStats = await main().getByRole("region", { name: "Ringkasan event", exact: true }).boundingBox();
     const teacherSummary = await results().boundingBox();
-    const draft = await main().getByRole("region", { name: "Draf event", exact: true }).boundingBox();
+    const draftRegion = main().getByRole("region", { name: "Draf event", exact: true });
+    const draft = await (await draftRegion.count() ? draftRegion : main().getByRole("heading", { name: "Event Anda", exact: true })).boundingBox();
     assert(teacherStats.y + teacherStats.height <= teacherSummary.y);
     assert(teacherSummary.y + teacherSummary.height <= draft.y);
-    ok("Teacher compact summary between statistics and draft; full lists initially closed");
+    ok("Teacher compact summary between statistics and following event content (with/without draft); full lists initially closed");
     for (const type of types) {
       await open(type, type === "competency");
       const panel = section(type), label = labels[type];

@@ -208,6 +208,7 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
+- [API internal hasil UI/UX (Phase 4A)](docs/UI-UX-ASSESSMENT-API.md).
 - [REST API, persistensi dan integrasi Guru–Siswa](docs/BACKEND-REST-API.md).
 - [Autentikasi PostgreSQL dan RBAC](docs/AUTHENTICATION-RBAC.md).
 - [Fondasi PostgreSQL dan Prisma](docs/DATABASE-FOUNDATION.md).

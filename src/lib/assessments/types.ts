@@ -20,6 +20,7 @@ export type AssessmentRecord = Readonly<{
   completedAt?: string;
   feedback?: string;
   source: "mock" | "api";
+  origin?: "DEMO" | "INTERNAL" | "EXTERNAL";
 }>;
 
 export type AssessmentScope =
