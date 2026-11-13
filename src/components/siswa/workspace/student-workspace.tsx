@@ -2,7 +2,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
-import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
+import {
+  listedEvents,
+  refreshWorkspace,
+  useEventDraftStore,
+} from "@/lib/guru/event-draft-store";
 import {
   assessmentForVersion,
   submissionComplete,
@@ -15,7 +19,8 @@ import {
 } from "@/lib/guru/learning-selectors";
 import { formatEventDate } from "@/lib/guru/event-selectors";
 import { submissionId } from "@/lib/guru/learning-data";
-import type { ManagedEvent } from "@/lib/guru/event-types";
+import { AttachmentActions } from "../../shared/attachment-actions";
+import type { EventAttachment, ManagedEvent } from "@/lib/guru/event-types";
 import {
   isEnrolled,
   milestoneUnlocked,
@@ -89,29 +94,119 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
     feedback = submission ? feedbackFor(submission.id, state.learning) : [],
     latest = submission?.versions.at(-1),
     lastFeedback = feedback.filter((f) => f.revision).at(-1);
-  function files(values: FileList | null) {
-    if (!values) return;
+  const [uploading, setUploading] = useState(false),
+    [progress, setProgress] = useState(""),
+    working = useRef(false);
+  async function files(values: FileList | null) {
+    if (!values || working.current || !milestone) return;
     const additions = Array.from(values);
     if (
       work.files.length + additions.length > 5 ||
-      additions.some((f) => f.size > 10 * 1024 * 1024)
+      additions.some((f) => f.size > 10485760)
     ) {
       setError("Maksimal 5 file, masing-masing 10 MB.");
       return;
     }
-    setWork((w) => ({
-      ...w,
-      files: [
-        ...w.files,
-        ...additions.map((f) => ({
-          id: crypto.randomUUID(),
-          name: f.name,
-          size: f.size,
-          type: f.type,
-        })),
-      ],
-    }));
+    working.current = true;
+    setUploading(true);
     setError("");
+    setNotice("");
+    try {
+      for (const file of additions) {
+        const form = new FormData();
+        form.set("file", file);
+        form.set("expectedVersion", String(latest?.version ?? 0));
+        form.set("requestId", crypto.randomUUID());
+        const attachment = await new Promise<EventAttachment>(
+          (resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open(
+              "POST",
+              `/api/events/${encodeURIComponent(event.id)}/milestones/${encodeURIComponent(milestone.id)}/attachments`,
+            );
+            xhr.timeout = 120000;
+            xhr.upload.onprogress = (e) =>
+              setProgress(
+                `${file.name}: ${e.lengthComputable ? Math.round((e.loaded / e.total) * 100) + "% terkirim" : "mengirim"} · menunggu konfirmasi penyimpanan`,
+              );
+            xhr.onerror = () =>
+              reject(
+                new Error(
+                  "Koneksi upload gagal. Muat ulang untuk memeriksa draf sebelum mencoba lagi.",
+                ),
+              );
+            xhr.ontimeout = () =>
+              reject(
+                new Error(
+                  "Upload melewati batas waktu. Periksa draf sebelum mencoba lagi.",
+                ),
+              );
+            xhr.onload = () => {
+              let data;
+              try {
+                data = JSON.parse(xhr.responseText);
+              } catch {
+                reject(new Error("Respons upload tidak valid."));
+                return;
+              }
+              if (xhr.status < 200 || xhr.status >= 300)
+                reject(new Error(data.error?.message ?? "Upload gagal."));
+              else if (!data.attachment?.uploaded)
+                reject(new Error("Penyimpanan belum dikonfirmasi."));
+              else resolve(data.attachment);
+            };
+            xhr.send(form);
+          },
+        );
+        setWork((w) => ({
+          ...w,
+          files: w.files.some((f) => f.id === attachment.id)
+            ? w.files
+            : [...w.files, attachment],
+        }));
+        setNotice(
+          `${attachment.name} berhasil disimpan di penyimpanan privat.`,
+        );
+      }
+      await refreshWorkspace();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload gagal.");
+    } finally {
+      working.current = false;
+      setUploading(false);
+      setProgress("");
+    }
+  }
+  async function removeFile(file: EventAttachment) {
+    if (working.current) return;
+    working.current = true;
+    setUploading(true);
+    setError("");
+    try {
+      if (file.uploaded) {
+        const response = await fetch(
+          `/api/attachments/${encodeURIComponent(file.id)}`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ expectedVersion: latest?.version ?? 0 }),
+          },
+        );
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error?.message ?? "File tidak dapat dihapus.");
+      }
+      setWork((w) => ({
+        ...w,
+        files: w.files.filter((f) => f.id !== file.id),
+      }));
+      await refreshWorkspace();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Penghapusan gagal.");
+    } finally {
+      working.current = false;
+      setUploading(false);
+    }
   }
   if (!milestone)
     return (
@@ -238,31 +333,34 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                 </p>
               </div>
             )}
-            {submission && submission.surveyRequired !== false && !submission.surveyComplete && !revision && (
-              <StudentNotice>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="min-w-0 flex-1 basis-64">
-                    <p className="font-semibold">
-                      Tugas Milestone {index + 1} sudah terkumpul
-                    </p>
-                    <p className="mt-1">
-                      {milestone.surveyActive
-                        ? `Isi Form Survei Pembelajaran ${next ? `untuk membuka Milestone ${index + 2} · ${next.title}` : "untuk menyelesaikan tahap ini"}.`
-                        : "Tidak ada survei wajib yang dikonfigurasi untuk milestone ini. Konfigurasi survei Guru berada di luar prototipe ini."}
-                    </p>
+            {submission &&
+              submission.surveyRequired !== false &&
+              !submission.surveyComplete &&
+              !revision && (
+                <StudentNotice>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1 basis-64">
+                      <p className="font-semibold">
+                        Tugas Milestone {index + 1} sudah terkumpul
+                      </p>
+                      <p className="mt-1">
+                        {milestone.surveyActive
+                          ? `Isi Form Survei Pembelajaran ${next ? `untuk membuka Milestone ${index + 2} · ${next.title}` : "untuk menyelesaikan tahap ini"}.`
+                          : "Tidak ada survei wajib yang dikonfigurasi untuk milestone ini. Konfigurasi survei Guru berada di luar prototipe ini."}
+                      </p>
+                    </div>
+                    {milestone.surveyActive && (
+                      <SiswaLink
+                        href={surveyHref(event.id, milestone.id)}
+                        primary
+                        className="shrink-0"
+                      >
+                        Isi Form Survei
+                      </SiswaLink>
+                    )}
                   </div>
-                  {milestone.surveyActive && (
-                    <SiswaLink
-                      href={surveyHref(event.id, milestone.id)}
-                      primary
-                      className="shrink-0"
-                    >
-                      Isi Form Survei
-                    </SiswaLink>
-                  )}
-                </div>
-              </StudentNotice>
-            )}
+                </StudentNotice>
+              )}
             <Surface>
               <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
                 <div>
@@ -289,6 +387,9 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                   noValidate
                   onSubmit={async (e) => {
                     e.preventDefault();
+                    if (working.current) return;
+                    working.current = true;
+                    setUploading(true);
                     setNotice("");
                     const problem = await submitStudentWork(
                       event.id,
@@ -296,6 +397,8 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                       work,
                     );
                     setError(problem);
+                    working.current = false;
+                    setUploading(false);
                     if (!problem)
                       router.push(
                         revision
@@ -335,30 +438,12 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                   </label>
                   <div className="space-y-2">
                     {work.files.map((f) => (
-                      <div
+                      <AttachmentActions
                         key={f.id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-line p-3 text-xs"
-                      >
-                        <span className="min-w-0 break-all">
-                          {f.name}
-                          <span className="mt-1 block text-secondary">
-                            {(f.size / 1024 / 1024).toFixed(2)} MB · siap
-                            dikirim sebagai metadata contoh
-                          </span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setWork((w) => ({
-                              ...w,
-                              files: w.files.filter((x) => x.id !== f.id),
-                            }))
-                          }
-                          className="text-danger"
-                        >
-                          Hapus
-                        </button>
-                      </div>
+                        file={f}
+                        onRemove={() => void removeFile(f)}
+                        busy={uploading}
+                      />
                     ))}
                   </div>
                   <div
@@ -374,7 +459,8 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                       id="student-files"
                       type="file"
                       multiple
-                      accept={`${milestone.formats?.includes("PDF") ? ".pdf," : ""}${milestone.formats?.includes("Gambar") ? ".png,.jpg,.jpeg,.webp,.svg," : ""}${milestone.formats?.includes("Teks") ? ".txt" : ""}`}
+                      disabled={uploading}
+                      accept={`${!milestone.formats || milestone.formats.includes("PDF") ? ".pdf," : ""}${!milestone.formats || milestone.formats.includes("Gambar") ? ".png,.jpg,.jpeg," : ""}${!milestone.formats || milestone.formats.includes("DOCX") ? ".docx" : ""}`}
                       className="sr-only"
                       onChange={(e) => {
                         files(e.target.files);
@@ -384,6 +470,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     Tarik file ke sini atau{" "}
                     <button
                       type="button"
+                      disabled={uploading}
                       onClick={() => input.current?.click()}
                       className="font-medium text-primary"
                     >
@@ -425,10 +512,18 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     />
                   </label>
                   <p className="mt-3 text-[11px] text-secondary">
-                    Prototipe · Gunakan berkas fiktif. Hanya nama, ukuran, dan
-                    jenis file disimpan di server; isi file tidak dikirim atau
-                    disimpan.
+                    Berkas benar-benar diunggah dan disimpan privat. Gunakan
+                    berkas latihan; jangan unggah data sensitif. Validasi format
+                    bukan pemindaian malware.
                   </p>
+                  {progress && (
+                    <p
+                      role="status"
+                      className="mt-3 break-all text-xs text-primary"
+                    >
+                      {progress}
+                    </p>
+                  )}
                   {error && (
                     <p role="alert" className="mt-3 text-sm text-danger">
                       {error}
@@ -439,16 +534,23 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                       <SiswaLink href="/siswa/dashboard">Batal</SiswaLink>
                     )}
                     <SiswaButton
+                      disabled={uploading}
                       variant="outline"
                       onClick={async () => {
+                        if (working.current) return;
+                        working.current = true;
+                        setUploading(true);
                         setNotice("");
                         if (await saveWorkDraft(event.id, milestone.id, work))
                           setNotice("Draf tersimpan di server.");
+                        else setError("Draf belum tersimpan. Coba lagi.");
+                        working.current = false;
+                        setUploading(false);
                       }}
                     >
                       Simpan Draf
                     </SiswaButton>
-                    <SiswaButton type="submit">
+                    <SiswaButton type="submit" disabled={uploading}>
                       {revision
                         ? "Kirim Revisi"
                         : `Kumpulkan Milestone ${index + 1}`}
@@ -575,14 +677,20 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                         [
                           `Isi Form Survei Milestone ${index + 1}`,
                           submissionComplete(submission),
-                          submission.surveyRequired === false ? "Tidak diwajibkan" : submission.surveyComplete ? "Selesai" : "Belum diisi",
+                          submission.surveyRequired === false
+                            ? "Tidak diwajibkan"
+                            : submission.surveyComplete
+                              ? "Selesai"
+                              : "Belum diisi",
                         ],
                         [
                           next
                             ? `Milestone ${index + 2} terbuka`
                             : "Pengerjaan milestone selesai",
                           submissionComplete(submission),
-                          submissionComplete(submission) ? "Terbuka" : "Menunggu",
+                          submissionComplete(submission)
+                            ? "Terbuka"
+                            : "Menunggu",
                         ],
                       ].map(([label, done, text], n) => (
                         <li
@@ -614,7 +722,8 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                     ) : !milestone.surveyActive &&
                       !submission.surveyComplete ? (
                       <p className="mt-4 text-xs text-secondary">
-                        Tidak ada survei wajib yang dikonfigurasi untuk milestone ini.
+                        Tidak ada survei wajib yang dikonfigurasi untuk
+                        milestone ini.
                       </p>
                     ) : null}
                   </Surface>

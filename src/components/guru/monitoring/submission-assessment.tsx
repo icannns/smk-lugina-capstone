@@ -25,7 +25,7 @@ import {
   useTeacherProfile,
 } from "@/lib/guru/event-draft-store";
 import { formatEventDate } from "@/lib/guru/event-selectors";
-import { downloadText } from "@/lib/guru/client-export";
+import { AttachmentActions } from "../../shared/attachment-actions";
 import { TeacherPage } from "../teacher-page";
 import { Surface, DesignIcon, controlClass } from "../design-ui";
 import { EmptyRows, StatusBadge, StudentAvatar } from "../learning-ui";
@@ -665,55 +665,7 @@ export function Evidence({
   version: SubmissionVersion;
   onPreview: (action: DashboardDialogState) => void;
 }) {
-  const sample = `CONTOH PROTOTIPE — BUKAN FILE SISWA ASLI\n\nLampiran: ${version.file}\nEvent: ${submission.eventId}\nMilestone: ${submission.milestoneId}\nVersi: ${version.version}\n\n${version.note ?? submission.note ?? "Contoh dokumentasi proyek pembelajaran. Pratinjau ini tidak memuat berkas siswa."}`;
-  const files = version.files ?? [
-    { id: version.file, name: version.file, size: 0, type: "" },
-  ];
-  return (
-    <div className="space-y-2">
-      {files.map((file) => (
-        <div
-          key={file.id}
-          className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-line p-3"
-        >
-          <span className="rounded-lg bg-blue-50 p-2">
-            <DesignIcon frame="291:23200" name="imgIcon2" />
-          </span>
-          <div className="min-w-0 flex-1 basis-40">
-            <p className="break-all text-sm">{file.name}</p>
-            <p className="text-xs text-secondary">
-              {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB · ` : ""}
-              metadata contoh demo
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              onPreview({
-                title: `Pratinjau contoh · Versi ${version.version}`,
-                description: sample.replace(version.file, file.name),
-              })
-            }
-            className="flex items-center gap-2 text-xs text-secondary"
-          >
-            <DesignIcon frame="291:23200" name="imgIcon3" />
-            Buka
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              downloadText(
-                `${file.name.replace(/\.pdf$/i, "")}.demo.txt`,
-                sample.replace(version.file, file.name),
-              )
-            }
-            className="flex items-center gap-2 text-xs text-secondary"
-          >
-            <DesignIcon frame="291:23200" name="imgIcon4" />
-            Unduh
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+  void submission; void onPreview;
+  const files=version.files??[{id:version.file,name:version.file,size:0,type:""}];
+  return <div className="space-y-2">{files.map(file=><AttachmentActions key={file.id} file={file} version={version.version}/>)}</div>;
 }

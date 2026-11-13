@@ -243,7 +243,7 @@ export function MilestoneStep({
                   id={`${key}-formats-help`}
                   className="mt-2 text-xs leading-[normal] text-secondary"
                 >
-                  PDF/gambar (JPG, PNG) maks. 10 MB per berkas, maks. 3 berkas.
+                  PDF, gambar (JPG/PNG), DOCX maks. 10 MB per berkas, maks. 5 berkas.
                   Boleh digabung.
                 </p>
                 {errors[`${key}-formats`] && (

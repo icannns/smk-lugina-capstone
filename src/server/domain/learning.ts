@@ -1,4 +1,6 @@
 import "server-only";
+import { canonicalFiles } from "../files/service";
+import { assertEditable } from "../files/permissions";
 import { z } from "zod";
 import { isWibDateTime } from "../../lib/guru/event-wizard-validation";
 import type { Principal } from "../auth/principal";
@@ -27,15 +29,13 @@ export async function studentWork(user: Principal, eventId: string, milestoneId:
     if (!milestone) throw new AuthorizationError(403, "FORBIDDEN");
     const key = { eventId, studentId: user.student!.id, milestoneId };
     if (!submit) {
+      await assertEditable(tx,key);
+      input.work.files = await canonicalFiles(tx,key,input.work.files);
       await tx.submissionDraft.upsert({ where: { eventId_studentId_milestoneId: key }, create: { ...key, ...input.work, files: asJson(input.work.files) }, update: { ...input.work, files: asJson(input.work.files) } });
       return { saved: true };
     }
     if (!input.requestId || input.expectedVersion === undefined) fail("requestId dan expectedVersion wajib diisi.");
-    if (!input.work.text.trim() && !input.work.link && !input.work.files.length) fail("Tambahkan teks, tautan, atau metadata lampiran.");
-    for (const f of input.work.files) {
-      const formats = milestone.acceptedFormats;
-      if (formats.length && !((formats.includes("PDF") && /\.pdf$/i.test(f.name)) || (formats.includes("Gambar") && /\.(png|jpe?g|webp|svg)$/i.test(f.name)) || (formats.includes("Teks") && /\.txt$/i.test(f.name)))) fail("Format lampiran tidak sesuai milestone.");
-    }
+    if (!input.work.text.trim() && !input.work.link && !input.work.files.length) fail("Tambahkan teks, tautan, atau file yang sudah diunggah.");
     if (input.work.link && milestone.acceptedFormats.length && !milestone.acceptedFormats.includes("Hyperlink")) fail("Milestone tidak menerima tautan.");
     const old = await tx.submission.findUnique({ where: { eventId_studentId_milestoneId: key }, include: { versions: { orderBy: { version: "desc" }, take: 1, include: { feedback: true } } } });
     const duplicate = await tx.submissionVersion.findUnique({ where: { requestId: input.requestId } });
@@ -43,20 +43,12 @@ export async function studentWork(user: Principal, eventId: string, milestoneId:
       if (duplicate.submissionId !== old?.id) fail("requestId telah digunakan.", 409, "CONFLICT");
       return { submissionId: old!.id, version: duplicate.version, replay: true };
     }
-    const latest = old?.versions[0];
-    if ((latest?.version ?? 0) !== input.expectedVersion) fail("Versi pekerjaan berubah. Muat ulang sebelum mengirim.", 409, "STALE_VERSION");
-    if (latest && !latest.feedback.some((f) => f.revisionRequested)) fail("Pengumpulan sudah ada dan belum diminta revisi.", 409, "REVISION_NOT_REQUESTED");
-    // Keep the existing sequential UI rule, with only configured surveys required.
-    const previous = await tx.milestone.findMany({ where: { eventId, position: { lt: milestone.position } }, include: { surveys: { where: { enabled: true } } } });
-    for (const m of previous) {
-      const submitted = await tx.submission.findUnique({ where: { eventId_studentId_milestoneId: { ...key, milestoneId: m.id } } });
-      if (!submitted) fail("Kumpulkan milestone sebelumnya terlebih dahulu.", 409, "MILESTONE_LOCKED");
-      for (const binding of m.surveys) if (!await tx.surveyResponseReference.findFirst({ where: { eventId, studentId: key.studentId, milestoneId: m.id, surveyReferenceId: binding.surveyReferenceId, completedAt: { not: null } } })) fail("Survei milestone sebelumnya belum diisi.", 409, "MILESTONE_LOCKED");
-    }
+    await assertEditable(tx,key,input.expectedVersion);
+    input.work.files = await canonicalFiles(tx,key,input.work.files);
     const submission = old ?? await tx.submission.create({ data: key });
-    const version = (latest?.version ?? 0) + 1;
+    const version = (old?.versions[0]?.version ?? 0) + 1;
     const row = await tx.submissionVersion.create({ data: { id: `${submission.id}:v${version}`, submissionId: submission.id, eventId, version, requestId: input.requestId, submittedAt: new Date(), note: input.work.text, link: input.work.link,
-      attachments: { create: input.work.files.map((f) => ({ id: f.id, name: f.name, contentType: f.type, sizeBytes: BigInt(f.size) })) } } });
+      attachments: { create: input.work.files.map((f) => ({ id: f.id, uploadId: f.id, name: f.name, contentType: f.type, sizeBytes: BigInt(f.size) })) } } });
     await tx.submissionDraft.deleteMany({ where: key });
     return { submissionId: submission.id, version: row.version };
   });

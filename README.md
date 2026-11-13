@@ -11,7 +11,7 @@ nilai, feedback, atau permintaan revisi.
 > **Status saat ini: autentikasi dan pembelajaran memakai PostgreSQL.**
 > Login/Register memakai Auth.js; event, enrollment, draf, tugas berversi,
 > nilai, feedback, profil, laporan dan portofolio sudah melalui REST API.
-> Lampiran masih metadata dan hasil provider eksternal tetap referensi DEMO.
+> Lampiran tugas mendukung upload privat asli; hasil provider eksternal tetap referensi DEMO.
 > Google OAuth belum tersedia. Lihat [panduan REST](docs/BACKEND-REST-API.md)
 > dan [setup autentikasi](docs/AUTHENTICATION-RBAC.md).
 
@@ -151,13 +151,14 @@ menekan Simpan Draf belum dijamin bertahan setelah refresh.
   memerlukan survei menunggu integrasi modul Survei.
 - Untuk mencoba seluruh alur survei dan dokumen sertifikat contoh, gunakan event
   demo yang instrumen surveinya sudah dikonfigurasi.
-- Lampiran tugas menyimpan metadata contoh, bukan isi file yang diunggah ke
-  server. Preview dan unduhan sampel diberi keterangan simulasi.
+- Lampiran tugas PDF/PNG/JPEG/DOCX disimpan privat melalui adapter lokal atau S3.
+  Metadata historis tanpa berkas tetap ditandai tidak tersedia; tidak dibuat file pengganti.
 - Ekspor laporan PDF/XLSX benar-benar dibuat di browser. Dokumen sertifikat
   merupakan contoh penyelesaian belajar, tanpa penerbitan atau verifikasi resmi
   institusi.
 - REST CRUD pembelajaran dan RBAC tersedia. Google OAuth, administrasi Survei,
-  penyimpanan isi lampiran, serta koneksi provider tim lain belum tersedia.
+  serta koneksi provider tim lain belum tersedia. Adapter S3 memerlukan konfigurasi
+  privat dan verifikasi deployment; tidak ada fallback lokal otomatis di produksi.
 - Catatan dependency development dan perbedaan visual kecil masih didokumentasikan
   dalam panduan handover. Prototipe ini belum dinyatakan siap untuk produksi.
 
@@ -208,6 +209,7 @@ Desain berada di [Figma SMK Lugina](https://www.figma.com/design/hWTpQwbyreDsivI
 **Page 1 → Redesign Guru** untuk Guru dan **Guru & Siswa → Redesign Siswa** untuk
 Siswa serta autentikasi bersama S01–S04.
 
+- [Upload privat dan lampiran tugas (Phase 4B)](docs/FILE-UPLOAD-ATTACHMENTS.md).
 - [API internal hasil UI/UX (Phase 4A)](docs/UI-UX-ASSESSMENT-API.md).
 - [REST API, persistensi dan integrasi Guru–Siswa](docs/BACKEND-REST-API.md).
 - [Autentikasi PostgreSQL dan RBAC](docs/AUTHENTICATION-RBAC.md).

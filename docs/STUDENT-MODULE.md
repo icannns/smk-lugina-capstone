@@ -3,8 +3,9 @@
 > **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
 > laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
 > di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
-> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
-> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> aplikasi saat ini. Sesi berbeda memakai database yang sama. Lampiran tugas
+> memakai [upload privat Phase 4B](FILE-UPLOAD-ATTACHMENTS.md); provider eksternal
+> belum terintegrasi. Acuan terbaru:
 > [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
 
 
@@ -43,7 +44,7 @@ Workspace menampilkan milestone terurut, instruksi, deadline, format, bukti vers
 
 Simpan Draf mempertahankan isian saat refresh pada sesi yang sama. Kirim tugas membuat versi submission; revisi menambah versi baru. Guru dapat membaca dan menilai versi terbaru, sementara evidence, feedback, dan nilai lama tetap berada pada riwayat. Nilai lama tidak otomatis menjadi penilaian versi baru.
 
-Lampiran hanya menyimpan nama, ukuran, tipe, dan ID. Buka menampilkan simulasi; Unduh membuat sampel `.demo.txt`. Tidak ada file tugas nyata yang diunggah atau diambil dari server. Route event/milestone yang tidak ditemukan atau belum diikuti menyediakan tautan pemulihan.
+Lampiran tugas menyimpan berkas asli privat; pratinjau PDF/gambar dan unduh memakai endpoint Auth.js/RBAC. DOCX hanya diunduh. Lampiran historis yang hanya metadata ditandai tidak tersedia tanpa file pengganti. Route event/milestone yang tidak ditemukan atau belum diikuti menyediakan tautan pemulihan.
 
 ## Survei milestone dan progres
 

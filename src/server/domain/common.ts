@@ -30,7 +30,8 @@ export async function endpoint(request: Request, work: (user: Awaited<ReturnType
   try {
     const user = await requirePrincipal(role);
     if (!["GET", "HEAD"].includes(request.method) && !sameOrigin(request)) throw new AuthorizationError(403, "FORBIDDEN");
-    return privateJson(await work(user), status);
+    const result = await work(user);
+    return result instanceof Response ? result : privateJson(result, status);
   } catch (error) {
     if (error instanceof AuthorizationError) return privateJson({ error: { code: error.code, message: error.status === 401 ? "Silakan masuk kembali." : "Akses tidak diizinkan." } }, error.status);
     if (error instanceof DomainError) return privateJson({ error: { code: error.code, message: error.message } }, error.status);

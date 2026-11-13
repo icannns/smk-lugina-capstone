@@ -11,6 +11,10 @@ export type EventMilestone = {
   attachments?: EventAttachment[];
 };
 export type EventAttachment = {
+  uploaded?: boolean;
+  checksum?: string;
+  downloadUrl?: string;
+  previewUrl?: string;
   id: string;
   name: string;
   size: number;
