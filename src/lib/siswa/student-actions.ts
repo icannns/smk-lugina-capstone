@@ -41,8 +41,8 @@ export function workError(
       !(
         (formats.includes("PDF") && /\.pdf$/i.test(f.name)) ||
         (formats.includes("Gambar") &&
-          /\.(png|jpe?g|webp|svg)$/i.test(f.name)) ||
-        (formats.includes("Teks") && /\.txt$/i.test(f.name))
+          /\.(png|jpe?g)$/i.test(f.name)) ||
+        (formats.includes("DOCX") && /\.docx$/i.test(f.name))
       )
     )
       return "Jenis file tidak sesuai format pengumpulan milestone.";
@@ -62,14 +62,15 @@ export function workError(
     return "Tambahkan file, teks jawaban, atau tautan contoh sebelum mengumpulkan.";
   return "";
 }
+const submittedWork = (work: WorkDraft) => ({...work,files:work.files.map(({id,name,size,type})=>({id,name,size,type}))});
 export async function saveWorkDraft(eventId: string, milestoneId: string, work: WorkDraft) {
- return Boolean(await mutateDomain(milestonePath(eventId,milestoneId)+"/work-draft", "PUT", { work }));
+ return Boolean(await mutateDomain(milestonePath(eventId,milestoneId)+"/work-draft", "PUT", { work: submittedWork(work) }));
 }
 export async function submitStudentWork(eventId: string, milestoneId: string, work: WorkDraft) {
  const error = workError(eventId,milestoneId,work); if (error) return error;
  const c = context(eventId); if (!c) return "Sesi Siswa tidak tersedia.";
  const previous = allSubmissions(c.state.learning).find((s) => s.eventId === eventId && s.studentId === c.studentId && s.milestoneId === milestoneId);
- const result = await mutateDomain(milestonePath(eventId,milestoneId)+"/submissions", "POST", { work, expectedVersion: previous?.versions.at(-1)?.version ?? 0, requestId: crypto.randomUUID() });
+ const result = await mutateDomain(milestonePath(eventId,milestoneId)+"/submissions", "POST", { work: submittedWork(work), expectedVersion: previous?.versions.at(-1)?.version ?? 0, requestId: crypto.randomUUID() });
  return result ? "" : readEventStore().storageError || "Pengumpulan gagal.";
 }
 export async function saveSurveyDraft(eventId: string, milestoneId: string, answers: SurveyDraft) {

@@ -1,4 +1,5 @@
 import "server-only";
+import { uploadDto } from "../files/service";
 import { enrollmentKey, submissionKey } from "../../lib/domain/keys";
 import type { Principal } from "../auth/principal";
 import type { Transaction } from "./common";
@@ -24,7 +25,7 @@ export async function workspace(user: Principal, database: Transaction = getData
   const enrollments = await database.enrollment.findMany({ where: enrollmentWhere, include: { student: { include: { user: { select: { name: true, email: true } } } } } });
   const enrolledIds = [...new Set(enrollments.map((e) => e.studentId))];
   const submissions = await database.submission.findMany({ where: enrollmentWhere,
-    include: { versions: { orderBy: { version: "asc" }, include: { attachments: true, assessment: { include: { scores: true } }, feedback: { orderBy: { createdAt: "asc" } } } } },
+    include: { versions: { orderBy: { version: "asc" }, include: { attachments: { include: { upload: true } }, assessment: { include: { scores: true } }, feedback: { orderBy: { createdAt: "asc" } } } } },
   });
   const responses = await database.surveyResponseReference.findMany({ where: enrollmentWhere, orderBy: { revision: "asc" }, include: { reviews: teacher ? { where: { reviewerTeacherId: user.teacher!.id } } : true, binding: { include: { survey: true } } } });
   const rubrics = await database.rubric.findMany({ where: teacher ? { ownerTeacherId: user.teacher!.id } : { versions: { some: { events: { some: { id: { in: eventIds } } } } } }, include: { versions: { orderBy: { version: "desc" }, include: { criteria: { orderBy: { position: "asc" }, include: { levels: { orderBy: { score: "asc" } } } }, events: { select: { id: true } } } } } });
@@ -78,7 +79,7 @@ export async function workspace(user: Principal, database: Transaction = getData
       surveySummary: response ? "Respons tersimpan; skor instrumen eksternal tidak dihitung aplikasi." : undefined,
       instrument: response?.binding.survey.title, completion: response ? "Respons survei tersimpan." : undefined, integration: response ? "Referensi database; provider eksternal belum dihubungkan." : undefined,
       versions: s.versions.map((v) => ({ version: v.version, submittedAt: timestamp(v.submittedAt), file: v.attachments[0]?.name ?? (v.link ? "Tautan project" : "Jawaban teks"), note: v.note ?? "", link: v.link ?? "",
-        files: v.attachments.map((f) => ({ id: f.id, name: f.name, size: Number(f.sizeBytes), type: f.contentType })) })),
+        files: v.attachments.map((f) => (f.upload?.status === "READY" ? uploadDto(f.upload) : { id: f.id, name: f.name, size: Number(f.sizeBytes), type: f.contentType, uploaded: false })) })),
     };
     for (const v of s.versions) {
       if (v.assessment) state.learning.assessments[`${s.id}:v${v.version}`] = { submissionId: s.id, version: v.version, revision: v.assessment.revision, savedAt: timestamp(v.assessment.updatedAt), scores: Object.fromEntries(v.assessment.scores.map((score) => [score.criterionId, score.value.toNumber()])) };
@@ -92,11 +93,12 @@ export async function workspace(user: Principal, database: Transaction = getData
     state.studentUI.surveyResponses[key] = { id: r.id, first: snapshot?.first ?? null, second: snapshot?.second ?? null, reflection: snapshot?.reflection ?? "", version: r.revision, submittedAt: r.completedAt ? timestamp(r.completedAt) : "" };
   }
   const drafts = teacher ? [] : await database.submissionDraft.findMany({ where: { ...enrollmentWhere, studentId: teacher ? { in: enrolledIds } : user.student!.id } });
+  const uploads = teacher ? [] : await database.submissionUpload.findMany({where:{studentId:user.student!.id,status:"READY",eventId:{in:eventIds}}});
   for (const draft of drafts) {
     // A teacher may read submitted work, never a student's unsubmitted draft.
     if (teacher) continue;
     const key = submissionKey(draft.eventId,draft.studentId,draft.milestoneId);
-    state.studentUI.workDrafts[key] = { text: draft.text, link: draft.link, files: draft.files as unknown as WorkDraft["files"] };
+    state.studentUI.workDrafts[key] = { text: draft.text, link: draft.link, files: (draft.files as unknown as WorkDraft["files"]).map(f => {const upload=uploads.find(u=>u.id===f.id&&u.eventId===draft.eventId&&u.milestoneId===draft.milestoneId);return upload ? uploadDto(upload) : {...f,uploaded:false};}) };
     if (draft.surveyDraft) state.studentUI.surveyDrafts[key] = draft.surveyDraft as unknown as SurveyDraft;
   }
   const claims = await database.prototypeCertificateClaim.findMany({ where: enrollmentWhere });

@@ -10,6 +10,7 @@ export const wizardSteps = [
 export const submissionFormats = [
   "PDF",
   "Gambar",
+  "DOCX",
   "Teks",
   "Hyperlink",
 ] as const;

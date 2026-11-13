@@ -3,8 +3,9 @@
 > **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
 > laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
 > di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
-> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
-> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
+> aplikasi saat ini. Sesi berbeda memakai database yang sama. Lampiran tugas
+> memakai [upload privat Phase 4B](FILE-UPLOAD-ATTACHMENTS.md); provider eksternal
+> belum terintegrasi. Acuan terbaru:
 > [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
 
 
@@ -97,7 +98,7 @@ Penyelesaian lebih awal tidak otomatis melewati assessment atau syarat sertifika
 
 ## Karya, laporan, dan profil
 
-Karya Siswa menyediakan arsip per event, daftar peserta, bukti tugas, feedback, dan versi terdahulu. Buka menampilkan preview contoh; Unduh menghasilkan `.demo.txt` berlabel simulasi, bukan file tugas asli.
+Karya Siswa menyediakan arsip per event, daftar peserta, bukti tugas, feedback, dan versi terdahulu. Pratinjau dan Unduh mengambil berkas asli melalui pemeriksaan izin event. Metadata lama tanpa blob tetap ditandai tidak tersedia.
 
 Laporan menerapkan filter saat Tampilkan ditekan dan menghapus konteks saat Reset. Status pengerjaan pada tabel, filter, dan ekspor menggunakan definisi yang sama, termasuk task terkirim dengan survei belum lengkap. PDF merangkum data dengan wrapping/pagination; XLSX memuat tabel hasil filter. Keduanya benar-benar dibuat di browser. PDF menggunakan normalisasi teks sederhana; dukungan tipografi Unicode penuh tidak dijanjikan.
 

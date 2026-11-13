@@ -40,18 +40,19 @@ enum ReferenceSource {
 }
 
 model User {
-  id                String         @id @default(cuid()) @db.VarChar(191)
-  name              String         @db.VarChar(120)
-  email             String?        @unique @db.VarChar(320)
-  username          String?        @unique @db.VarChar(80)
+  id                String             @id @default(cuid()) @db.VarChar(191)
+  name              String             @db.VarChar(120)
+  email             String?            @unique @db.VarChar(320)
+  username          String?            @unique @db.VarChar(80)
   role              Role
-  isDemo            Boolean        @default(false)
+  isDemo            Boolean            @default(false)
   passwordHash      String?
-  passwordChangedAt DateTime?      @db.Timestamptz(3)
-  disabledAt        DateTime?      @db.Timestamptz(3)
+  passwordChangedAt DateTime?          @db.Timestamptz(3)
+  disabledAt        DateTime?          @db.Timestamptz(3)
   loginSessions     LoginSession[]
-  createdAt         DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime       @updatedAt @db.Timestamptz(3)
+  submissionUploads SubmissionUpload[]
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
 
   teacher TeacherProfile?
   student StudentProfile?
@@ -136,6 +137,7 @@ model Enrollment {
   teacherNote           String                        @default("")
   workDrafts            SubmissionDraft[]
   prototypeCertificates PrototypeCertificateClaim[]
+  uploads               SubmissionUpload[]
 
   @@unique([eventId, studentId])
   @@index([studentId])
@@ -156,6 +158,7 @@ model Milestone {
   attachments     Json?
   workDrafts      SubmissionDraft[]
   criteria        MilestoneCriterion[]
+  uploads         SubmissionUpload[]
 
   @@id([eventId, id])
   @@unique([eventId, position])
@@ -204,7 +207,11 @@ model SubmissionAttachment {
   storageKey  String?
   version     SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
+  uploadId String?           @db.VarChar(191)
+  upload   SubmissionUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
   @@id([versionId, id])
+  @@index([uploadId])
 }
 
 model Rubric {
@@ -485,4 +492,42 @@ model UiUxAssessmentRevision {
 
   @@id([assessmentId, revision])
   @@index([changedByTeacherId, changedAt])
+}
+
+enum UploadStatus {
+  UPLOADING
+  READY
+  FAILED
+  DELETING
+  DELETED
+}
+
+// A private object is staged before first submission and can be referenced by immutable versions.
+model SubmissionUpload {
+  id               String                 @id @default(cuid()) @db.VarChar(191)
+  eventId          String                 @db.VarChar(191)
+  studentId        String                 @db.VarChar(191)
+  milestoneId      String                 @db.VarChar(191)
+  uploaderUserId   String                 @db.VarChar(191)
+  expectedVersion  Int
+  originalName     String                 @db.VarChar(180)
+  contentType      String                 @db.VarChar(150)
+  sizeBytes        BigInt
+  checksum         String                 @db.VarChar(64)
+  storageKey       String                 @unique @db.VarChar(64)
+  storageBackend   String                 @db.VarChar(10)
+  storageNamespace String                 @db.VarChar(64)
+  requestKey       String                 @unique @db.VarChar(64)
+  status           UploadStatus           @default(UPLOADING)
+  createdAt        DateTime               @default(now()) @db.Timestamptz(3)
+  expiresAt        DateTime               @db.Timestamptz(3)
+  cleanupNeeded    Boolean                @default(false)
+  enrollment       Enrollment             @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
+  milestone        Milestone              @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict, onUpdate: Restrict)
+  uploader         User                   @relation(fields: [uploaderUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  attachments      SubmissionAttachment[]
+
+  @@index([eventId, studentId, milestoneId, expectedVersion, status])
+  @@index([uploaderUserId, createdAt])
+  @@index([status, expiresAt])
 }

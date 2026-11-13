@@ -3,7 +3,8 @@
 > Pembaruan Phase 4A: API hasil UI/UX internal tersedia. Filter type/student/event
 > dan pagination list ditambahkan; endpoint rubrik milestone tetap terpisah.
 > Lihat [kontrak UI/UX](UI-UX-ASSESSMENT-API.md). Provider FOMO/COMMIT tetap belum
-> diintegrasikan; schema kini 28 model.
+> diintegrasikan. Phase 4B menambahkan SubmissionUpload (29 model);
+> lihat [upload privat](FILE-UPLOAD-ATTACHMENTS.md) untuk kontrak lampiran terbaru.
 
 
 ## Status dan arsitektur
@@ -44,7 +45,8 @@ secara membabi buta. Polling bukan WebSocket dan belum dioptimalkan untuk skala 
   dapat menentukan pemilik. Pendaftaran publik tetap hanya membuat Siswa.
 - Semua respons privat memakai `Cache-Control: no-store`. Mutasi memerlukan
   origin yang sama serta JSON, kecuali aksi klaim tanpa body. Batas body 1 MiB;
-  metadata lampiran dibatasi jumlah/ukuran/format. Isi berkas tidak diunggah.
+  lampiran tugas divalidasi terhadap upload privat yang terkonfirmasi. Metadata
+  lampiran pendukung Guru/sertifikat tetap di luar lingkup upload tugas.
 - HTML studi kasus/instruksi disanitasi memakai daftar tag/atribut terbatas;
   teks tugas dan feedback dirender sebagai teks React.
 
@@ -117,7 +119,9 @@ startAt/endAt, attachments, wizard. `updated/period/status` tampilan tidak menja
 otoritas server; status/pemilik/waktu dihitung dari record database.
 `EventMilestone`: id, title, instructions?, deadline?, formats?, surveyActive?, attachments?.
 Tanggal input `YYYY-MM-DDTHH:mm` adalah waktu **WIB**, disimpan timestamptz.
-Metadata file `{id,name,size,type}` tidak berarti blob tersedia.
+Untuk lampiran tugas, `{id,name,size,type}` harus merujuk upload privat READY milik
+Siswa pada event/milestone yang sama. Server menentukan metadata kanonis. Metadata
+pendukung event/milestone dan sertifikat tidak berarti blob tersedia.
 
 - Event memakai optimistic concurrency `revision` + transaksi Serializable dan
   row lock. Revisi stale menghasilkan 409, tidak menimpa sesi lain. ID create
@@ -223,10 +227,10 @@ mengubah sementara grant akun test, lalu memulihkannya.
 
 ## Batas dan handover deployment
 
-- Teks, tautan, metadata lampiran, draf, nilai/feedback, progres/laporan, profil,
-  dan klaim prototipe sudah database-backed. **Blob file belum diunggah/disimpan**;
-  preview/download lampiran tetap simulasi yang diberi label. PDF/XLSX laporan
-  benar-benar dibuat di browser dari DTO database.
+- Teks, tautan, draf, nilai/feedback, progres/laporan, profil, dan klaim prototipe
+  sudah database-backed. Lampiran tugas kini mempunyai blob privat dan riwayat
+  versi immutable; metadata lama tidak dipalsukan menjadi file. PDF/XLSX laporan
+  tetap dibuat di browser dari DTO database. Lihat [Phase 4B](FILE-UPLOAD-ATTACHMENTS.md).
 - Sertifikat adalah dokumen pembelajaran contoh, bukan penerbitan kompetensi,
   tanda tangan resmi, atau layanan verifikasi institusi.
 - Jawaban DEMO survei dapat disimpan di DB untuk menguji workflow; tidak menghitung

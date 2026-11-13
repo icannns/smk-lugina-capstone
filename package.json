@@ -22,12 +22,17 @@
     "test:auth:browser": "tsx tests/auth-browser-regressions.mjs",
     "test:rest": "tsx tests/rest-api-regressions.mjs",
     "test:rest:browser": "tsx tests/rest-browser-integration.mjs",
-    "test:uiux": "tsx tests/ui-ux-api-regressions.mjs"
+    "test:uiux": "tsx tests/ui-ux-api-regressions.mjs",
+    "files:cleanup": "tsx prisma/cleanup-submission-files.ts",
+    "test:files:unit": "tsx --test tests/file-storage.test.ts",
+    "test:files:api": "tsx tests/file-attachments-regressions.mjs",
+    "test:files:browser": "tsx tests/file-attachments-browser.mjs"
   },
   "engines": {
     "node": "^20.19 || ^22.12 || >=24.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1168.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "argon2": "0.45.2",
@@ -38,6 +43,7 @@
     "react-dom": "19.3.0",
     "sanitize-html": "2.18.2",
     "server-only": "0.0.1",
+    "yauzl": "3.4.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
@@ -47,6 +53,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/sanitize-html": "2.16.2",
+    "@types/yauzl": "3.4.0",
     "dotenv": "18.0.10",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",

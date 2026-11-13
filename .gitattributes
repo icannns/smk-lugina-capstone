@@ -1,0 +1,2 @@
+# Preserve actual fixture bytes and PDF xref offsets on Windows checkouts.
+tests/fixtures/submission-files/* binary

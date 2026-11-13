@@ -112,8 +112,8 @@ unduhan dengan uji seluruh aplikasi pembaca dokumen.
 
 Browser testing memakai Edge/Chromium lokal; bukan uji seluruh browser, screen
 reader, beban produksi, penetrasi independen, atau klaim identik piksel Figma.
-Provider FOMO/COMMIT, pengiriman file biner, dan deployment produksi tidak diuji
-karena belum diimplementasikan. Catatan hasil aktual fase ini ada pada
+Provider FOMO/COMMIT dan deployment produksi tidak diuji. Upload biner privat
+memiliki suite Phase 4B tersendiri; adapter S3 belum diverifikasi pada provider nyata. Catatan hasil aktual fase ini ada pada
 [panduan REST](../docs/BACKEND-REST-API.md#hasil-verifikasi-fase-ini).
 
 ## UI/UX Assessment internal — Phase 4A
@@ -131,3 +131,17 @@ atau mengganti respons API dengan mock hanya untuk mempertahankan angka seed.
 Kontrak dan hasil verifikasi: [UI/UX API](../docs/UI-UX-ASSESSMENT-API.md).
 
 Tes unit adapter paginated: `npx tsx --test tests/assessment-http.test.ts` (tanpa DB).
+
+## Upload berkas privat — Phase 4B
+
+Lihat [setup, keamanan, dan hasil aktual](../docs/FILE-UPLOAD-ATTACHMENTS.md).
+`npm run test:files:unit` tidak memakai DB. Runner API/browser memerlukan DB test
+terisolasi, Auth.js aktif dan storage sementara di luar repo:
+`npm run test:files:api`, lalu `npm run test:files:browser`.
+Gunakan `AUDIT_OUTPUT_DIR` berbeda untuk tiap runner, di bawah induk yang sama;
+runner browser membaca `file-attachments-regressions/flow.json` milik runner API.
+Sesudah menghentikan dan menyalakan ulang aplikasi dengan DB/root storage sama,
+jalankan `npm run test:files:api -- restart` untuk membandingkan checksum kembali.
+Runner API melakukan fault injection HANYA pada `FILE_STORAGE_LOCAL_ROOT` di bawah
+direktori temp OS; jangan gunakan storage development bersama. Semua file fixture
+pada `tests/fixtures/submission-files/` adalah dokumen/gambar fiktif tanpa data siswa.
