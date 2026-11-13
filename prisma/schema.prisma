@@ -36,6 +36,7 @@ enum ExternalAssessmentStatus {
 enum ReferenceSource {
   DEMO
   EXTERNAL
+  INTERNAL
 }
 
 model User {
@@ -59,19 +60,20 @@ model User {
 }
 
 model TeacherProfile {
-  id            String         @id @default(cuid()) @db.VarChar(191)
-  userId        String         @unique @db.VarChar(191)
-  role          Role           @default(TEACHER)
-  phone         String?        @db.VarChar(40)
-  user          User           @relation(fields: [userId, role], references: [id, role], onDelete: Restrict, onUpdate: Restrict)
+  id            String                   @id @default(cuid()) @db.VarChar(191)
+  userId        String                   @unique @db.VarChar(191)
+  role          Role                     @default(TEACHER)
+  phone         String?                  @db.VarChar(40)
+  user          User                     @relation(fields: [userId, role], references: [id, role], onDelete: Restrict, onUpdate: Restrict)
   events        Event[]
   rubrics       Rubric[]
   assessments   Assessment[]
   feedback      Feedback[]
   surveyReviews SurveyReview[]
-  contactEmail  String?        @db.VarChar(320)
+  uiUxRevisions UiUxAssessmentRevision[]
+  contactEmail  String?                  @db.VarChar(320)
   avatar        String?
-  displayRole   String?        @db.VarChar(80)
+  displayRole   String?                  @db.VarChar(80)
 
   @@unique([userId, role])
 }
@@ -389,6 +391,11 @@ model ExternalAssessmentReference {
   student              StudentProfile           @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   enrollment           Enrollment?              @relation(fields: [eventId, studentId], references: [eventId, studentId], onDelete: Restrict, onUpdate: Restrict)
 
+  revision       Int                      @default(0)
+  uiUxCreateKey  String?                  @unique @db.VarChar(64)
+  uiUxCreateHash String?                  @db.VarChar(64)
+  uiUxRevisions  UiUxAssessmentRevision[]
+
   @@unique([provider, externalAssessmentId])
   @@index([studentId, type, completedAt])
   @@index([eventId, type, status])
@@ -464,4 +471,18 @@ model PrototypeCertificateClaim {
 
   @@unique([eventId, studentId])
   @@index([studentId])
+}
+
+// Append-only snapshots of internal UI/UX results; legacy records have no invented history.
+model UiUxAssessmentRevision {
+  assessmentId       String                      @db.VarChar(191)
+  revision           Int
+  snapshot           Json
+  changedAt          DateTime                    @default(now()) @db.Timestamptz(3)
+  changedByTeacherId String                      @db.VarChar(191)
+  assessment         ExternalAssessmentReference @relation(fields: [assessmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  teacher            TeacherProfile              @relation(fields: [changedByTeacherId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([assessmentId, revision])
+  @@index([changedByTeacherId, changedAt])
 }

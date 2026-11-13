@@ -4,7 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import { DashboardButton } from "../guru/dashboard-ui";
 import { StatusBadge } from "../guru/learning-ui";
 import { Surface } from "../guru/design-ui";
-import { assessmentResultText, assessmentStatusLabels } from "@/lib/assessments/selectors";
+import { assessmentOriginLabel, assessmentResultText, assessmentStatusLabels } from "@/lib/assessments/selectors";
 import type { AssessmentQueryState, AssessmentRecord, AssessmentStatus } from "@/lib/assessments/types";
 
 const badgeStatus = {
@@ -33,7 +33,7 @@ export function AssessmentLoadState({
     <Surface>
       <div role={failed ? "alert" : "status"} aria-busy={!failed} className="space-y-3 text-sm">
         <p className="font-medium">{failed ? "Hasil asesmen belum dapat dimuat." : "Memuat hasil asesmen…"}</p>
-        <p className="text-secondary">{failed ? "Coba muat ulang bagian ini. Data event dan tugas tetap tersedia." : "Menyiapkan data asesmen contoh."}</p>
+        <p className="text-secondary">{failed ? "Coba muat ulang bagian ini. Data event dan tugas tetap tersedia." : "Menyiapkan hasil asesmen tersimpan."}</p>
         {failed && <DashboardButton variant="outline" onClick={onRetry}>Coba lagi</DashboardButton>}
       </div>
     </Surface>
@@ -49,6 +49,7 @@ export function AssessmentResultCard({
         <div className="min-w-0 flex-1 basis-40">
           {name && <p className="mb-1 break-words text-sm font-semibold">{name}</p>}
           <h4 className="break-words text-sm font-medium">{record.title}</h4>
+          <p className="mt-1 text-xs text-secondary">{assessmentOriginLabel(record)}</p>
           <p className="mt-1 break-words text-xs leading-[18px] text-secondary">{eventName}</p>
         </div>
         <AssessmentBadge status={record.status} />
@@ -91,9 +92,9 @@ export function AssessmentDetail({
         }
       }}
       className="fixed inset-0 m-auto max-h-[85dvh] w-[calc(100%-40px)] max-w-lg overflow-y-auto rounded-2xl border border-line bg-white p-5 text-foreground shadow-xl backdrop:bg-slate-950/35 sm:p-8">
-      <p className="mb-2 text-xs font-semibold text-primary">DATA ASESMEN CONTOH</p>
+      <p className="mb-2 text-xs font-semibold text-primary">{record.source === "mock" ? "DATA ASESMEN CONTOH" : record.origin === "INTERNAL" ? "HASIL ASESMEN INTERNAL" : "HASIL ASESMEN"}</p>
       <h2 id={title} className="break-words text-xl font-semibold">{record.title}</h2>
-      <p id={description} className="mt-2 text-sm leading-6 text-secondary">Catatan fiktif untuk demonstrasi. Belum terhubung ke layanan asesmen.</p>
+      <p id={description} className="mt-2 text-sm leading-6 text-secondary">{record.source === "mock" ? "Catatan fiktif untuk demonstrasi. Belum terhubung ke layanan asesmen." : "Hasil tersimpan di PostgreSQL. Asesmen UI/UX terpisah dari nilai rubrik milestone; provider eksternal belum diintegrasikan."}</p>
       <dl className="my-5 grid min-w-0 gap-4 text-sm">
         <div><dt className="text-xs text-secondary">Siswa</dt><dd className="mt-1 break-words font-medium">{studentName}</dd></div>
         <div><dt className="text-xs text-secondary">Event</dt><dd className="mt-1 break-words">{eventName}</dd></div>

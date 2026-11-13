@@ -4,6 +4,7 @@ import { Surface } from "../guru/design-ui";
 import { DashboardButton } from "../guru/dashboard-ui";
 import { AssessmentBadge } from "./assessment-ui";
 import {
+  assessmentOriginLabel,
   assessmentHighlight,
   assessmentLabels,
   assessmentResultText,
@@ -38,6 +39,7 @@ export function AssessmentSummaryCard({
             </p>
             <p className="mt-1 text-xs leading-[18px] text-secondary">
               {summary.unavailable} belum tersedia · {summary.total} catatan
+              {records.some(r => r.source === "mock") && <span className="block">Termasuk {records.filter(r => r.source === "mock").length} data contoh</span>}
             </p>
           </>
         ) : latest ? (
@@ -46,6 +48,7 @@ export function AssessmentSummaryCard({
               {assessmentResultText(latest)}
             </p>
             <p className="mt-1 break-words text-xs leading-[18px] text-secondary">{latest.title}</p>
+            <p className="mt-1 text-xs text-secondary">{assessmentOriginLabel(latest)}</p>
             <p className="mt-1 text-xs leading-[18px] text-secondary">{records.length} catatan · lihat hasil dan riwayat</p>
           </>
         ) : (

@@ -5,7 +5,7 @@ import { Surface, controlClass } from "../guru/design-ui";
 import { DashboardButton } from "../guru/dashboard-ui";
 import { AssessmentBadge, AssessmentDetail, AssessmentResultCard, assessmentDate } from "./assessment-ui";
 import {
-  assessmentLabels, assessmentStatusLabels, assessmentSummary,
+  assessmentOriginLabel, assessmentLabels, assessmentStatusLabels, assessmentSummary,
   assessmentResultText, filterAssessments, initialAssessmentFilters,
 } from "@/lib/assessments/selectors";
 import type { AssessmentFilters, AssessmentRecord, AssessmentType } from "@/lib/assessments/types";
@@ -48,7 +48,7 @@ export function AssessmentSection({
             <h3 id={`${id}-title`} className="text-lg font-semibold leading-[26px]">{teacher ? label : `Hasil ${label}`}</h3>
             <p className="mt-1 text-xs leading-[18px] text-secondary">{descriptions[type]}</p>
           </div>
-          <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-medium text-primary">Data contoh</span>
+          <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-medium text-primary">{records.some(r => r.source !== "mock") ? "Hasil tersimpan" : "Data contoh"}</span>
         </div>
         {teacher && <>
           <dl className="my-5 grid grid-cols-3 gap-2 sm:gap-4">
@@ -83,12 +83,12 @@ export function AssessmentSection({
         </p> : <>
           {teacher && <div className="hidden max-w-full overflow-x-auto rounded-xl border border-line md:block" tabIndex={0} role="region" aria-label={`Tabel hasil ${label}`}>
             <table className="w-full min-w-[720px] text-left text-sm">
-              <caption className="sr-only">Catatan {label} contoh per siswa dan event</caption>
+              <caption className="sr-only">Catatan {label} per siswa dan event</caption>
               <thead className="border-b border-line bg-gray-50 text-xs text-secondary"><tr>
                 {["Siswa / Asesmen", "Event", "Hasil", "Status", "Selesai (WIB)", "Detail"].map((heading) => <th scope="col" key={heading} className="px-3 py-3 font-medium">{heading}</th>)}
               </tr></thead>
               <tbody>{visible.map((record) => <tr key={record.id} className="border-b border-line align-top last:border-0">
-                <th scope="row" className="max-w-52 break-words px-3 py-4 font-medium"><span>{names.get(record.studentId) ?? "Siswa contoh"}</span><span className="mt-1 block text-xs font-normal leading-[18px] text-secondary">{record.title}</span></th>
+                <th scope="row" className="max-w-52 break-words px-3 py-4 font-medium"><span>{names.get(record.studentId) ?? "Siswa contoh"}</span><span className="mt-1 block text-xs font-normal leading-[18px] text-secondary">{record.title}</span><span className="mt-1 block text-xs font-normal text-secondary">{assessmentOriginLabel(record)}</span></th>
                 <td className="max-w-52 break-words px-3 py-4 text-xs leading-[18px] text-secondary">{eventName(record)}</td>
                 <td className="max-w-64 break-words px-3 py-4 text-xs leading-[18px]">{assessmentResultText(record)}</td>
                 <td className="px-3 py-4"><AssessmentBadge status={record.status} /></td>

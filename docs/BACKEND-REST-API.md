@@ -1,5 +1,11 @@
 # REST API dan Persistensi Pembelajaran — Backend Phase 3
 
+> Pembaruan Phase 4A: API hasil UI/UX internal tersedia. Filter type/student/event
+> dan pagination list ditambahkan; endpoint rubrik milestone tetap terpisah.
+> Lihat [kontrak UI/UX](UI-UX-ASSESSMENT-API.md). Provider FOMO/COMMIT tetap belum
+> diintegrasikan; schema kini 28 model.
+
+
 ## Status dan arsitektur
 
 Backend berada di aplikasi Next.js yang sama: App Router → Route Handler →
