@@ -1,18 +1,21 @@
 # Fondasi Database — Backend Phase 1
 
-> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
-> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
-> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
-> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
-> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
-> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+> **Status terkini (Backend Phase 4B):** alur event, enrollment, tugas,
+> penilaian, portofolio, laporan, dan profil memakai REST API + PostgreSQL.
+> Autentikasi memakai Auth.js dan otorisasi server. Schema kini memiliki **29
+> model**. Lampiran berupa berkas nyata di storage privat, dengan metadata dan
+> versi tersimpan di PostgreSQL. Hasil UI/UX internal terpisah dari nilai rubrik
+> milestone. Provider eksternal belum terintegrasi. Uraian fase terdahulu di bawah
+> adalah catatan historis, bukan mode fallback aplikasi saat ini. Acuan terbaru:
+> [REST API](BACKEND-REST-API.md), [UI/UX internal](UI-UX-ASSESSMENT-API.md), dan
+> [upload lampiran privat](FILE-UPLOAD-ATTACHMENTS.md).
 
 
 > Pembaruan Phase 2: autentikasi sudah memakai database; lihat
 > [Auth.js/RBAC](AUTHENTICATION-RBAC.md). Dokumen ini menjelaskan fondasi
 > Phase 1 (22 model); migrasi Auth menambah 2 model tanpa mengubah migrasi awal.
 
-## Status dan batas implementasi
+## Status dan batas implementasi Phase 1 (historis)
 
 Fondasi PostgreSQL + Prisma tersedia tanpa mengganti frontend. Halaman Guru dan
 Siswa **masih memakai mock/sessionStorage**, bukan database ini. Belum ada Route

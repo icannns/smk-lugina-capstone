@@ -1,4 +1,5 @@
 "use client";
+import { escapeXmlText } from "../text-validation";
 import { createPrototypePdf } from "./prototype-pdf";
 export function downloadText(
   filename: string,
@@ -35,18 +36,7 @@ export function downloadSpreadsheet(
   filename: string,
   rows: (string | number)[][],
 ) {
-  const xml = (value: string) =>
-    value.replace(
-      /[&<>"']/g,
-      (c) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&apos;",
-        })[c]!,
-    );
+  const xml = escapeXmlText;
   const sheet = `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((r, i) => `<row r="${i + 1}">${r.map((v) => (typeof v === "number" ? `<c><v>${v}</v></c>` : `<c t="inlineStr"><is><t xml:space="preserve">${xml(v)}</t></is></c>`)).join("")}</row>`).join("")}</sheetData></worksheet>`;
   const files: Record<string, string> = {
     "[Content_Types].xml":

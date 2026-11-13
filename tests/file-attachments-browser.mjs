@@ -162,10 +162,14 @@ try {
     sha(readFileSync(path.join(fixture, "sample.pdf"))),
   );
   await button(tp, "Pratinjau").first().click();
-  await expect(tp.getByRole("dialog").locator("iframe")).toHaveAttribute(
-    "src",
-    /^blob:/,
-  );
+    const pdfCanvas = tp.getByRole("dialog").locator('canvas[role="img"]');
+    await expect(pdfCanvas).toBeVisible();
+    assert(await pdfCanvas.evaluate((canvas) => {
+      const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let i = 0; i < pixels.length; i += 4)
+        if (pixels[i + 3] > 0 && pixels[i] < 200 && pixels[i + 1] < 200 && pixels[i + 2] < 200) return true;
+      return false;
+    }), "PDF preview must paint document content, not just mount a frame");
   await button(tp.getByRole("dialog"), "Tutup").click();
   ok(
     "Teacher Monitoring shows version metadata, fetches authorized PDF preview and downloads original bytes",

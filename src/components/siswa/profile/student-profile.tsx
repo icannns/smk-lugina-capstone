@@ -1,4 +1,5 @@
 "use client";
+import { nameError } from "@/lib/auth-demo";
 import Image from "next/image";
 import { useRef, useState, type FormEvent } from "react";
 import { useEventDraftStore } from "@/lib/guru/event-draft-store";
@@ -78,7 +79,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
     if (busy) return;
     setSuccess(false);
     const next: Record<string, string> = {};
-    if (!profile.name.trim()) next.name = "Nama lengkap wajib diisi.";
+    const invalidName = nameError(profile.name);
+    if (invalidName) next.name = invalidName;
     else if (profile.name.length > STUDENT_NAME_MAX_LENGTH)
       next.name = `Nama maksimal ${STUDENT_NAME_MAX_LENGTH} karakter.`;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()))

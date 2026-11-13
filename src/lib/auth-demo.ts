@@ -1,3 +1,4 @@
+import { isDisplayName } from "./text-validation";
 export function emailError(email: string): string | undefined {
   if (!email.trim()) return "Email wajib diisi.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
@@ -5,6 +6,7 @@ export function emailError(email: string): string | undefined {
 }
 
 export function nameError(name: string): string | undefined {
+  if (!isDisplayName(name)) return "Nama tidak boleh mengandung karakter kontrol.";
   if (name.trim().length < 2) return "Nama lengkap minimal 2 karakter.";
 }
 export function phoneError(phone: string): string | undefined {

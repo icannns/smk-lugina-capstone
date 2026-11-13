@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { EventAttachment } from "@/lib/guru/event-types";
 import { SiswaButton, SiswaDialog } from "../siswa/siswa-ui";
+import { PdfPreview } from "./pdf-preview";
 
 /** Every byte comes from an authenticated endpoint; legacy metadata has no fake fallback. */
 export function AttachmentActions({
@@ -134,15 +135,10 @@ export function AttachmentActions({
           <div className="min-w-0">
             {file.type === "application/pdf" ? (
               <>
-                <iframe
-                  sandbox=""
-                  title={file.name}
-                  src={preview}
-                  className="h-[55dvh] w-full rounded-lg border border-line"
-                />
-                <p className="mt-2 text-xs text-secondary">
-                  Jika penampil PDF browser tidak tersedia, gunakan Unduh.
-                </p>
+                <PdfPreview key={preview} url={preview} name={file.name} />
+                <SiswaButton className="mt-3" disabled={pending} onClick={() => void open(true)}>
+                  Unduh PDF
+                </SiswaButton>
               </>
             ) : (
               <Image

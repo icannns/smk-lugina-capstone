@@ -1,4 +1,5 @@
 import { registrationPasswordError } from "../../lib/auth/validation";
+import { isDisplayName } from "../../lib/text-validation";
 export function loginInput(input: Record<string, unknown>) {
   const identifier = typeof input.identifier === "string" ? input.identifier.trim().toLowerCase() : "";
   const password = typeof input.password === "string" ? input.password : "";
@@ -8,6 +9,7 @@ export function loginInput(input: Record<string, unknown>) {
 export function registrationInput(input: unknown) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const body = input as Record<string, unknown>;
+  if (typeof body.name !== "string" || !isDisplayName(body.name)) return null;
   if (Object.keys(body).some((key) => !["name", "email", "password", "confirm"].includes(key))) return null;
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";

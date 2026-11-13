@@ -1,14 +1,17 @@
 # Autentikasi PostgreSQL dan RBAC — Backend Phase 2
 
-> **Pembaruan Backend Phase 3:** alur event/enrollment/tugas/penilaian/profil dan
-> laporan sudah memakai REST API + PostgreSQL. Keterangan mock/sessionStorage
-> di uraian fase terdahulu di bawah merupakan catatan historis, bukan mode fallback
-> aplikasi saat ini. Sesi berbeda memakai database yang sama; lampiran masih
-> metadata dan provider eksternal belum terintegrasi. Acuan terbaru:
-> [REST API dan persistensi](BACKEND-REST-API.md). Total schema kini 27 model.
+> **Status terkini (Backend Phase 4B):** alur event, enrollment, tugas,
+> penilaian, portofolio, laporan, dan profil memakai REST API + PostgreSQL.
+> Autentikasi memakai Auth.js dan otorisasi server. Schema kini memiliki **29
+> model**. Lampiran berupa berkas nyata di storage privat, dengan metadata dan
+> versi tersimpan di PostgreSQL. Hasil UI/UX internal terpisah dari nilai rubrik
+> milestone. Provider eksternal belum terintegrasi. Uraian fase terdahulu di bawah
+> adalah catatan historis, bukan mode fallback aplikasi saat ini. Acuan terbaru:
+> [REST API](BACKEND-REST-API.md), [UI/UX internal](UI-UX-ASSESSMENT-API.md), dan
+> [upload lampiran privat](FILE-UPLOAD-ATTACHMENTS.md).
 
 
-## Status
+## Status pada Phase 2 (historis)
 
 Login email/username dan password kini memakai **Auth.js + PostgreSQL**.
 Registrasi publik membuat **Siswa**, bukan Guru. Data event, milestone,

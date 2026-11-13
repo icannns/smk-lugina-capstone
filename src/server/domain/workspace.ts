@@ -44,7 +44,7 @@ export async function workspace(user: Principal, database: Transaction = getData
   }
   for (const event of events) {
     const status: ManagedEvent["status"] = event.status === "DRAFT" ? "draft" : event.endsAt && event.endsAt < new Date() ? "ended" : event.startsAt && event.startsAt > new Date() ? "upcoming" : "ongoing";
-    const dto: ManagedEvent = { id: event.id, teacherName: event.owner.user.name, participantCount: event._count.enrollments, revision: event.revision, title: event.title, status, mode: "Penyelesaian", updated: wib(event.updatedAt).slice(0, 10),
+    const dto: ManagedEvent = { id: event.id, teacherName: event.owner.user.name, participantCount: event._count.enrollments, revision: event.revision, title: event.title, status, mode: "Penyelesaian", updated: wib(event.updatedAt).slice(0, 10), updatedAt: event.updatedAt.toISOString(),
       period: event.startsAt && event.endsAt ? `${formatEventDate(wib(event.startsAt), true)} – ${formatEventDate(wib(event.endsAt), true)}` : "Belum diatur",
       startAt: wib(event.startsAt), endAt: wib(event.endsAt), caseStudyHtml: cleanHtml(event.caseStudyHtml ?? ""), directionsHtml: cleanHtml(event.directionsHtml ?? ""),
       rubricId: event.rubricVersion?.rubricId, rubric: event.rubricVersion?.title,

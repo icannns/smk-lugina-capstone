@@ -6,6 +6,7 @@ import {
   allStudents,
   allSubmissions,
   allEnrollments,
+  enrollmentProgress,
 } from "./learning-selectors";
 import type { AssessmentChanges } from "./teacher-types";
 import { formatEventDate } from "./event-selectors";
@@ -75,7 +76,8 @@ export function studentDirectory(
             // New responses need review even when the historical enrollment was reviewed.
             return !reviews.reviewedResponses?.[e.id]?.includes(response.id);
           }),
-        completedMilestones: milestones.filter((m) => m.submittedAt).length,
+        // Learning completion and survey-response timestamps are separate domains.
+        completedMilestones: enrollmentProgress(event, e.studentId, learning).completed,
         milestones,
       },
     ];

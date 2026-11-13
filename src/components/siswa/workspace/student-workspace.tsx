@@ -768,7 +768,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
                 )}
               </>
             )}
-            {!revision && !submission && (
+            {!revision && !submission && milestone.surveyActive && (
               <Surface>
                 <h2 className="mb-3 text-[15px] font-semibold">Form Survei</h2>
                 <StatusBadge status="missing">Belum tersedia</StatusBadge>

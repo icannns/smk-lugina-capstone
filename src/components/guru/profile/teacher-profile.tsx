@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { nameError } from "@/lib/auth-demo";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
@@ -69,7 +70,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
     e.preventDefault();
     if (busy) return;
     const next: Record<string, string> = {};
-    if (!profile.name.trim()) next.name = "Nama lengkap wajib diisi.";
+    const invalidName = nameError(profile.name);
+    if (invalidName) next.name = invalidName;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()))
       next.email = "Masukkan email kontak yang valid.";
     if (profile.phone && !/^[+\d\s()-]{6,30}$/.test(profile.phone))

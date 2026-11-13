@@ -29,6 +29,8 @@ export type ManagedEvent = {
   status: EventStatus | "draft";
   mode: "Penyelesaian";
   updated: string;
+  /** Exact server timestamp for ordering; updated remains the display date. */
+  updatedAt?: string;
   period: string;
   milestones: EventMilestone[];
   progress?: number;

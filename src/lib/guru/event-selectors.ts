@@ -1,5 +1,10 @@
 import type { EventFilters, ManagedEvent } from "./event-types";
 
+export function compareEventUpdates(a: ManagedEvent, b: ManagedEvent) {
+  return (b.updatedAt ?? b.updated).localeCompare(a.updatedAt ?? a.updated) ||
+    a.id.localeCompare(b.id);
+}
+
 export function readEventFilters(params: {
   get: (key: string) => string | null;
 }): EventFilters {
@@ -48,7 +53,7 @@ export function selectEvents(
   if (filters.sort === "title")
     records.sort((a, b) => a.title.localeCompare(b.title, "id"));
   if (filters.sort === "updated")
-    records.sort((a, b) => b.updated.localeCompare(a.updated));
+    records.sort(compareEventUpdates);
   const pages = Math.max(1, Math.ceil(records.length / filters.pageSize));
   const page = Math.min(filters.page, pages);
   return {
