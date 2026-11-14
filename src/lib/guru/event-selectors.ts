@@ -1,4 +1,5 @@
 import type { EventFilters, ManagedEvent } from "./event-types";
+import { eventCardPageSize } from "./event-pagination";
 
 export function compareEventUpdates(a: ManagedEvent, b: ManagedEvent) {
   return (b.updatedAt ?? b.updated).localeCompare(a.updatedAt ?? a.updated) ||
@@ -20,7 +21,7 @@ export function readEventFilters(params: {
         : "all",
     sort: sort === "updated" || sort === "title" ? sort : "reference",
     page: Math.max(1, Math.floor(Number(params.get("page"))) || 1),
-    pageSize: size === 2 || size === 6 ? size : 4,
+    pageSize: size === 2 || size === 4 || size === 6 ? size : eventCardPageSize,
   };
 }
 
@@ -31,7 +32,7 @@ export function eventHref(filters: EventFilters, eventId?: string) {
   if (filters.status !== "all") p.set("status", filters.status);
   if (filters.sort !== "reference") p.set("sort", filters.sort);
   if (filters.page > 1) p.set("page", String(filters.page));
-  if (filters.pageSize !== 4) p.set("size", String(filters.pageSize));
+  if (filters.pageSize !== eventCardPageSize) p.set("size", String(filters.pageSize));
   if (eventId) p.set("event", eventId);
   return `/guru/events${p.size ? `?${p}` : ""}`;
 }

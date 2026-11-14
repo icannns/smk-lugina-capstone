@@ -15,6 +15,7 @@
     "db:migrate:deploy": "prisma migrate deploy --config prisma.config.ts",
     "db:migrate:status": "prisma migrate status --config prisma.config.ts",
     "db:seed": "prisma db seed --config prisma.config.ts",
+    "demo:content": "tsx prisma/refresh-demo-content.ts",
     "test:db:safety": "tsx --test tests/database-safety.test.ts",
     "test:db": "tsx --test tests/database.integration.test.ts",
     "auth:provision": "tsx prisma/provision-test-accounts.ts",

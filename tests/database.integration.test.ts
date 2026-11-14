@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { createDatabaseClient } from "../src/server/db/client";
 import { requireDevelopmentDatabase } from "../prisma/development-safety";
 import { seedDevelopmentData } from "../prisma/seed-data";
+import { demoEvents } from "../src/lib/guru/demo-events";
 
 const target = requireDevelopmentDatabase(process.env);
 if (!target.databaseName.startsWith("bojong_united_test"))
@@ -35,7 +36,8 @@ test("seed is idempotent and preserves existing demo identities and credential m
 });
 
 test("milestones are event-scoped; submission versions, grades and reviews retain history", async () => {
-  assert.equal(await database.milestone.count({ where: { id: "M1" } }), 2);
+  const milestoneEvents = await database.milestone.findMany({ where: { id: "M1" }, select: { eventId: true } });
+  assert.deepEqual(milestoneEvents.map((row) => row.eventId).sort(), demoEvents.map((event) => event.id).sort());
   const versions = await database.submissionVersion.findMany({ where: { submissionId: "kantin:dimas:M1" }, include: { assessment: { include: { scores: true } } }, orderBy: { version: "asc" } });
   assert.equal(versions.length, 2);
   assert.equal(versions[0].assessment?.scores.length, 4);

@@ -9,6 +9,8 @@ import {
 } from "@/lib/guru/learning-selectors";
 import { formatEventDate } from "@/lib/guru/event-selectors";
 import type { ManagedEvent } from "@/lib/guru/event-types";
+import { eventCardPageSize } from "@/lib/guru/event-pagination";
+import { EventPagination } from "./event-pagination";
 import { enrollStudent } from "@/lib/siswa/student-actions";
 import { isEnrolled, workHref } from "@/lib/siswa/selectors";
 import { SiswaShell, SiswaIcon } from "../siswa-shell";
@@ -46,7 +48,7 @@ export function StudentEvents() {
         (status === "all" || e.status === status) &&
         e.title.toLowerCase().includes(search.toLowerCase()),
     ),
-    pages = Math.max(1, Math.ceil(filtered.length / 4)),
+    pages = Math.max(1, Math.ceil(filtered.length / eventCardPageSize)),
     current = Math.min(page, pages);
   if (eventId)
     return event ? (
@@ -131,7 +133,7 @@ export function StudentEvents() {
         </select>
       </div>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {filtered.slice((current - 1) * 4, current * 4).map((e) => {
+        {filtered.slice((current - 1) * eventCardPageSize, current * eventCardPageSize).map((e) => {
           const enrolled = isEnrolled(e.id, studentId, state.learning);
           return (
             <Surface
@@ -186,44 +188,7 @@ export function StudentEvents() {
       {!filtered.length && (
         <EmptyRows>Tidak ada event sesuai pencarian atau filter.</EmptyRows>
       )}
-      <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 text-xs text-secondary">
-        <p>
-          Menampilkan {filtered.length ? (current - 1) * 4 + 1 : 0}–
-          {Math.min(current * 4, filtered.length)} dari {filtered.length} event
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Halaman event sebelumnya"
-            disabled={current <= 1}
-            onClick={() => setPage(current - 1)}
-            className="rounded-lg border border-line bg-white px-3 py-2 disabled:opacity-40"
-          >
-            ‹
-          </button>
-          {Array.from({ length: pages }, (_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Halaman event ${i + 1}`}
-              aria-current={current === i + 1 ? "page" : undefined}
-              onClick={() => setPage(i + 1)}
-              className={`rounded-lg px-3 py-2 ${current === i + 1 ? "bg-primary text-white" : "border border-line bg-white"}`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            type="button"
-            aria-label="Halaman event berikutnya"
-            disabled={current >= pages}
-            onClick={() => setPage(current + 1)}
-            className="rounded-lg border border-line bg-white px-3 py-2 disabled:opacity-40"
-          >
-            ›
-          </button>
-        </div>
-      </footer>
+      <EventPagination total={filtered.length} page={current} onChange={setPage} />
     </SiswaShell>
   );
 }

@@ -17,10 +17,13 @@ import { EmptyRows } from "../guru/learning-ui";
 import { StudentBadge as StatusBadge } from "./siswa-ui";
 import { useStudentIdentity } from "./use-student-identity";
 import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
+import { EventPagination } from "./events/event-pagination";
+import { eventCardPageSize } from "@/lib/guru/event-pagination";
 export function StudentDashboard() {
   const { account } = useAppAuth(),
     state = useEventDraftStore(),
     [filter, setFilter] = useState("all"),
+    [page, setPage] = useState(1),
     studentId = account?.studentId;
   const identity = useStudentIdentity();
   const mine = listedEvents(state)
@@ -58,7 +61,7 @@ export function StudentDashboard() {
   const certificateActions = certificates.filter(
     ({ event }) => !state.studentUI.certificates[enrollmentKey(event.id,studentId ?? "")],
   );
-  const visible = mine.filter(
+  const filtered = mine.filter(
     ({ event, row }) =>
       filter === "all" ||
       (filter === "complete" && row.completed === row.total) ||
@@ -66,6 +69,8 @@ export function StudentDashboard() {
         row.completed < row.total &&
         event.status !== "upcoming"),
   );
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / eventCardPageSize)));
+  const visible = filtered.slice((currentPage - 1) * eventCardPageSize, currentPage * eventCardPageSize);
   return (
     <SiswaShell frame="370:2522" active="dashboard">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -194,7 +199,7 @@ export function StudentDashboard() {
               type="button"
               key={key}
               aria-pressed={filter === key}
-              onClick={() => setFilter(key)}
+              onClick={() => { setFilter(key); setPage(1); }}
               className={`rounded-lg px-4 py-2 text-xs ${filter === key ? "bg-white shadow-sm" : "text-secondary"}`}
             >
               {label}
@@ -281,6 +286,7 @@ export function StudentDashboard() {
           );
         })}
       </div>
+      <EventPagination total={filtered.length} page={currentPage} onChange={setPage} />
       {!visible.length && (
         <EmptyRows>
           Belum ada event pada daftar ini.{" "}

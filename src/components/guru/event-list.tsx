@@ -11,6 +11,7 @@ import {
 import { DashboardButton, DashboardIcon } from "./dashboard-ui";
 import { useRouter } from "next/navigation";
 import { monitoringHref } from "@/lib/guru/learning-selectors";
+import { eventCardPageSize } from "@/lib/guru/event-pagination";
 
 export function EventCard({
   event,
@@ -112,7 +113,7 @@ export function EventList({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("status");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(4);
+  const [pageSize, setPageSize] = useState<number>(eventCardPageSize);
   const filtered = useMemo(
     () =>
       events
@@ -262,6 +263,7 @@ export function EventList({
               }}
               className="h-8 max-w-28 rounded-lg border border-line bg-white px-1"
             >
+              <option value={6}>6 / halaman</option>
               <option value={4}>4 / halaman</option>
               <option value={2}>2 / halaman</option>
             </select>

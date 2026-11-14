@@ -1,6 +1,6 @@
 import type { PrismaClient } from "../src/generated/prisma/client";
 import { initialRubrics } from "../src/lib/guru/rubric-data";
-import { managedEvents } from "../src/lib/guru/event-data";
+import { demoEvents } from "../src/lib/guru/demo-events";
 import { mockAssessmentRecords } from "../src/lib/assessments/mock-data";
 
 export const DEVELOPMENT_SEED_ID = "bojong-development-fixtures-v1";
@@ -45,8 +45,9 @@ export async function seedDevelopmentData(database: PrismaClient) {
       }
     }
 
-    for (const event of managedEvents.filter((record) => ["kantin", "wireframe"].includes(record.id))) {
-      await tx.event.upsert({ where: { id: event.id }, create: { id: event.id, ownerTeacherId: "rina", title: event.title, status: event.id === "kantin" ? "ONGOING" : "ENDED", rubricVersionId: `${event.rubricId}:v1`, startsAt: wib(event.startAt), endsAt: wib(event.endAt), caseStudyHtml: event.caseStudyHtml, directionsHtml: event.directionsHtml }, update: {} });
+    for (const event of demoEvents) {
+      const status = event.status === "ended" ? "ENDED" : event.status === "upcoming" ? "UPCOMING" : "ONGOING";
+      await tx.event.upsert({ where: { id: event.id }, create: { id: event.id, ownerTeacherId: "rina", title: event.title, status, publishedAt: wib(event.startAt), rubricVersionId: `${event.rubricId}:v1`, startsAt: wib(event.startAt), endsAt: wib(event.endAt), caseStudyHtml: event.caseStudyHtml, directionsHtml: event.directionsHtml }, update: {} });
       for (const [index, milestone] of event.milestones.entries()) {
         const key = { eventId: event.id, id: milestone.id };
         await tx.milestone.upsert({ where: { eventId_id: key }, create: { ...key, position: index + 1, title: milestone.title, instructions: milestone.instructions, deadline: wib(milestone.deadline), acceptedFormats: milestone.formats?.split(", ") ?? [] }, update: {} });
