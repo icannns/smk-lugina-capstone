@@ -30,7 +30,9 @@ framework backend terpisah, OAuth Google, deployment, atau migrasi DB produksi.
   Next.js 16 dan React 19. Versi v5 masih beta dan perlu diuji ulang saat upgrade.
 - `argon2` **0.45.2**, Argon2id `memoryCost=19456` KiB, `timeCost=2`,
   `parallelism=1`, salt acak per hash. Verifikasi akun tidak ditemukan tetap
-  menjalankan verifikasi dummy hash; tidak ada password default di source.
+  menjalankan verifikasi dummy hash; runtime tidak mempunyai fallback/master
+  password. Contoh password demo lokal di README hanya aktif setelah provisioning
+  opt-in pada database yang diizinkan.
 - `src/auth.ts`: Credentials provider + JWT session, callback mengambil
   identitas/role/profil dari database, tidak dari input maupun session.update.
 - Tidak memakai Prisma Adapter Auth.js: Credentials melakukan lookup/provision
@@ -162,7 +164,7 @@ DB/password sesuai [panduan database](DATABASE-FOUNDATION.md).
 | `AUTH_TRUST_PROXY_HEADERS` | false kecuali ingress benar-benar dipercaya. |
 | `ALLOW_DEV_SEED`, `NODE_ENV` | Guard seed/provision: true dan development/test pada command lokal. |
 | `ALLOW_DEV_ACCOUNT_PROVISION` | Opt-in tambahan true khusus provisioning tester. |
-| `TEST_TEACHER_PASSWORD`, `TEST_DIMAS_PASSWORD`, `TEST_AISYAH_PASSWORD` | Tiga password tester berbeda; kosong di template dan tidak disertakan source. |
+| `TEST_TEACHER_PASSWORD`, `TEST_DIMAS_PASSWORD`, `TEST_AISYAH_PASSWORD` | Tiga password tester berbeda; template tetap kosong. Contoh publik di README hanya untuk demo lokal disposable, atau gunakan sandi privat untuk QA terbatas. |
 
 ```powershell
 npm ci
@@ -189,12 +191,14 @@ boleh). Ini pencegah salah target, bukan jaminan keamanan koneksi tunnel.
 Tidak menyediakan endpoint pembuatan Guru. Tidak berlaku untuk produksi.
 
 1. Siapkan 3 password **berbeda**, 12–128 karakter dengan persyaratan UI,
-   secara aman melalui environment/secret manager. Jangan gunakan password
-   fixture frontend lama yang pernah dipublikasikan.
+   secara aman melalui environment/secret manager. Untuk demo lokal disposable
+   dengan data fiktif, boleh gunakan contoh publik pada [README](../README.md#akun-demo).
+   Contoh tersebut bukan kredensial deployment atau akun pengguna nyata.
 2. Set NODE_ENV=development, ALLOW_DEV_SEED=true,
    ALLOW_DEV_ACCOUNT_PROVISION=true di terminal provisioning.
 3. Isi TEST_*_PASSWORD dari vault atau generate dan kirim ke tester melalui
-   kanal privat yang disetujui. Script **tidak mencetak** password/URL.
+   kanal privat yang disetujui, atau gunakan contoh README hanya untuk demo lokal.
+   Script **tidak mencetak** password/URL.
 4. Jalankan `npm run auth:provision`. Command menjalankan seed idempoten,
    memverifikasi ID/role/isDemo, lalu mengisi hash hanya jika masih null.
    Menjalankan ulang tidak mengganti password yang sudah diprovisikan.

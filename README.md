@@ -101,15 +101,46 @@ menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 ## Akun demo
 
-Identitas berikut fiktif untuk pengujian. Jalankan `npm run auth:provision`
-dengan password environment privat sesuai [panduan](docs/AUTHENTICATION-RBAC.md).
-Tidak ada password default di repository.
+Identitas dan password berikut **sengaja dipublikasikan untuk demo lokal**.
+Gunakan hanya pada database development/test disposable berisi data fiktif.
+Jangan gunakan password ini pada deployment publik, akun sekolah, atau akun pribadi.
 
-| Peran | Username | Email | Kata sandi |
+| Peran | Username | Email | Password demo lokal |
 | --- | --- | --- | --- |
-| Guru | `rina.guru` | `guru@example.com` | Dari administrator pengujian |
-| Siswa — Dimas | `dimas` | `siswa@example.com` | Dari administrator pengujian |
-| Siswa — Aisyah | `aisyah` | `aisyah@example.com` | Dari administrator pengujian |
+| Guru | `rina.guru` | `guru@example.com` | `DemoGuru2026!` |
+| Siswa - Dimas | `dimas` | `siswa@example.com` | `DemoDimas2026!` |
+| Siswa - Aisyah | `aisyah` | `aisyah@example.com` | `DemoAisyah2026!` |
+
+**Password di tabel berlaku setelah provisioning berikut berhasil pada akun yang
+belum memiliki password.** Clone, `npm ci`, dan seed data saja tidak otomatis
+mengaktifkan password tersebut. Siapkan `.env` privat, database lokal, dan migrasi
+sesuai [panduan Auth](docs/AUTHENTICATION-RBAC.md), lalu jalankan dari root:
+
+```powershell
+$env:NODE_ENV = 'development'
+$env:ALLOW_DEV_SEED = 'true'
+$env:ALLOW_DEV_ACCOUNT_PROVISION = 'true'
+$env:TEST_TEACHER_PASSWORD = 'DemoGuru2026!'
+$env:TEST_DIMAS_PASSWORD = 'DemoDimas2026!'
+$env:TEST_AISYAH_PASSWORD = 'DemoAisyah2026!'
+try {
+    npm run auth:provision
+    if ($LASTEXITCODE -ne 0) { throw 'Provisioning gagal; periksa konfigurasi lokal.' }
+} finally {
+    Remove-Item Env:TEST_TEACHER_PASSWORD, Env:TEST_DIMAS_PASSWORD, Env:TEST_AISYAH_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:ALLOW_DEV_ACCOUNT_PROVISION, Env:ALLOW_DEV_SEED, Env:NODE_ENV -ErrorAction SilentlyContinue
+}
+```
+
+Script tetap menolak target di luar localhost/dev/test yang diizinkan. Ia tidak
+mempunyai fallback login atau master password. **Jika akun pada DB lama sudah
+memiliki password, menjalankan ulang provisioning tidak mengganti passwordnya.**
+Gunakan password yang ditetapkan sebelumnya atau database QA baru; jangan menghapus
+akun/history atau reset database bersama untuk memaksakan password demo.
+
+Untuk QA terbatas, operator boleh memakai tiga password privat berbeda sebagai
+pengganti contoh tabel. Password tersebut tetap disimpan sebagai hash Argon2 di
+PostgreSQL. Sandi privat QA, database, dan AUTH_SECRET tidak dicantumkan di README.
 
 Gunakan username **atau** email pada halaman `/login`. Akun Guru diarahkan ke
 `/guru/dashboard`, sedangkan akun Siswa ke `/siswa/dashboard`. Pendaftaran publik
