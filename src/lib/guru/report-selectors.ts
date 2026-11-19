@@ -9,8 +9,8 @@ import {
   rubricScore,
   submissionStatus,
   certificateThreshold,
-  workStatus,
-  workLabels,
+  eventCompletionStatus,
+  eventCompletionLabels,
   assessmentStatus,
   assessmentLabels,
   milestoneLabel,
@@ -59,6 +59,12 @@ export function reportRows(
         total = milestones.length;
       return {
         ...r,
+        eventProgress: {
+          completed: r.completed,
+          total: r.total,
+          score: r.score,
+          status: eventCompletionStatus(r),
+        },
         certificateEligible:
           r.score !== null &&
           r.completed === r.total &&
@@ -83,15 +89,15 @@ export function reportRows(
         (filters.survey === "all" ||
           (filters.survey === "complete" && required.length > 0 && required.every((s) => s?.surveyComplete)) ||
           (filters.survey === "missing" && required.some((s) => !s?.surveyComplete))) &&
-        (filters.work === "all" || filters.work === workStatus(r)) &&
+        (filters.work === "all" || filters.work === r.eventProgress.status) &&
         (filters.assessment === "all" || filters.assessment === assessmentStatus(r));
     });
   const finished = rows.filter(
-      (r) => r.total > 0 && r.completed === r.total,
+      (r) => r.eventProgress.status === "complete",
     ).length,
-    scores = rows.flatMap((r) => (r.score === null ? [] : [r.score])),
-    total = rows.reduce((s, r) => s + r.total, 0),
-    complete = rows.reduce((s, r) => s + r.completed, 0);
+    scores = rows.flatMap((r) => (r.eventProgress.score === null ? [] : [r.eventProgress.score])),
+    total = rows.reduce((s, r) => s + r.eventProgress.total, 0),
+    complete = rows.reduce((s, r) => s + r.eventProgress.completed, 0);
   return {
     rows,
     milestones,
@@ -125,8 +131,8 @@ export function reportExport(
     ],
     ...data.rows.map((r) => [
       r.student.name,
-      `${r.completed} dari ${r.total}`,
-      workLabels[workStatus(r)],
+      `${r.eventProgress.completed} dari ${r.eventProgress.total}`,
+      eventCompletionLabels[r.eventProgress.status],
       ...r.submissions.map((s, i) =>
         s
           ? `${formatEventDate(s.versions.at(-1)!.submittedAt)} · ${milestoneSurveyLabel(data.milestones[i], s)} · ${r.scored[i]?.percent ?? "Belum dinilai"}`
@@ -137,7 +143,7 @@ export function reportExport(
         : "",
       r.scored.map((s) => s?.percent ?? "").join(", "),
       assessmentLabels[assessmentStatus(r)],
-      r.score ?? "",
+      r.eventProgress.score ?? "",
       r.certificateEligible ? "Contoh tersedia" : "Belum memenuhi",
     ]),
   ];

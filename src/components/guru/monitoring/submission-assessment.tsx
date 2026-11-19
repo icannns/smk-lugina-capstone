@@ -27,6 +27,7 @@ import {
 import { formatEventDate } from "@/lib/guru/event-selectors";
 import { AttachmentActions } from "../../shared/attachment-actions";
 import { TeacherPage } from "../teacher-page";
+import { TeacherActionNotice } from "../teacher-action-notice";
 import { Surface, DesignIcon, controlClass } from "../design-ui";
 import { EmptyRows, StatusBadge, StudentAvatar } from "../learning-ui";
 import {
@@ -72,7 +73,7 @@ export function Assessment({
     [message, setMessage] = useState(""),
     [deadline, setDeadline] = useState(""),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useState<{ kind: "success" | "error"; message: string } | null>(null),
     [busy, setBusy] = useState(false),
     [dialog, setDialog] = useState<DashboardDialogState | null>(null);
   if (!student || !milestone || !roster.some((r) => r.student.id === studentId))
@@ -129,7 +130,7 @@ export function Assessment({
       setError("Batas revisi harus berada setelah waktu sekarang (WIB).");
       return;
     }
-    setNotice("");
+    setNotice(null);
     setBusy(true);
     const sent = await addTeacherFeedback(submission.id, {
       id: crypto.randomUUID(),
@@ -140,20 +141,22 @@ export function Assessment({
       version: latest.version,
     });
     setBusy(false);
-    if (!sent) { setError("Feedback belum tersimpan. Periksa pesan server."); return; }
+    if (!sent) {
+      setNotice({ kind: "error", message: "Penyimpanan feedback belum bisa dikonfirmasi. Periksa pesan server." });
+      return;
+    }
     setMessage("");
     if (revision) setValues({});
     setDeadline("");
     setError("");
-    setNotice(
-      revision
-        ? "Revisi diminta pada pengumpulan contoh ini."
-        : "Feedback tersimpan di server.",
-    );
+    setNotice({
+      kind: "success",
+      message: revision ? "Permintaan revisi tersimpan di server." : "Feedback tersimpan di server.",
+    });
   }
   async function save() {
-    if (!submission || !latest || !score || !rubric || busy) return;
-    setNotice("");
+    if (!submission || !latest || !score || !rubric || busy || status === "revision") return;
+    setNotice(null);
     setBusy(true);
     const saved = await saveAssessment(
       {
@@ -165,8 +168,12 @@ export function Assessment({
       rubric.id,
     );
     setBusy(false);
-    if (!saved) { setError("Penilaian belum tersimpan. Periksa pesan server."); return; }
-    setNotice("Penilaian tersimpan di server.");
+    if (!saved) {
+      setNotice({ kind: "error", message: "Penyimpanan penilaian belum bisa dikonfirmasi. Periksa pesan server." });
+      return;
+    }
+    setError("");
+    setNotice({ kind: "success", message: "Penilaian tersimpan di server." });
   }
   return (
     <TeacherPage activePage="monitoring" frame={frame}>
@@ -220,11 +227,15 @@ export function Assessment({
           </strong>
         </p>
         <StatusBadge status={status} />
-        {status !== "reviewed" && (
-          <StatusBadge status="missing">Belum dinilai</StatusBadge>
-        )}
       </Surface>
-      {latest && latest.version > 1 && status !== "reviewed" && (
+      {status === "revision" && (
+        <p className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          Menunggu siswa mengirim revisi.
+          {submission && latest && assessmentForVersion(submission, latest.version, state.learning) &&
+            " Nilai yang sudah diberikan tetap tersedia di Riwayat Pengumpulan."}
+        </p>
+      )}
+      {latest && latest.version > 1 && status !== "reviewed" && status !== "revision" && (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
           <strong>Perlu diperiksa ulang.</strong> Siswa mengunggah revisi versi{" "}
           {latest.version} pada {date(latest.submittedAt)}. Nilai versi
@@ -487,7 +498,7 @@ export function Assessment({
               {rubric?.criteria.map((c) => (
                 <fieldset
                   key={c.id}
-                  disabled={!submission || Boolean(saved) || busy}
+                  disabled={!submission || Boolean(saved) || busy || status === "revision"}
                 >
                   <legend className="text-sm font-medium">{c.title}</legend>
                   <p className="mb-2 text-xs text-secondary">{c.description}</p>
@@ -526,23 +537,23 @@ export function Assessment({
               <div>
                 <p className="text-xs text-secondary">Nilai 0–100</p>
                 <p className="mt-1 text-sm text-secondary">
-                  {score ? `${score.percent} / 100` : "Belum dinilai"}
+                  {score ? `${score.percent} / 100` : status === "revision" ? "Menunggu revisi" : "Belum dinilai"}
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={save}
-              disabled={!submission || !score || Boolean(saved) || busy}
+              disabled={!submission || !score || Boolean(saved) || busy || status === "revision"}
               className="h-10 w-full rounded-control bg-primary text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
             >
               {busy
                 ? "Menyimpan…"
                 : saved
                   ? "Nilai sudah tersimpan"
-                  : "Simpan Penilaian"}
+                  : status === "revision" ? "Menunggu revisi" : "Simpan Penilaian"}
             </button>
-            {!saved && (
+            {!saved && status !== "revision" && (
               <p className="mt-1 text-xs text-secondary">
                 ⓘ{" "}
                 {submission
@@ -636,12 +647,7 @@ export function Assessment({
         </div>
       </div>
       {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-xl bg-green-50 p-3 text-sm text-green-800"
-        >
-          {notice}
-        </p>
+        <TeacherActionNotice {...notice} onClose={() => setNotice(null)} />
       )}
       {state.storageError && (
         <p role="alert" className="mt-4 text-sm text-amber-800">

@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import type { ManagedEvent } from "@/lib/guru/event-types";
+import { certificateDescriptionLimit } from "@/lib/guru/event-wizard-validation";
 import type {
   CertificateConfig,
   CertificateMarker,
@@ -122,7 +123,7 @@ export function CertificatePreview({
             <h3 className="text-sm font-semibold">{config.name}</h3>
             <p className="mt-1 text-[10px] text-secondary">diberikan kepada</p>
             <p className="text-lg font-semibold text-[#1447e6]">Aisyah Putri</p>
-            <p className="text-[10px] text-secondary">
+            <p className="line-clamp-3 [overflow-wrap:anywhere] text-[10px] text-secondary">
               {config.description} — {title}
             </p>
             <p className="mt-2 text-[9px] font-semibold">{config.signer}</p>
@@ -360,13 +361,20 @@ export function CertificateStep({
                   id="cert-description"
                   label="Teks keterangan"
                   optional
+                  error={errors["cert-description"]}
                 >
                   <textarea
                     id="cert-description"
                     className={`${wizardInput} h-24 py-2.5`}
                     value={c.description}
+                    maxLength={certificateDescriptionLimit}
+                    aria-invalid={!!errors["cert-description"]}
+                    aria-describedby={errors["cert-description"] ? "cert-description-limit cert-description-error" : "cert-description-limit"}
                     onChange={(e) => edit({ description: e.target.value })}
                   />
+                  <p id="cert-description-limit" className="mt-1 text-xs text-secondary">
+                    {c.description.length.toLocaleString("id-ID")} / {certificateDescriptionLimit.toLocaleString("id-ID")} karakter. Pratinjau meringkas teks yang panjang.
+                  </p>
                 </WizardField>
               </div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">

@@ -73,7 +73,7 @@ export function StatusBadge({
   children,
 }: {
   status:
-    keyof typeof submissionLabels | "complete" | "partial" | "working" | "none";
+    keyof typeof submissionLabels | "complete" | "partial" | "working" | "none" | "awaitingAssessment";
   children?: ReactNode;
 }) {
   const style =
@@ -83,7 +83,7 @@ export function StatusBadge({
         ? "bg-red-50 text-red-600"
         : status === "survey" || status === "partial"
           ? "bg-amber-50 text-amber-700"
-          : status === "pending"
+          : status === "pending" || status === "awaitingAssessment"
             ? "bg-blue-50 text-primary"
             : status === "working"
               ? "bg-teal-50 text-teal-700"

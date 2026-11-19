@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import {
   useState,
   type InputHTMLAttributes,
@@ -57,10 +58,25 @@ export function SharedAuthInput({
           className={`${compact ? "h-12" : "h-[50px]"} w-full min-w-0 rounded-lg border bg-[#fbfcfe] pr-12 text-sm text-[#111827] focus:border-primary focus:outline-2 focus:outline-primary/20 disabled:opacity-60 ${icon ? "pl-[46px]" : "pl-4"} ${error ? "border-danger" : "border-line"}`}
         />
         {icon && (
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute left-4 shrink-0 border-[1.5px] border-[#9ca3af] ${icon === "name" ? "size-[18px] rounded-full" : icon === "email" ? "h-3.5 w-[18px] rounded-[2px]" : "size-4 rounded-[4px]"}`}
-          />
+          <svg
+            aria-hidden="true"
+            data-auth-input-icon={icon}
+            className="pointer-events-none absolute left-4 size-[18px] text-[#667085]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {icon === "email" ? (
+              <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>
+            ) : icon === "password" ? (
+              <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2" /></>
+            ) : (
+              <><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" /></>
+            )}
+          </svg>
         )}
         {password ? (
           <button
@@ -71,12 +87,15 @@ export function SharedAuthInput({
             }
             aria-pressed={visible}
             onClick={() => setVisible((v) => !v)}
-            className="absolute inset-y-0 right-1.5 grid w-10 place-items-center rounded-lg"
+            className="absolute inset-y-0 right-1.5 grid w-10 place-items-center rounded-lg hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-primary"
           >
             <span
               aria-hidden
-              className={`h-3.5 w-5 rounded-full border-[1.5px] ${visible ? "border-primary bg-primary-soft" : "border-[#9ca3af]"}`}
-            />
+              className="relative grid size-5 place-items-center"
+            >
+              <Image src="/auth/eye-login.svg" alt="" width={16} height={16} unoptimized />
+              {visible && <span className="pointer-events-none absolute h-px w-[17px] -rotate-45 bg-[#4b5563] shadow-[0_1px_white]" />}
+            </span>
           </button>
         ) : (
           valid && (

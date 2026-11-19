@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { TeacherActionNotice } from "../../teacher-action-notice";
 import {
   beginEventDraft,
   changeEventDraft,
@@ -63,7 +64,7 @@ function EventWizardSession() {
   const [attemptedMilestones, setAttemptedMilestones] = useState(false);
   const [attemptedAdvanced, setAttemptedAdvanced] = useState(false);
   const [action, setAction] = useState<DashboardDialogState | null>(null);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<"success" | "error" | null>(null);
   useEffect(() => {
     if (id) bootstrapped.current = false;
     else if (!bootstrapped.current) {
@@ -176,11 +177,11 @@ function EventWizardSession() {
   function change(patch: Partial<ManagedEvent>) {
     if (state.pending) return;
     changeEventDraft({ ...event, ...patch });
-    setNotice("");
+    setNotice(null);
   }
   async function go(step: WizardStep) {
     if (state.pending) return;
-    setNotice("");
+    setNotice(null);
     setAttemptedAdvanced(false);
     if (!await saveEventDraft({ ...event, wizard: { ...event.wizard!, step } })) return;
     window.history.pushState(null, "", wizardHref(id!, step));
@@ -452,13 +453,9 @@ function EventWizardSession() {
               <button
                 type="button"
                 onClick={async () => {
-                  setNotice("");
+                  setNotice(null);
                   const success = await saveEventDraft(event);
-                  setNotice(
-                    success
-                      ? "Draf tersimpan di PostgreSQL."
-                      : "Draf belum tersimpan. Periksa pesan error dan coba lagi.",
-                  );
+                  setNotice(success ? "success" : "error");
                 }}
                 className={`h-10 rounded-control bg-white px-4 text-sm font-medium ${isMilestones ? "border border-line" : ""}`}
               >
@@ -480,18 +477,17 @@ function EventWizardSession() {
           </div>
           </fieldset>
           {notice && (
-            <div
-              role="status"
-              className="mt-3 flex flex-wrap items-center gap-3 text-sm text-secondary"
+            <TeacherActionNotice
+              kind={notice}
+              message={notice === "success" ? "Draf tersimpan di PostgreSQL." : "Penyimpanan draf belum bisa dikonfirmasi. Periksa pesan server."}
+              onClose={() => setNotice(null)}
             >
-              <p>{notice}</p>
-              <Link
-                href="/guru/events?tab=draft"
-                className="font-medium text-primary hover:underline"
-              >
-                Lihat daftar draf
-              </Link>
-            </div>
+              {notice === "success" && (
+                <Link href="/guru/events?tab=draft" className="mt-1 inline-block font-medium text-primary hover:underline">
+                  Lihat daftar draf
+                </Link>
+              )}
+            </TeacherActionNotice>
           )}
           <p className="mt-3 text-xs leading-4 text-muted">
             Prototipe · Gunakan data fiktif. Lampiran hanya simulasi metadata,

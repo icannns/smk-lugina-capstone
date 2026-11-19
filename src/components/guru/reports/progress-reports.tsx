@@ -13,8 +13,7 @@ import {
   allStudents,
   milestoneSurveyLabel,
   allEnrollments,
-  workStatus,
-  workLabels,
+  eventCompletionLabels,
   assessmentStatus,
   assessmentLabels,
   milestoneLabel,
@@ -137,6 +136,7 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
                 [
                   ["all", "Semua pengerjaan"],
                   ["complete", "Selesai"],
+                  ["awaitingAssessment", "Menunggu penilaian"],
                   ["working", "Dalam pengerjaan"],
                   ["none", "Belum mengerjakan"],
                 ],
@@ -205,6 +205,12 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
             {error}
           </p>
         )}
+        {selected && (
+          <p className="mt-3 text-xs text-secondary">
+            Semua siswa mencakup peserta event terpilih. Filter lain tetap berlaku.
+            {filters.milestone !== "all" && " Filter milestone membatasi rincian tugas, survei, dan status nilai. Progres dan nilai akhir tetap mencakup seluruh event."}
+          </p>
+        )}
       </Surface>
       {!data || !event ? (
         <Surface className="flex min-h-[640px] flex-col items-center justify-center text-center">
@@ -238,7 +244,7 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
                       "Nama | Progres | Nilai akhir",
                       ...data.rows.map(
                         (r) =>
-                          `${r.student.name} | ${r.completed}/${r.total} | ${r.score ?? "Belum lengkap"}`,
+                          `${r.student.name} | ${r.eventProgress.completed}/${r.eventProgress.total} | ${r.eventProgress.score ?? "Belum lengkap"}`,
                       ),
                     ],
                     `laporan-${event.id}-demo.pdf`,
@@ -369,11 +375,11 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
                           </Link>
                         </td>
                         <td className="px-4">
-                          {r.completed} dari {r.total}
+                          {r.eventProgress.completed} dari {r.eventProgress.total}
                         </td>
                         <td className="px-4">
-                          <StatusBadge status={workStatus(r)}>
-                            {workLabels[workStatus(r)]}
+                          <StatusBadge status={r.eventProgress.status}>
+                            {eventCompletionLabels[r.eventProgress.status]}
                           </StatusBadge>
                         </td>
                         {r.submissions.map((s, i) => (
@@ -396,7 +402,7 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
                             {assessmentLabels[assessmentStatus(r)]}
                           </StatusBadge>
                         </td>
-                        <td className="px-4 font-semibold">{r.score ?? ""}</td>
+                        <td className="px-4 font-semibold">{r.eventProgress.score ?? ""}</td>
                         <td className="px-4 text-[11px] text-secondary">
                           {r.certificateEligible ? (
                             <Link
@@ -416,7 +422,16 @@ function ReportContent({ initial }: { initial: ReportFilters }) {
             </div>
             {!data.rows.length && (
               <EmptyRows>
-                Tidak ada peserta yang sesuai filter laporan.
+                <p>Tidak ada peserta yang sesuai filter laporan.</p>
+                {Object.entries(initial).some(([key, value]) => key !== "event" && value !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => window.history.pushState(null, "", `/guru/reports?${new URLSearchParams({ event: event.id })}`)}
+                    className="mt-3 rounded-control border border-line bg-white px-4 py-2 font-medium text-primary"
+                  >
+                    Hapus filter lain
+                  </button>
+                )}
               </EmptyRows>
             )}
             <p className="border-t border-line px-4 py-3 text-xs text-secondary">

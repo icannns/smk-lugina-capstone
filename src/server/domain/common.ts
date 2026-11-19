@@ -4,7 +4,7 @@ import { requirePrincipal, AuthorizationError } from "../auth/authorization";
 import { privateJson, sameOrigin } from "../auth/http";
 import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
-import { isWibDateTime } from "../../lib/guru/event-wizard-validation";
+import { certificateDescriptionLimit, isWibDateTime } from "../../lib/guru/event-wizard-validation";
 import type { Prisma } from "../../generated/prisma/client";
 export type Transaction = Prisma.TransactionClient;
 export class DomainError extends Error {
@@ -62,7 +62,7 @@ export const revision = z.number().int().nonnegative();
 export const file = z.object({ id, name: z.string().min(1).max(255), type: z.string().max(150), size: z.number().int().min(0).max(10 * 1024 * 1024) }).strict();
 const fileMeta = file.omit({ id: true });
 const position = z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) }).strict();
-export const certificate = z.object({ mode: z.enum(["details", "template"]), threshold: z.string().max(10), name: z.string().max(240), organizer: z.string().max(240), issuedAt: z.string().max(10).refine((value) => !value || isWibDateTime(`${value}T00:00`), "Tanggal dokumen tidak valid."), signer: z.string().max(120), signerRole: z.string().max(120), description: z.string().max(5000), logo: fileMeta.optional(), signature: fileMeta.optional(), template: fileMeta.optional(), positions: z.object({ student: position, event: position, date: position, score: position }).strict() }).strict();
+export const certificate = z.object({ mode: z.enum(["details", "template"]), threshold: z.string().max(10), name: z.string().max(240), organizer: z.string().max(240), issuedAt: z.string().max(10).refine((value) => !value || isWibDateTime(`${value}T00:00`), "Tanggal dokumen tidak valid."), signer: z.string().max(120), signerRole: z.string().max(120), description: z.string().max(certificateDescriptionLimit), logo: fileMeta.optional(), signature: fileMeta.optional(), template: fileMeta.optional(), positions: z.object({ student: position, event: position, date: position, score: position }).strict() }).strict();
 const localDate = z.string().max(19).refine((value) => !value || isWibDateTime(value), "Tanggal WIB tidak valid.");
 export const milestoneInput = z.object({ id, title: z.string().max(240), instructions: z.string().max(50000).optional(), deadline: localDate.optional(), formats: z.string().max(150).optional(), surveyActive: z.boolean().optional(), attachments: z.array(file).max(10).optional() }).strict();
 export const eventInput = z.object({ id, revision: revision.optional(), teacherName: z.string().max(120).optional(), participantCount: z.number().int().nonnegative().optional(), title: z.string().max(240), status: z.enum(["draft", "upcoming", "ongoing", "ended"]), mode: z.literal("Penyelesaian"), updated: z.string().max(40), updatedAt: z.iso.datetime().optional(), period: z.string().max(300), milestones: z.array(milestoneInput).max(30), progress: z.number().optional(), rubric: z.string().max(240).optional(), certificate: z.string().max(240).optional(), rubricId: id.optional(), certificateConfig: certificate.optional(), caseStudyHtml: z.string().max(100000).optional(), directionsHtml: z.string().max(100000).optional(), startAt: localDate.optional(), endAt: localDate.optional(), attachments: z.array(file).max(10).optional(), wizard: z.object({ step: z.enum(["information", "milestones", "rubric", "certificate", "review", "done"]), selectedMilestoneId: z.string().max(191), modeChosen: z.boolean() }).strict().optional() }).strict();
