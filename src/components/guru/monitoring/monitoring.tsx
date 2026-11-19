@@ -7,8 +7,8 @@ import {
   eventLearning,
   monitoringHref,
   submissionStatus,
-  workStatus,
-  workLabels,
+  eventCompletionStatus,
+  eventCompletionLabels,
   assessmentStatus,
   assessmentLabels,
   milestoneLabel,
@@ -273,13 +273,13 @@ function MonitoringList({ eventId }: { eventId: string }) {
                     );
                   })}
                   <td className="px-4">
-                    <StatusBadge status={workStatus(r)}>
-                      {workLabels[workStatus(r)]}
+                    <StatusBadge status={eventCompletionStatus(r)}>
+                      {eventCompletionLabels[eventCompletionStatus(r)]}
                     </StatusBadge>
                   </td>
                   <td className="px-4">
-                    <StatusBadge status={assessmentStatus(r)}>
-                      {assessmentLabels[assessmentStatus(r)]}
+                    <StatusBadge status={r.hasOpenRevision ? "revision" : assessmentStatus(r)}>
+                      {r.hasOpenRevision ? undefined : assessmentLabels[assessmentStatus(r)]}
                     </StatusBadge>
                   </td>
                   <td className="px-4">{r.score ?? "Belum lengkap"}</td>

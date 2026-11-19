@@ -94,41 +94,6 @@ export function InformationStep({
             />
           </WizardField>
         </div>
-        <fieldset>
-          <legend className="text-sm font-medium leading-5">
-            Sistem Milestone
-          </legend>
-          <label className="mt-2 flex min-h-[88px] cursor-pointer items-start gap-3 rounded-2xl px-4 pt-4">
-            <input
-              type="radio"
-              name="milestone-mode"
-              checked={event.wizard?.modeChosen ?? false}
-              onChange={() =>
-                onChange({
-                  wizard: {
-                    step: "information",
-                    selectedMilestoneId:
-                      event.wizard?.selectedMilestoneId ??
-                      event.milestones[0]?.id ??
-                      "",
-                    modeChosen: true,
-                  },
-                })
-              }
-              className="mt-1 size-4 shrink-0 accent-primary"
-            />
-            <span>
-              <span className="block text-sm font-semibold leading-5">
-                Mode Penyelesaian
-              </span>
-              <span className="mt-1 block max-w-[321px] text-xs leading-4 text-secondary">
-                Milestone disusun berurutan (Mode Penyelesaian). Milestone
-                berikutnya terbuka setelah tugas &amp; Form Survei sebelumnya
-                selesai.
-              </span>
-            </span>
-          </label>
-        </fieldset>
       </div>
     </EventSurface>
   );

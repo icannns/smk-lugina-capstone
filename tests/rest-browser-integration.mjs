@@ -23,12 +23,20 @@ async function shot(p,name){await p.evaluate(()=>document.fonts.ready);await p.s
 try{
  const teacher=await context(),student=await context(),tp=await page(teacher),sp=await page(student);
  await login(tp,"rina.guru",passwords[0]);await button(tp,"Create Event").click();await tp.waitForURL(url=>url.pathname==="/guru/events/create"&&Boolean(url.searchParams.get("draft")));
- const eventId=new URL(tp.url()).searchParams.get("draft");await tp.locator("#event-title").fill(title);await tp.locator("#event-start").fill("2026-01-01T08:00");await tp.locator("#event-end").fill("2030-12-31T23:59");await button(tp,"Lanjut").click();
+ const eventId=new URL(tp.url()).searchParams.get("draft");
+ await expect(main(tp).getByText("Mode Penyelesaian", { exact: true })).toHaveCount(0);
+ await expect(main(tp).getByRole("radio")).toHaveCount(0);
+ await tp.locator("#event-title").fill(title);await tp.locator("#event-start").fill("2026-01-01T08:00");await tp.locator("#event-end").fill("2030-12-31T23:59");await button(tp,"Lanjut").click();
+ await expect(main(tp).getByText("Berurutan", { exact: true })).toBeVisible();
+ await expect(main(tp).getByText(/Milestone berikutnya terbuka setelah siswa mengumpulkan tugas/)).toBeVisible();
  const list=tp.getByRole("complementary",{name:"Daftar milestone",exact:true});await list.locator("ol li").nth(2).getByRole("button",{name:/Pilih milestone/}).click();await tp.getByRole("region",{name:"Editor milestone 3",exact:true}).getByRole("button",{name:"Hapus",exact:true}).click();await list.locator("ol li").nth(1).getByRole("button",{name:/Pilih milestone/}).click();await tp.getByRole("region",{name:"Editor milestone 2",exact:true}).getByRole("button",{name:"Hapus",exact:true}).click();await tp.locator("#wizard-main input[type=datetime-local]").fill("2030-12-01T23:59");await button(tp,"Lanjut ke Rubrik").click();await tp.getByRole("radio",{name:"Rubrik UI/UX Dasar",exact:true}).check();await button(tp,"Lanjut").click();await button(tp,"Unggah Template").click();await button(tp,"Lanjut").click();await expect(button(tp,"Terbitkan Event")).toBeVisible();await button(tp,"Simpan Draf").click();await expect(main(tp)).toContainText("Draf tersimpan di PostgreSQL");
  const saved=await snapshot(teacher);assert.equal(saved.saved[eventId].title,title);assert.equal(saved.saved[eventId].milestones.length,1);const milestoneId=saved.saved[eventId].milestones[0].id;
+ assert.equal(saved.saved[eventId].mode, "Penyelesaian");
  await tp.reload();await expect(main(tp)).toContainText(title);await expect(button(tp,"Terbitkan Event")).toBeVisible();
  const reviewer=await context(),rp=await page(reviewer);await login(rp,"rina.guru",passwords[0]);await rp.goto(base+`/guru/events/create?draft=${eventId}&step=review`);await expect(main(rp)).toContainText(title);await rp.close();ok("Wizard data saved on every step and Save Draft survives refresh and a separate Teacher browser session");
- await button(tp,"Terbitkan Event").click();await expect(tp.getByRole("heading",{name:"Event terbit",exact:true})).toBeVisible();assert((await snapshot(teacher)).published[eventId]);ok("Normal wizard publishes a persisted event without duplicate creation");
+ await button(tp,"Terbitkan Event").click();await expect(tp.getByRole("heading",{name:"Event terbit",exact:true})).toBeVisible();
+ assert.equal((await snapshot(teacher)).published[eventId].mode, "Penyelesaian");
+ ok("Wizard creates, saves and publishes with the default sequential mode and no mode control");
  await login(sp,"dimas",passwords[1]);assert.equal((await(await teacher.request.get(base+"/api/me")).json()).user.role,"TEACHER");
  await sp.goto(base+"/siswa/events");await main(sp).getByLabel("Cari judul event").fill(title);await main(sp).getByRole("link",{name:"Lihat Detail & Enroll",exact:true}).click();await button(sp,"Enroll Event").click();await sp.getByRole("dialog",{name:"Ikuti Event Pembelajaran Ini?",exact:true}).getByRole("button",{name:"Ya, Enroll Event",exact:true}).click();await expect(main(sp)).toContainText("Pendaftaran berhasil!");await main(sp).getByRole("link",{name:"Buka Ruang Kerja Event",exact:true}).click();
  await sp.locator("#student-work-text").fill(`Pekerjaan fiktif ${stamp}`);

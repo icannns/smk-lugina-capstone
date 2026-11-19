@@ -24,6 +24,21 @@ function isIntegrityViolation(error: unknown): boolean {
 before(async () => { await seedDevelopmentData(database); });
 after(async () => { await database.$disconnect(); });
 
+test("app connections preserve timestamp instants when PostgreSQL timezone options use WIB", async () => {
+  const url = new URL(target.connectionString);
+  url.searchParams.set("options", "-c timezone=Asia/Bangkok -c application_name=bojong_timezone_test");
+  const client = createDatabaseClient(url.toString());
+  try {
+    const [row] = await client.$queryRaw<{ timezone: string; application: string; expiresAt: Date }[]>`
+      SELECT current_setting('TimeZone') AS timezone, current_setting('application_name') AS application,
+             '2026-11-19 19:00:00+07:00'::timestamptz AS "expiresAt"
+    `;
+    assert.equal(row.timezone, "UTC");
+    assert.equal(row.application, "bojong_timezone_test");
+    assert.equal(row.expiresAt.toISOString(), "2026-11-19T12:00:00.000Z");
+  } finally { await client.$disconnect(); }
+});
+
 test("seed is idempotent and preserves existing demo identities and credential metadata", async () => {
   const initial = await database.user.findMany({ orderBy: { id: "asc" } });
   const a = await seedDevelopmentData(database), b = await seedDevelopmentData(database);

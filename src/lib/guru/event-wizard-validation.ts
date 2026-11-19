@@ -62,9 +62,14 @@ export function rubricErrors(
     ? {}
     : { "wizard-rubric": "Pilih rubrik penilaian." };
 }
+/** Existing REST limit, shared by the editor and the event schema. */
+export const certificateDescriptionLimit = 5000;
+
 export function certificateErrors(event: ManagedEvent) {
   const c = event.certificateConfig ?? defaultCertificate();
   const errors: Record<string, string> = {};
+  if (c.description.length > certificateDescriptionLimit)
+    errors["cert-description"] = `Maksimum ${certificateDescriptionLimit.toLocaleString("id-ID")} karakter.`;
   if (
     c.threshold.trim() === "" ||
     !Number.isFinite(Number(c.threshold)) ||

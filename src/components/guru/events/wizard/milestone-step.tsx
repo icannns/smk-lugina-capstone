@@ -52,7 +52,7 @@ export function MilestoneStep({
               Milestone ({event.milestones.length})
             </h2>
             <span className="shrink-0 rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium leading-4 text-[#1447e6]">
-              Mode Penyelesaian
+              Berurutan
             </span>
           </div>
           <ol className="mt-3 flex flex-col gap-1">
@@ -115,9 +115,8 @@ export function MilestoneStep({
               Form Survei Standar
             </h3>
             <p className="mt-2 text-xs leading-[15px] text-secondary">
-              Setiap milestone, siswa mengisi Form Survei terkait pengalaman
-              teknologi dan refleksi pengerjaan sebelum lanjut ke milestone
-              berikutnya.
+              Milestone berikutnya terbuka setelah siswa mengumpulkan tugas
+              dan menyelesaikan Form Survei yang diwajibkan pada milestone sebelumnya.
             </p>
           </div>
         </aside>

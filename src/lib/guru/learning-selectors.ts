@@ -14,7 +14,7 @@ export function workStatus(row: {
   submitted: number;
   completed: number;
   total: number;
-}) {
+}): keyof typeof workLabels {
   return row.total > 0 && row.completed === row.total
     ? "complete"
     : row.submitted > 0
@@ -25,6 +25,20 @@ export const workLabels = {
   complete: "Selesai",
   working: "Dalam pengerjaan",
   none: "Belum mengerjakan",
+};
+export function eventCompletionStatus(row: {
+  submitted: number;
+  completed: number;
+  total: number;
+  score: number | null;
+}): ReturnType<typeof workStatus> | "awaitingAssessment" {
+  const status = workStatus(row);
+  // A final score exists only after every current version has a valid assessment.
+  return status === "complete" && row.score === null ? "awaitingAssessment" : status;
+}
+export const eventCompletionLabels = {
+  ...workLabels,
+  awaitingAssessment: "Menunggu penilaian",
 };
 export function assessmentStatus(row: { reviewed: number; total: number }) {
   return row.reviewed === 0
@@ -188,6 +202,7 @@ export function enrollmentProgress(
     submitted,
     completed: submissions.filter((s) => submissionComplete(s)).length,
     reviewed,
+    hasOpenRevision: submissions.some((s) => submissionStatus(s, changes) === "revision"),
     total: event.milestones.length,
     score:
       reviewed === event.milestones.length && reviewed > 0
@@ -223,9 +238,7 @@ export function eventLearning(
     completed,
     reviewed,
     pending: submitted - reviewed,
-    finished: rows.filter(
-      (r) => r.total > 0 && r.submissions.every((s) => submissionComplete(s)),
-    ).length,
+    finished: rows.filter((r) => eventCompletionStatus(r) === "complete").length,
     assessed: rows.filter((r) => r.score !== null).length,
     percent: total ? Math.round((completed / total) * 100) : 0,
     average: scores.length

@@ -424,7 +424,10 @@ export function StudentWork() {
                     score = s
                       ? rubricScore(assessmentFor(s, state.learning), rubric)
                       : null,
-                    feedback = s ? feedbackFor(s.id, state.learning) : [];
+                    feedback = s ? feedbackFor(s.id, state.learning) : [],
+                    isRevision = (versionNumber: number) => versionNumber > 1 &&
+                      feedback.some((item) => item.revision && item.version === versionNumber - 1),
+                    revisions = s?.versions.filter((entry) => isRevision(entry.version)).length ?? 0;
                   return (
                     <li key={m.id} className="relative">
                       <span
@@ -453,21 +456,15 @@ export function StudentWork() {
                         </div>
                         {s && version && (
                           <div className="mt-4">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDialog({
-                                  title: `Pratinjau contoh · ${version.file}`,
-                                  description: `PROTOTIPE — ${version.file}, versi ${version.version}. ${s.note ?? "Contoh dokumen pembelajaran; bukan berkas siswa asli."}`,
-                                })
-                              }
-                              className="inline-flex max-w-full items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm"
-                            >
-                              <DesignIcon frame="291:26470" name="imgIcon3" />
-                              <span className="break-all text-left">
-                                {version.file}
-                              </span>
-                            </button>
+                            <Evidence submission={s} version={version} onPreview={setDialog} />
+                            {version.note && (
+                              <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm">{version.note}</p>
+                            )}
+                            {version.link && (
+                              <a href={version.link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">
+                                Buka tautan karya
+                              </a>
+                            )}
                           </div>
                         )}
                         {feedback.map((f) => (
@@ -484,16 +481,16 @@ export function StudentWork() {
                             </p>
                           </div>
                         ))}
-                        {s && (
+                        {s && s.versions.length > 1 && (
                           <details className="mt-3">
                             <summary className="cursor-pointer text-center text-xs text-primary">
-                              Riwayat revisi ({s.versions.length} versi)
+                              Riwayat pengumpulan{revisions > 0 ? ` (${revisions} revisi)` : ""}
                             </summary>
                             <div className="mt-3 space-y-2">
                               {[...s.versions].reverse().map((v) => (
                                 <div key={v.version}>
                                   <p className="mb-1 text-xs text-secondary">
-                                    Versi {v.version} ·{" "}
+                                    {v.version === 1 ? "Pengumpulan awal" : isRevision(v.version) ? `Revisi versi ${v.version}` : `Pengumpulan versi ${v.version}`} ·{" "}
                                     {formatEventDate(v.submittedAt, true)}
                                   </p>
                                   <Evidence
