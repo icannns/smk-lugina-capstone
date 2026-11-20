@@ -61,10 +61,9 @@ akun demo dengan password acak. Lihat password lokal di terminal pribadi dengan
 
 ### Docker QA dengan satu password demo
 
-Untuk pengujian tim, jalankan langkah berikut di PowerShell dari root repo
-setelah clone atau `git pull`. Masukkan password yang disepakati tim saat
-diminta. Gunakan 12–128 karakter dengan huruf besar, huruf kecil, serta angka
-atau simbol.
+Setelah clone atau `git pull`, jalankan perintah berikut di PowerShell dari
+root repo. Saat diminta **Masukkan password demo bersama**, ketik
+**`AkunDemo2026!`**. Password contoh ini khusus untuk Docker QA lokal.
 
 ```powershell
 $env:BOJONG_PORT = '3001'
@@ -76,9 +75,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Gagal menyiapkan password demo bersama.' }
 docker compose -p bojong-demo-bersama up -d --wait
 ```
 
-Buka `http://localhost:3001/login`. Gunakan password yang tadi dimasukkan untuk
-`rina.guru` (Guru), `dimas` (Siswa), atau `aisyah` (Siswa). Langkah pengisian
-password dilakukan sekali untuk project Docker QA baru. Data dan password project
+Buka `http://localhost:3001/login`. Masuk sebagai `rina.guru` (Guru),
+`dimas` (Siswa), atau `aisyah` (Siswa) dengan password yang tadi dimasukkan.
+Isi password sekali saat menyiapkan project Docker QA baru. Data dan password project
 Docker yang sudah ada tetap tersimpan. [Panduan Docker](docs/DOCKER-SETUP.md#opsional-satu-password-untuk-tiga-akun-demo)
 
 ### Alternatif dengan Node.js lokal
