@@ -30,7 +30,6 @@ export type DashboardAction = {
 
 export const teacher = {
   name: "Rina Marlina, S.Kom.",
-  greeting: "Selamat pagi, Rina",
   initials: "RM",
   role: "Guru",
 };

@@ -32,7 +32,7 @@ page.on("pageerror",e=>errors.push(e.message));page.on("response",r=>{if(r.statu
 const main=()=>page.locator("main:visible").last(),button=name=>page.getByRole("button",{name,exact:true});
 const ok=name=>{checks.push(name);console.log("PASS",name)};
 async function go(route){await page.goto(base+route);await expect(page.locator("main:visible").last()).not.toHaveAttribute("aria-label","Memuat ruang belajar");}
-async function login(identifier,password){await go("/login");await page.locator("#login-email").fill(identifier);await page.locator("#login-password").fill(password);await button("Masuk").click();await page.waitForURL(identifier==="rina.guru"?"**/guru/dashboard":"**/siswa/dashboard");await expect(page.getByRole("heading",{name:identifier==="rina.guru"?"Selamat pagi, Rina":"Halo, Dimas",exact:true})).toBeVisible();}
+async function login(identifier,password){await go("/login");await page.locator("#login-email").fill(identifier);await page.locator("#login-password").fill(password);await button("Masuk").click();await page.waitForURL(identifier==="rina.guru"?"**/guru/dashboard":"**/siswa/dashboard");await expect(page.getByRole("heading",{name:identifier==="rina.guru"?/^Selamat (pagi|siang|sore|malam), Rina$/:/^Selamat (pagi|siang|sore|malam), Dimas$/,exact:true})).toBeVisible();}
 let studentLoggedIn=false;
 try{
  await login("rina.guru",process.env.TEST_TEACHER_PASSWORD);

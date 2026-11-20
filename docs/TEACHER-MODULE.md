@@ -92,7 +92,7 @@ Rubric memakai kriteria berbobot sama, skala 1–5, dan lima uraian skor wajib. 
 
 Skor assessment dinormalisasi: total skor dibagi maksimum rubric × 100. Nilai akhir merupakan rata-rata milestone tanpa bobot tambahan ketika penilaian yang disyaratkan lengkap. Pengumpulan kosong tidak dapat dinilai. Status nol, sebagian, dan seluruh assessment terbaru dibedakan.
 
-Guru dapat menyimpan nilai, feedback, dan permintaan revisi. Revisi setelah deadline memerlukan deadline revisi; nilai yang diberikan untuk deadline revisi harus berupa waktu WIB yang valid di masa depan. Versi lama mempertahankan nilai/feedback historis; versi baru menunggu penilaian ulang. “Siswa berikutnya” mengikuti roster event/milestone yang sama sebagai interpretasi navigasi contoh.
+Guru dapat menyimpan nilai, feedback, dan permintaan revisi. Revisi setelah deadline memerlukan deadline revisi; nilai yang diberikan untuk deadline revisi harus berupa waktu WIB yang valid di masa depan. Versi lama mempertahankan nilai/feedback historis; versi baru menunggu penilaian ulang. “Siswa berikutnya” berpindah peserta pada milestone yang sama. “Milestone berikutnya” mempertahankan event dan siswa, mengikuti urutan milestone yang tersimpan, serta menampilkan penanda “Milestone terakhir” di akhir urutan.
 
 Penyelesaian lebih awal tidak otomatis melewati assessment atau syarat sertifikat. Aturan milestone Siswa dan ambang contoh dijelaskan pada [modul Siswa](STUDENT-MODULE.md).
 

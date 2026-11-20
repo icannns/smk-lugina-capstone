@@ -78,7 +78,7 @@ async function login(role) {
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await page.waitForURL("**/" + (role === "teacher" ? "guru" : "siswa") + "/dashboard");
   await expect(page.locator("main:visible h1")).toHaveText(
-    role === "teacher" ? "Selamat pagi, Rina" : "Halo, Dimas",
+    role === "teacher" ? /^Selamat (pagi|siang|sore|malam), Rina$/ : /^Selamat (pagi|siang|sore|malam), Dimas$/,
   );
 }
 
@@ -101,7 +101,7 @@ try {
     for (const url of routes[other]) {
       await arrive(url, home);
       await expect(page.locator("main:visible h1")).toHaveText(
-        role === "teacher" ? "Selamat pagi, Rina" : "Halo, Dimas",
+        role === "teacher" ? /^Selamat (pagi|siang|sore|malam), Rina$/ : /^Selamat (pagi|siang|sore|malam), Dimas$/,
       );
       result.checks.push({ check: "wrong-role redirect", role, url });
     }

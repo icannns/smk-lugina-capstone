@@ -1,0 +1,79 @@
+name: bojong-united-local
+
+x-node-service: &node-service
+  image: ${COMPOSE_PROJECT_NAME}-app
+  pull_policy: never
+
+services:
+  credentials:
+    <<: *node-service
+    build: .
+    command: ["node", "docker/local.mjs", "credentials"]
+    network_mode: none
+    volumes:
+      - db-auth:/run/bojong/db-auth
+      - app-auth:/run/bojong/app-auth
+
+  postgres:
+    image: postgres:17-alpine
+    command: ["postgres", "-c", "listen_addresses=127.0.0.1"]
+    depends_on:
+      credentials:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_USER: bojong_local
+      POSTGRES_DB: bojong_united_test_docker
+      POSTGRES_PASSWORD_FILE: /run/bojong/db-auth/password
+    # web shares this network namespace. Publish only its HTTP listener.
+    ports:
+      - "127.0.0.1:${BOJONG_PORT:-3000}:3000"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - db-auth:/run/bojong/db-auth:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  db-init:
+    <<: *node-service
+    command: ["node", "docker/local.mjs", "migrate"]
+    network_mode: service:postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - db-auth:/run/bojong/db-auth:ro
+      - app-auth:/run/bojong/app-auth:ro
+
+  web:
+    <<: *node-service
+    init: true
+    network_mode: service:postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      AUTH_URL: "http://localhost:${BOJONG_PORT:-3000}"
+      FILE_STORAGE_DRIVER: local
+      FILE_STORAGE_LOCAL_ROOT: /var/lib/bojong/attachments
+    volumes:
+      - db-auth:/run/bojong/db-auth:ro
+      - app-auth:/run/bojong/app-auth:ro
+      - attachments:/var/lib/bojong/attachments
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login', {redirect:'manual'}).then(r => { if (!r.ok) process.exitCode = 1 }).catch(() => { process.exitCode = 1 })"]
+      interval: 5s
+      timeout: 4s
+      retries: 15
+      start_period: 10s
+
+volumes:
+  db-auth:
+  app-auth:
+  postgres-data:
+  attachments:

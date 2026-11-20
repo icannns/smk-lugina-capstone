@@ -3,6 +3,7 @@ import { enrollmentKey } from "@/lib/domain/keys";
 import Link from "next/link";
 import { useState } from "react";
 import { useAppAuth } from "@/lib/auth/session";
+import { getJakartaGreeting, useDashboardTime } from "@/lib/dashboard-time";
 import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import {
   eventLearning,
@@ -27,6 +28,8 @@ export function StudentDashboard() {
     [page, setPage] = useState(1),
     studentId = account?.studentId;
   const identity = useStudentIdentity();
+  const time = useDashboardTime();
+  const firstName = identity.name.trim().split(/\s+/)[0] || "Siswa";
   const mine = listedEvents(state)
     .filter((e) => e.status !== "draft")
     .flatMap((event) => {
@@ -77,7 +80,7 @@ export function StudentDashboard() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 max-w-full">
           <h1 className="break-words text-[30px] font-bold leading-[38px]">
-            Halo, {identity.name.split(" ")[0] ?? "Siswa"}
+            {getJakartaGreeting(time)}, {firstName}
           </h1>
           <p className="mt-1 text-sm text-secondary">
             Pantau event yang kamu ikuti dan selesaikan setiap milestone tepat

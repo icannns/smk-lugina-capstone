@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getJakartaGreeting, useDashboardTime } from "@/lib/dashboard-time";
 import {
   beginEventDraft,
   useEventDraftStore,
@@ -33,10 +34,22 @@ import { ReviewQueue } from "./review-queue";
 import { studentDirectory } from "@/lib/guru/student-integration";
 import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
 
+const dashboardDate = new Intl.DateTimeFormat("id-ID", {
+  timeZone: "Asia/Jakarta",
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 function Dashboard({ empty }: { empty: boolean }) {
   const router = useRouter();
   const draftState = useEventDraftStore();
   const teacher = useTeacherProfile();
+  const time = useDashboardTime();
+  const firstName = teacher.name.trim().split(/\s+/)[0] || "Guru";
   const teacherSubmissions = allSubmissions(draftState.learning),
     teacherStudents = allStudents(draftState.learning);
   const params = useSearchParams();
@@ -157,10 +170,10 @@ function Dashboard({ empty }: { empty: boolean }) {
               <h1
                 className={`text-[30px] font-semibold ${empty ? "leading-[37.5px] tracking-[-0.75px]" : "leading-10"}`}
               >
-                {teacher.greeting}
+                {getJakartaGreeting(time)}, {firstName}
               </h1>
               <p className="mt-1 text-sm leading-5 text-secondary">
-                {draftState.serverTime ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(draftState.serverTime)) + " WIB" : "—"}
+                {time === null ? "—" : dashboardDate.format(time) + " WIB"}
                 {!empty &&
                   " — Pantau aktivitas event dan perkembangan belajar siswa."}
               </p>

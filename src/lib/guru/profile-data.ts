@@ -15,6 +15,5 @@ export function profileIdentity(profile: TeacherProfile) {
       .map((p) => p[0])
       .join("")
       .toUpperCase(),
-    greeting: `Selamat pagi, ${profile.name.split(" ")[0]}`,
   };
 }

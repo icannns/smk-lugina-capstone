@@ -158,9 +158,9 @@ export function SharedAuthButton({
 }
 export function DemoNotice({ accounts = false }: { accounts?: boolean }) {
   return <aside aria-label="Informasi autentikasi" className="mt-6 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-[11px] leading-[17px] text-secondary">
-    <p className="font-semibold text-primary">Autentikasi server · Data pembelajaran contoh</p>
-    <p>Email/kata sandi diverifikasi di server. Data event dan asesmen pada halaman pembelajaran masih mock. Google OAuth belum tersedia.</p>
-    {accounts && <p className="mt-1">Akun pengujian dan kata sandi diberikan administrator secara terpisah.</p>}
+    <p className="font-semibold text-primary">Autentikasi dan data pembelajaran</p>
+    <p>Email dan kata sandi diverifikasi di server. Data event, keikutsertaan, tugas, dan asesmen internal tersimpan di database. Sebagian hasil asesmen eksternal masih berupa data contoh. Masuk dengan Google belum tersedia.</p>
+    {accounts && <p className="mt-1">Untuk akun demo, gunakan kredensial yang disiapkan untuk lingkungan pengujian.</p>}
   </aside>;
 }
 export function GoogleMark() {

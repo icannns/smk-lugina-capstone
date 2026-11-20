@@ -39,7 +39,7 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "argon2": "0.45.2",
-    "next": "16.4.3",
+    "next": "16.4.6",
     "next-auth": "5.0.0-beta.32",
     "pdfjs-dist": "5.4.624",
     "pg": "8.23.1",
@@ -60,13 +60,16 @@
     "@types/yauzl": "3.4.0",
     "dotenv": "18.0.10",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.6",
     "prisma": "7.10.1",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
     "typescript": "^5"
   },
   "overrides": {
+    "@prisma/config": {
+      "effect": "3.22.1"
+    },
     "@typescript-eslint/typescript-estree": {
       "minimatch": "11.0.8"
     }

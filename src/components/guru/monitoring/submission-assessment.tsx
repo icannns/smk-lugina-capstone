@@ -59,7 +59,8 @@ export function Assessment({
     teacherStudents = allStudents(state.learning);
   const roster = eventLearning(event, state.learning, rubric).rows,
     student = teacherStudents.find((s) => s.id === studentId),
-    milestone = event.milestones.find((m) => m.id === milestoneId);
+    milestoneIndex = event.milestones.findIndex((m) => m.id === milestoneId),
+    milestone = event.milestones[milestoneIndex];
   const submission = teacherSubmissions.find(
     (s) => s.eventId === event.id && s.studentId === studentId && s.milestoneId === milestoneId,
   );
@@ -109,6 +110,7 @@ export function Assessment({
     roster[
       (roster.findIndex((r) => r.student.id === studentId) + 1) % roster.length
     ].student;
+  const nextMilestone = event.milestones[milestoneIndex + 1];
   const feedback = submission ? feedbackFor(submission.id, state.learning) : [];
   async function send(revision: boolean) {
     if (busy) return;
@@ -198,17 +200,33 @@ export function Assessment({
             </h1>
             <p className="text-sm text-secondary">
               {event.title} · Milestone{" "}
-              {event.milestones.indexOf(milestone) + 1}: {milestone.title}
+              {milestoneIndex + 1}: {milestone.title}
             </p>
           </div>
         </div>
-        <Link
-          href={monitoringHref(event.id, next.id, milestone.id)}
-          className="flex h-10 items-center gap-3 rounded-control bg-white px-4 text-sm"
+        <nav
+          aria-label="Navigasi penilaian"
+          className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
         >
-          <DesignIcon frame="291:23200" name="imgIcon1" />
-          Siswa berikutnya
-        </Link>
+          <Link
+            href={monitoringHref(event.id, next.id, milestone.id)}
+            className="flex h-10 items-center gap-3 rounded-control bg-white px-4 text-sm"
+          >
+            <DesignIcon frame="291:23200" name="imgIcon1" />
+            Siswa berikutnya
+          </Link>
+          {nextMilestone ? (
+            <Link
+              href={monitoringHref(event.id, studentId, nextMilestone.id)}
+              className="flex h-10 items-center gap-3 rounded-control bg-white px-4 text-sm text-primary hover:bg-primary-soft"
+            >
+              <DesignIcon frame="291:23200" name="imgIcon1" />
+              Milestone berikutnya
+            </Link>
+          ) : (
+            <span className="px-4 text-sm text-secondary">Milestone terakhir</span>
+          )}
+        </nav>
       </header>
       <Surface
         padded={false}

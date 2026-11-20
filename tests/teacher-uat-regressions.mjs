@@ -59,7 +59,7 @@ async function login(identifier, password, role, inspectIcons = false) {
   }
   await button(page, "Masuk").click();
   await page.waitForURL("**/" + role + "/dashboard");
-  const greeting = role === "guru" ? "Selamat pagi, Rina" : identifier === "dimas" ? "Halo, Dimas" : "Halo, Aisyah";
+  const greeting = role === "guru" ? /^Selamat (pagi|siang|sore|malam), Rina$/ : identifier === "dimas" ? /^Selamat (pagi|siang|sore|malam), Dimas$/ : /^Selamat (pagi|siang|sore|malam), Aisyah$/;
   await expect(page.getByRole("heading", { name: greeting, exact: true })).toBeVisible();
   return { context, page };
 }
@@ -249,6 +249,69 @@ try {
     await tp.getByText("Riwayat pengumpulan (1 revisi)").click();
     await expect(tp.getByText(/Pengumpulan awal/)).toBeVisible();
     await expect(tp.getByText(/Revisi versi 2/)).toBeVisible();
+
+    const assessmentPage = (student, milestone) => base + monitoringPath + "&student=" + student + "&milestone=" + milestone;
+    const nextMilestone = tp.getByRole("link", { name: "Milestone berikutnya", exact: true });
+    const nextStudent = tp.getByRole("link", { name: "Siswa berikutnya", exact: true });
+    const milestoneHeading = (number) => tp.locator("main header").getByText(new RegExp("Milestone " + number + ": Tahap " + number));
+    async function verifySelection(student, milestone, name) {
+      await expect(tp).toHaveURL(assessmentPage(student, "M" + milestone));
+      await expect(tp.getByRole("heading", { name, exact: true })).toBeVisible();
+      await expect(milestoneHeading(milestone)).toBeVisible();
+    }
+
+    for (const [submissionId, message] of [[a1, "Feedback khusus tahap pertama"], [a2, "Feedback khusus tahap kedua"]]) {
+      await api(tc, "POST", "/api/submissions/" + submissionId + "/feedback", {
+        id: randomUUID(), version: 1, message, revision: false,
+      }, 201);
+    }
+    await tp.goto(assessmentPage("aisyah", "M1"));
+    await verifySelection("aisyah", 1, "Aisyah Putri");
+    await expect(details).toContainText("Catatan kerja fiktif tahap 1");
+    await expect(details).toContainText("Feedback khusus tahap pertama");
+    await expect(details.getByText("100 / 100", { exact: true })).toBeVisible();
+    await nextMilestone.click();
+    await verifySelection("aisyah", 2, "Aisyah Putri");
+    await expect(details).toContainText("Catatan kerja fiktif tahap 2");
+    await expect(details).toContainText("Feedback khusus tahap kedua");
+    await expect(details).not.toContainText("Feedback khusus tahap pertama");
+    await expect(details.getByText("80 / 100", { exact: true })).toBeVisible();
+    await nextMilestone.click();
+    await verifySelection("aisyah", 3, "Aisyah Putri");
+    await expect(nextMilestone).toHaveCount(0);
+    await expect(details.getByText("Milestone terakhir", { exact: true })).toBeVisible();
+    await expect(nextStudent).toBeVisible();
+
+    await tp.goBack();
+    await verifySelection("aisyah", 2, "Aisyah Putri");
+    await tp.goForward();
+    await verifySelection("aisyah", 3, "Aisyah Putri");
+    await tp.reload();
+    await verifySelection("aisyah", 3, "Aisyah Putri");
+    await expect(details).toContainText("Catatan kerja fiktif tahap 3");
+    await expect(details).not.toContainText("Feedback khusus tahap kedua");
+
+    await tp.goto(assessmentPage("dimas", "M1"));
+    await verifySelection("dimas", 1, "Dimas Saputra");
+    await nextStudent.click();
+    await verifySelection("aisyah", 1, "Aisyah Putri");
+    await tp.goto(assessmentPage("dimas", "M1"));
+    for (const width of [320, 375, 768, 1024, 1440]) {
+      await tp.setViewportSize({ width, height: 900 });
+      await expect(nextStudent).toBeVisible();
+      await expect(nextMilestone).toBeVisible();
+      assert(await tp.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Assessment overflows viewport " + width);
+    }
+    await tp.setViewportSize({ width: 320, height: 900 });
+    await nextMilestone.click();
+    await verifySelection("dimas", 2, "Dimas Saputra");
+    await expect(details).not.toContainText("Feedback khusus tahap kedua");
+    await expect(details.getByText("Belum dikumpulkan", { exact: true }).first()).toBeVisible();
+    await saveShot("monitoring-navigation-320");
+    await tp.setViewportSize({ width: 1440, height: 900 });
+    await saveShot("monitoring-navigation-1440");
+    checks.nextStudentAndMilestoneNavigation = true;
+
     assert(checks.loginHasEyeAsset && checks.gradeNoticeFixed && checks.draftNoticeFixed);
     assert(!checks.revisionStatusHeader.includes("Belum dinilai"));
     assert(checks.monitoringRevisionRow.includes("Revisi diminta") && !checks.monitoringRevisionRow.includes("Belum dinilai"));

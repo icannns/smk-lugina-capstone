@@ -62,7 +62,7 @@ try {
   assert.equal((await json(teacher, "/api/me")).user.role, "TEACHER");
   assert.equal((await json(student, "/api/me")).user.student.id, "dimas");
   assert.equal((await json(aisyah, "/api/me")).user.student.id, "aisyah");
-  await studentPage.reload(); await expect(studentPage.getByRole("heading", { name: "Halo, Dimas", exact: true })).toBeVisible();
+  await studentPage.reload(); await expect(studentPage.getByRole("heading", { name: /^Selamat (pagi|siang|sore|malam), Dimas$/, exact: true })).toBeVisible();
   const persisted = await context(); await persisted.addCookies(await teacher.cookies());
   assert.equal((await json(persisted, "/api/me")).user.id, "teacher-rina");
   const cookie = (await teacher.cookies()).find((c) => c.name.endsWith("session-token"));

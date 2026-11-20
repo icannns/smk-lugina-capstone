@@ -346,7 +346,7 @@ async function checkPortfolio(student) {
 
 async function checkResponsive(student, enrolled) {
   const views = [
-    [student, "/siswa/dashboard", "Halo, Dimas"],
+    [student, "/siswa/dashboard", /^Selamat (pagi|siang|sore|malam), Dimas$/],
     [student, "/siswa/events", "Jelajah Event"],
     [student, `/siswa/events?event=${eventId}`, title],
     [student, `/siswa/workspace?event=${eventId}&milestone=M1`, title],
