@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { submissionLabels } from "@/lib/guru/learning-selectors";
+import { eventCompletionLabels, submissionLabels } from "@/lib/guru/learning-selectors";
 import {
   useEffect,
   useId,
@@ -33,6 +33,12 @@ export function StudentBadge({
     </span>
   );
 }
+
+export function StudentEventCompletionBadge({ status }: { status: keyof typeof eventCompletionLabels }) {
+  const tone = status === "awaitingAssessment" ? "pending" : status === "none" ? "missing" : status;
+  return <StudentBadge status={tone}>{eventCompletionLabels[status]}</StudentBadge>;
+}
+
 export const studentControl =
   "h-10 w-full min-w-0 rounded-xl border border-line bg-white px-3 text-sm focus:outline-2 focus:outline-primary disabled:bg-gray-50 disabled:text-secondary";
 export function SiswaButton({

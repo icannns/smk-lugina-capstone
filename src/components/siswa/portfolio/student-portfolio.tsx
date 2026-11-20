@@ -9,6 +9,7 @@ import {
   assessmentFor,
   milestoneRequiresSurvey,
   submissionComplete,
+  eventCompletionStatus,
   enrollmentProgress,
   rubricScore,
   submissionLabels,
@@ -29,7 +30,7 @@ import {
 } from "@/lib/siswa/student-actions";
 import { Surface } from "../../guru/design-ui";
 import { EmptyRows } from "../../guru/learning-ui";
-import { StudentBadge as StatusBadge } from "../siswa-ui";
+import { StudentBadge as StatusBadge, StudentEventCompletionBadge } from "../siswa-ui";
 import { SiswaShell, SiswaIcon } from "../siswa-shell";
 import { useStudentIdentity } from "../use-student-identity";
 import {
@@ -155,9 +156,7 @@ export function StudentPortfolio() {
                       ? "Segera dimulai"
                       : "Berlangsung"}
                 </StatusBadge>
-                {row.completed < row.total && (
-                  <StatusBadge status="missing">Belum selesai</StatusBadge>
-                )}
+                <StudentEventCompletionBadge status={eventCompletionStatus(row)} />
               </div>
               <h2 className="mb-2 text-base font-semibold">{e.title}</h2>
               <p className="text-xs text-secondary">{formatPeriod(e.period)}</p>
@@ -293,11 +292,7 @@ function PortfolioEvent({
                     ? "Segera dimulai"
                     : "Berlangsung"}
               </StatusBadge>
-              <StatusBadge
-                status={row.completed === row.total ? "complete" : "pending"}
-              >
-                {row.completed === row.total ? "Selesai" : "Dalam pengerjaan"}
-              </StatusBadge>
+              <StudentEventCompletionBadge status={eventCompletionStatus(row)} />
               {!project && (
                 <p className="text-xs text-secondary">
                   {event.period} · Mode {event.mode}
@@ -306,6 +301,7 @@ function PortfolioEvent({
             </div>
           ) : (
             <div className="mt-1 text-sm leading-5 text-secondary">
+              <StudentEventCompletionBadge status={eventCompletionStatus(row)} />
               <p>
                 {eventDescriptions[event.id] ||
                   plainHtml(event.caseStudyHtml) ||
@@ -412,13 +408,7 @@ function PortfolioEvent({
                     </p>
                     <h2 className="font-semibold">{m.title}</h2>
                   </div>
-                  <StatusBadge
-                    status={project && submissionComplete(s) ? "complete" : status}
-                  >
-                    {project && submissionComplete(s)
-                      ? "Pengerjaan milestone selesai"
-                      : submissionLabels[status]}
-                  </StatusBadge>
+                  <StatusBadge status={status}>{submissionLabels[status]}</StatusBadge>
                 </div>
                 {project && (
                   <>

@@ -6,6 +6,7 @@ import { useAppAuth } from "@/lib/auth/session";
 import { listedEvents, useEventDraftStore } from "@/lib/guru/event-draft-store";
 import {
   eventLearning,
+  eventCompletionStatus,
   feedbackFor,
   submissionStatus,
   certificateThreshold,
@@ -14,7 +15,7 @@ import { formatEventDate } from "@/lib/guru/event-selectors";
 import { SiswaShell } from "./siswa-shell";
 import { Surface } from "../guru/design-ui";
 import { EmptyRows } from "../guru/learning-ui";
-import { StudentBadge as StatusBadge } from "./siswa-ui";
+import { StudentBadge as StatusBadge, StudentEventCompletionBadge } from "./siswa-ui";
 import { useStudentIdentity } from "./use-student-identity";
 import { DashboardAssessments } from "@/components/assessments/dashboard-assessments";
 import { EventPagination } from "./events/event-pagination";
@@ -35,12 +36,14 @@ export function StudentDashboard() {
           state.rubrics[event.rubricId ?? ""],
         ),
         row = data.rows.find((r) => r.student.id === studentId);
-      return row ? [{ event, row }] : [];
+      if (!row) return [];
+      const status = eventCompletionStatus(row);
+      return [{ event, row, status, active: event.status === "ongoing" && status !== "complete" }];
     });
   const certificates = mine.filter(
-    ({ event, row }) =>
+    ({ event, row, status }) =>
+      status === "complete" &&
       row.score !== null &&
-      row.completed === row.total &&
       row.score >= certificateThreshold(event),
   );
   const tasks = mine.flatMap(({ event, row }) =>
@@ -62,12 +65,10 @@ export function StudentDashboard() {
     ({ event }) => !state.studentUI.certificates[enrollmentKey(event.id,studentId ?? "")],
   );
   const filtered = mine.filter(
-    ({ event, row }) =>
+    ({ active, status }) =>
       filter === "all" ||
-      (filter === "complete" && row.completed === row.total) ||
-      (filter === "active" &&
-        row.completed < row.total &&
-        event.status !== "upcoming"),
+      (filter === "complete" && status === "complete") ||
+      (filter === "active" && active),
   );
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / eventCardPageSize)));
   const visible = filtered.slice((currentPage - 1) * eventCardPageSize, currentPage * eventCardPageSize);
@@ -95,7 +96,7 @@ export function StudentDashboard() {
           [
             "Event diikuti",
             mine.length,
-            `${mine.filter((e) => e.event.status === "ongoing").length} aktif · ${mine.filter((e) => e.row.completed === e.row.total).length} selesai`,
+            `${mine.filter((e) => e.active).length} aktif · ${mine.filter((e) => e.status === "complete").length} selesai`,
           ],
           [
             "Milestone selesai",
@@ -208,30 +209,24 @@ export function StudentDashboard() {
         </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {visible.map(({ event, row }) => {
-          const complete = row.completed === row.total,
+        {visible.map(({ event, row, status }) => {
+          const complete = status === "complete",
+            awaitingAssessment = status === "awaitingAssessment",
             progress = row.total
               ? Math.round((row.completed / row.total) * 100)
               : 0,
-            index = row.submissions.findIndex((s) => s && s.surveyRequired !== false && !s.surveyComplete),
-            active =
-              index >= 0
-                ? index
-                : Math.max(
-                    0,
-                    row.submissions.findIndex((s) => !s),
-                  ),
-            milestone = event.milestones[active];
+            revisionIndex = row.submissions.findIndex((s) => submissionStatus(s, state.learning) === "revision"),
+            surveyIndex = row.submissions.findIndex((s) => s && s.surveyRequired !== false && !s.surveyComplete),
+            nextIndex = row.submissions.findIndex((s) => !s),
+            activeIndex = [revisionIndex, surveyIndex, nextIndex].find((index) => index >= 0) ?? 0,
+            milestone = event.milestones[activeIndex],
+            showSummary = complete || (awaitingAssessment && revisionIndex < 0);
           return (
             <Surface key={event.id} className="!p-6">
               <div className="mb-3 flex justify-between gap-2">
-                <StatusBadge status={complete ? "complete" : "pending"}>
-                  {complete
-                    ? "Selesai"
-                    : event.status === "upcoming"
-                      ? "Segera dimulai"
-                      : "Dalam pengerjaan"}
-                </StatusBadge>
+                {event.status === "upcoming" && status === "none" ? (
+                  <StatusBadge status="pending">Segera dimulai</StatusBadge>
+                ) : <StudentEventCompletionBadge status={status} />}
                 <span className="text-xs text-secondary">
                   Nilai: {row.score ?? "belum ada"}
                 </span>
@@ -255,32 +250,32 @@ export function StudentDashboard() {
               </div>
               <div className="my-3 rounded-xl border border-line bg-gray-50 p-3 text-xs">
                 <p className="text-secondary">
-                  {complete ? "Hasil akhir" : "Milestone aktif"}
+                  {complete ? "Hasil akhir" : showSummary ? "Penilaian Guru" : "Milestone aktif"}
                 </p>
                 <p className="mt-1 font-semibold">
                   {complete
-                    ? row.score !== null
-                      ? "Seluruh milestone sudah dinilai"
-                      : "Penilaian belum lengkap"
-                    : `${active + 1}. ${milestone?.title || "Milestone"}`}
+                    ? "Seluruh milestone sudah dinilai"
+                    : showSummary
+                      ? "Penilaian belum lengkap"
+                      : `${activeIndex + 1}. ${milestone?.title || "Milestone"}`}
                 </p>
                 <p className="mt-1 text-secondary">
                   {complete
-                    ? row.score === null
+                    ? "Dokumen belajar sesuai syarat nilai."
+                    : showSummary
                       ? "Nilai akhir menunggu penilaian Guru."
-                      : "Dokumen belajar sesuai syarat nilai."
-                    : `Deadline ${milestone?.deadline ? formatEventDate(milestone.deadline, true) : "belum ditentukan"}`}
+                      : `Deadline ${milestone?.deadline ? formatEventDate(milestone.deadline, true) : "belum ditentukan"}`}
                 </p>
               </div>
               <Link
                 href={
-                  complete
+                  showSummary
                     ? `/siswa/portfolio?event=${event.id}`
-                    : `/siswa/workspace?event=${event.id}&milestone=${milestone?.id}`
+                    : `/siswa/workspace?event=${event.id}${milestone ? `&milestone=${milestone.id}` : ""}`
                 }
                 className={`flex h-10 items-center justify-center rounded-xl border text-sm font-medium ${complete ? "border-line bg-white" : "border-primary bg-primary text-white"}`}
               >
-                {complete ? "Lihat Ringkasan" : "Buka Ruang Kerja"}
+                {showSummary ? "Lihat Ringkasan" : "Buka Ruang Kerja"}
               </Link>
             </Surface>
           );

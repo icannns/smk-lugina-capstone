@@ -151,7 +151,7 @@ export function StudentEvents() {
                   }
                 >
                   {enrolled
-                    ? `Sudah Diikuti · ${e.status === "ended" ? "Selesai" : e.status === "upcoming" ? "Segera dimulai" : "Aktif"}`
+                    ? `Sudah Diikuti · ${e.status === "ended" ? "Berakhir" : e.status === "upcoming" ? "Segera dimulai" : "Aktif"}`
                     : `${e.status === "ended" ? "Berakhir" : "Terbuka"} · ${e.status === "ongoing" ? "Berlangsung" : e.status === "upcoming" ? "Segera Dimulai" : "Arsip"}`}
                 </StatusBadge>
               </div>
@@ -218,10 +218,10 @@ function StudentEventDetail({ event }: { event: ManagedEvent }) {
             {event.title}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <StatusBadge status={enrolled ? "complete" : "pending"}>
+            <StatusBadge status={enrolled ? "complete" : event.status === "ended" ? "missing" : "pending"}>
               {enrolled
-                ? "Sudah Terdaftar · Aktif"
-                : `Terbuka · ${event.status === "ongoing" ? "Berlangsung" : event.status === "upcoming" ? "Segera Dimulai" : "Berakhir"}`}
+                ? `Sudah Terdaftar · ${event.status === "ended" ? "Berakhir" : event.status === "upcoming" ? "Segera dimulai" : "Aktif"}`
+                : event.status === "ended" ? "Berakhir" : `Terbuka · ${event.status === "ongoing" ? "Berlangsung" : "Segera Dimulai"}`}
             </StatusBadge>
             <p className="text-xs text-secondary">
               {event.period} · Pengampu: {event.teacherName ?? "—"}
