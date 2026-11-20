@@ -55,9 +55,31 @@ dari root repo.
 docker compose up --build -d --wait
 ```
 
-Buka `http://localhost:3000`. Compose menyiapkan PostgreSQL, migrasi, dan akun
-demo secara otomatis. Panduan berikut menjelaskan cara mengambil password lokal,
-mengganti port, dan menghentikan layanan. [Panduan Docker](docs/DOCKER-SETUP.md)
+Buka `http://localhost:3000/login`. Compose menyiapkan PostgreSQL, migrasi, dan
+akun demo dengan password acak. Lihat password lokal di terminal pribadi dengan
+`docker compose exec web node docker/local.mjs accounts`.
+
+### Docker QA dengan satu password demo
+
+Untuk pengujian tim, jalankan langkah berikut di PowerShell dari root repo
+setelah clone atau `git pull`. Masukkan password yang disepakati tim saat
+diminta. Gunakan 12–128 karakter dengan huruf besar, huruf kecil, serta angka
+atau simbol.
+
+```powershell
+$env:BOJONG_PORT = '3001'
+$dockerDemoPassword = Read-Host 'Masukkan password demo bersama' -AsSecureString
+([System.Net.NetworkCredential]::new('', $dockerDemoPassword)).Password |
+  docker compose -p bojong-demo-bersama run --rm --build -T credentials node docker/local.mjs shared-credentials
+Remove-Variable dockerDemoPassword
+if ($LASTEXITCODE -ne 0) { throw 'Gagal menyiapkan password demo bersama.' }
+docker compose -p bojong-demo-bersama up -d --wait
+```
+
+Buka `http://localhost:3001/login`. Gunakan password yang tadi dimasukkan untuk
+`rina.guru` (Guru), `dimas` (Siswa), atau `aisyah` (Siswa). Langkah pengisian
+password dilakukan sekali untuk project Docker QA baru. Data dan password project
+Docker yang sudah ada tetap tersimpan. [Panduan Docker](docs/DOCKER-SETUP.md#opsional-satu-password-untuk-tiga-akun-demo)
 
 ### Alternatif dengan Node.js lokal
 
@@ -116,7 +138,7 @@ menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 Gunakan akun fiktif ini pada database development/test. Secara default, Docker
 membuat password acak untuk tiap akun. Project QA baru juga bisa memakai satu
-password demo yang ditentukan tim. [Panduan password demo bersama](docs/DOCKER-SETUP.md#opsional-satu-password-untuk-tiga-akun-demo)
+password demo yang ditentukan tim. [Setup Docker QA](#docker-qa-dengan-satu-password-demo)
 
 | Peran | Username | Email |
 | --- | --- | --- |
