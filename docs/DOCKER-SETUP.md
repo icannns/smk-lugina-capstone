@@ -31,7 +31,7 @@ perintah `up --build` untuk membangun image. [Referensi Compose](https://docs.do
 
 ## Login akun demo
 
-Jalankan perintah ini di terminal pribadi untuk melihat password acak milik
+Jalankan perintah ini di terminal pribadi untuk melihat password demo milik
 project Compose yang sedang berjalan.
 
 ```bash
@@ -44,15 +44,39 @@ docker compose exec web node docker/local.mjs accounts
 | `dimas` | Dashboard Siswa |
 | `aisyah` | Dashboard Siswa |
 
-Password berbeda antara akun dan antara project Compose baru. Simpan keluaran
+Secara default, password berbeda antara akun dan antarpemasangan Docker. Simpan keluaran
 perintah di terminal pribadi. Hindari menyalinnya ke log, tangkapan layar,
 group chat, atau Git. Provisioning mengisi hash akun demo yang belum memiliki
 password. Login dan data akun tetap tersedia setelah container dimulai ulang.
 
+### Opsional, satu password untuk tiga akun demo
+
+Lakukan sebelum project QA pertama kali dinyalakan. Semua anggota tim bisa
+memasukkan password demo yang sama. Pilih 12–128 karakter dengan huruf besar,
+huruf kecil, serta angka atau simbol.
+
+```powershell
+$env:BOJONG_PORT = '3001'
+$dockerDemoPassword = Read-Host 'Masukkan password demo bersama' -AsSecureString
+([System.Net.NetworkCredential]::new('', $dockerDemoPassword)).Password |
+  docker compose -p bojong-demo-bersama run --rm --build -T credentials node docker/local.mjs shared-credentials
+Remove-Variable dockerDemoPassword
+if ($LASTEXITCODE -ne 0) { throw 'Gagal menyiapkan password demo bersama.' }
+docker compose -p bojong-demo-bersama up -d --wait
+```
+
+Buka **http://localhost:3001/login**. `rina.guru`, `dimas`, dan `aisyah`
+memakai password tadi. Password masuk lewat stdin dan tersimpan di volume
+privat project. Project yang sudah diinisialisasi tetap memakai password lama.
+Gunakan nama project dan port lain jika ingin mencobanya sambil mempertahankan
+project serta data sebelumnya. Jika setup password gagal, perbaiki dulu
+sebelum menjalankan `up`.
+
 ## Yang disiapkan Compose
 
-1. `credentials` membuat password PostgreSQL, `AUTH_SECRET`, dan tiga password
-   demo acak di volume lokal. File yang sudah ada dipertahankan.
+1. `credentials` membuat password PostgreSQL dan `AUTH_SECRET` secara acak.
+   Secara default, password ketiga akun demo dibuat acak juga. File yang sudah
+   ada di volume lokal dipertahankan.
 2. `postgres` memulai PostgreSQL 17 dan menjalankan healthcheck koneksi TCP.
 3. `db-init` menjalankan `prisma migrate deploy` dan `npm run auth:provision`
    pada `bojong_united_test_docker`. Keduanya perlu berhasil sebelum `web` mulai.

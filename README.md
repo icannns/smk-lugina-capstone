@@ -114,8 +114,9 @@ menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 ## Akun demo
 
-Gunakan akun fiktif ini pada database development/test. Docker membuat password
-acak yang berbeda untuk tiap akun pada setiap project Compose.
+Gunakan akun fiktif ini pada database development/test. Secara default, Docker
+membuat password acak untuk tiap akun. Project QA baru juga bisa memakai satu
+password demo yang ditentukan tim. [Panduan password demo bersama](docs/DOCKER-SETUP.md#opsional-satu-password-untuk-tiga-akun-demo)
 
 | Peran | Username | Email |
 | --- | --- | --- |

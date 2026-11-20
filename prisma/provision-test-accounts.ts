@@ -15,7 +15,14 @@ async function main() {
   for (const [, , password] of definitions)
     if (!password || password.length < 12 || password.length > 128 || registrationPasswordError(password))
       throw new Error("All three tester passwords must meet the documented requirements.");
-  if (new Set(definitions.map((entry) => entry[2])).size !== 3) throw new Error("Tester passwords must differ.");
+  const passwordCount = new Set(definitions.map((entry) => entry[2])).size;
+  const connection = new URL(target.connectionString);
+  const allowSharedDockerPassword = process.env.BOJONG_DOCKER_SHARED_DEMO === "true" &&
+    process.env.NODE_ENV === "test" && target.databaseName === "bojong_united_test_docker" &&
+    connection.hostname === "127.0.0.1" && connection.port === "5432" && connection.username === "bojong_local";
+  if (passwordCount !== 3 && !(allowSharedDockerPassword && passwordCount === 1)) {
+    throw new Error("Tester passwords must differ outside shared Docker demo mode.");
+  }
   const database = createDatabaseClient(target.connectionString);
   try {
     await seedDevelopmentData(database);

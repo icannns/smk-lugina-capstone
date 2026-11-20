@@ -192,7 +192,8 @@ Tidak menyediakan endpoint pembuatan Guru. Tidak berlaku untuk produksi.
 
 1. Siapkan tiga password **berbeda**, masing-masing 12–128 karakter dan
    sesuai persyaratan UI. Masukkan melalui environment atau secret manager.
-   Docker melakukan langkah ini secara otomatis. [Panduan Docker](DOCKER-SETUP.md)
+   Docker melakukan langkah ini secara otomatis dan menyediakan opsi password
+   bersama khusus project Docker QA baru. [Panduan Docker](DOCKER-SETUP.md#opsional-satu-password-untuk-tiga-akun-demo)
 2. Set NODE_ENV=development, ALLOW_DEV_SEED=true,
    ALLOW_DEV_ACCOUNT_PROVISION=true di terminal provisioning.
 3. Isi TEST_*_PASSWORD dari vault atau buat secara acak dan bagikan ke tester
