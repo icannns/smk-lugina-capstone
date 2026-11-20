@@ -12,6 +12,7 @@ import {
   submissionComplete,
   certificateThreshold,
   enrollmentProgress,
+  eventCompletionStatus,
   feedbackFor,
   rubricScore,
   submissionLabels,
@@ -40,6 +41,7 @@ import {
   SiswaButton,
   SiswaLink,
   StudentNotice,
+  StudentEventCompletionBadge,
   SummaryRows,
   studentControl,
   formatPeriod,
@@ -233,13 +235,7 @@ function Workspace({ event, index }: { event: ManagedEvent; index: number }) {
             {event.title}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <StatusBadge
-              status={row.completed === row.total ? "complete" : "pending"}
-            >
-              {row.completed === row.total
-                ? "Tugas & survei selesai"
-                : "Dalam pengerjaan"}
-            </StatusBadge>
+            <StudentEventCompletionBadge status={eventCompletionStatus(row)} />
             <p className="text-xs text-secondary">
               {formatPeriod(event.period)} · Mode {event.mode} ·{" "}
               {event.teacherName ?? "—"}
