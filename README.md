@@ -48,12 +48,25 @@ yang sudah dikonfigurasi tetap dapat digunakan.
 
 ## Cara menjalankan di laptop
 
-### 1. Siapkan kebutuhan
+Dengan Docker Desktop dalam mode Linux containers, jalankan perintah berikut
+dari root repo.
+
+```bash
+docker compose up --build -d --wait
+```
+
+Buka `http://localhost:3000`. Compose menyiapkan PostgreSQL, migrasi, dan akun
+demo secara otomatis. Panduan berikut menjelaskan cara mengambil password lokal,
+mengganti port, dan menghentikan layanan. [Panduan Docker](docs/DOCKER-SETUP.md)
+
+### Alternatif dengan Node.js lokal
+
+#### 1. Siapkan kebutuhan
 
 - Node.js **20.19+, 22.12+, atau 24+**, beserta npm (sesuai dukungan Prisma).
 - Git dan akses GitHub ke repository ini karena repository bersifat privat.
 
-### 2. Ambil proyek dan jalankan frontend
+#### 2. Ambil proyek dan jalankan frontend
 
 Untuk salinan repository baru:
 
@@ -79,7 +92,7 @@ Login nyata memerlukan database lokal, migrasi, AUTH_SECRET dan provisioning aku
 koneksi database. Build pertama mungkin memerlukan internet untuk mengunduh
 font Inter melalui `next/font`; hasil build menyajikan font secara lokal.
 
-### 3. Menjalankan hasil build produksi secara lokal
+#### 3. Menjalankan hasil build produksi secara lokal
 
 Dari root repository:
 
@@ -101,28 +114,26 @@ menghasilkan client Prisma, tanpa migrasi atau seed otomatis.
 
 ## Akun demo
 
-Identitas dan password berikut **sengaja dipublikasikan untuk demo lokal**.
-Gunakan hanya pada database development/test disposable berisi data fiktif.
-Jangan gunakan password ini pada deployment publik, akun sekolah, atau akun pribadi.
+Gunakan akun fiktif ini pada database development/test. Docker membuat password
+acak yang berbeda untuk tiap akun pada setiap project Compose.
 
-| Peran | Username | Email | Password demo lokal |
-| --- | --- | --- | --- |
-| Guru | `rina.guru` | `guru@example.com` | `DemoGuru2026!` |
-| Siswa - Dimas | `dimas` | `siswa@example.com` | `DemoDimas2026!` |
-| Siswa - Aisyah | `aisyah` | `aisyah@example.com` | `DemoAisyah2026!` |
+| Peran | Username | Email |
+| --- | --- | --- |
+| Guru | `rina.guru` | `guru@example.com` |
+| Siswa - Dimas | `dimas` | `siswa@example.com` |
+| Siswa - Aisyah | `aisyah` | `aisyah@example.com` |
 
-**Password di tabel berlaku setelah provisioning berikut berhasil pada akun yang
-belum memiliki password.** Clone, `npm ci`, dan seed data saja tidak otomatis
-mengaktifkan password tersebut. Siapkan `.env` privat, database lokal, dan migrasi
-sesuai [panduan Auth](docs/AUTHENTICATION-RBAC.md), lalu jalankan dari root:
+Lihat password instalasi Docker sendiri dengan `docker compose exec web node
+docker/local.mjs accounts`. Untuk setup Node.js lokal, siapkan database dan
+`.env` privat sesuai panduan Auth, lalu isi tiga password berbeda sebelum
+menjalankan provisioning. [Panduan Auth](docs/AUTHENTICATION-RBAC.md)
 
 ```powershell
 $env:NODE_ENV = 'development'
 $env:ALLOW_DEV_SEED = 'true'
 $env:ALLOW_DEV_ACCOUNT_PROVISION = 'true'
-$env:TEST_TEACHER_PASSWORD = 'DemoGuru2026!'
-$env:TEST_DIMAS_PASSWORD = 'DemoDimas2026!'
-$env:TEST_AISYAH_PASSWORD = 'DemoAisyah2026!'
+# Sediakan TEST_TEACHER_PASSWORD, TEST_DIMAS_PASSWORD, dan
+# TEST_AISYAH_PASSWORD secara privat di .env lokal.
 try {
     npm run auth:provision
     if ($LASTEXITCODE -ne 0) { throw 'Provisioning gagal; periksa konfigurasi lokal.' }
@@ -138,9 +149,7 @@ memiliki password, menjalankan ulang provisioning tidak mengganti passwordnya.**
 Gunakan password yang ditetapkan sebelumnya atau database QA baru; jangan menghapus
 akun/history atau reset database bersama untuk memaksakan password demo.
 
-Untuk QA terbatas, operator boleh memakai tiga password privat berbeda sebagai
-pengganti contoh tabel. Password tersebut tetap disimpan sebagai hash Argon2 di
-PostgreSQL. Sandi privat QA, database, dan AUTH_SECRET tidak dicantumkan di README.
+Password akun disimpan sebagai hash Argon2 di PostgreSQL.
 
 Gunakan username **atau** email pada halaman `/login`. Akun Guru diarahkan ke
 `/guru/dashboard`, sedangkan akun Siswa ke `/siswa/dashboard`. Pendaftaran publik

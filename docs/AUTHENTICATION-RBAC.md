@@ -164,7 +164,7 @@ DB/password sesuai [panduan database](DATABASE-FOUNDATION.md).
 | `AUTH_TRUST_PROXY_HEADERS` | false kecuali ingress benar-benar dipercaya. |
 | `ALLOW_DEV_SEED`, `NODE_ENV` | Guard seed/provision: true dan development/test pada command lokal. |
 | `ALLOW_DEV_ACCOUNT_PROVISION` | Opt-in tambahan true khusus provisioning tester. |
-| `TEST_TEACHER_PASSWORD`, `TEST_DIMAS_PASSWORD`, `TEST_AISYAH_PASSWORD` | Tiga password tester berbeda; template tetap kosong. Contoh publik di README hanya untuk demo lokal disposable, atau gunakan sandi privat untuk QA terbatas. |
+| `TEST_TEACHER_PASSWORD`, `TEST_DIMAS_PASSWORD`, `TEST_AISYAH_PASSWORD` | Tiga password tester berbeda. Template membiarkan nilainya kosong. Docker mengisi nilai acak saat bootstrap. |
 
 ```powershell
 npm ci
@@ -190,14 +190,13 @@ Perintah hanya menerima DB localhost bernama `bojong_united_dev/test` (suffix
 boleh). Ini pencegah salah target, bukan jaminan keamanan koneksi tunnel.
 Tidak menyediakan endpoint pembuatan Guru. Tidak berlaku untuk produksi.
 
-1. Siapkan 3 password **berbeda**, 12–128 karakter dengan persyaratan UI,
-   secara aman melalui environment/secret manager. Untuk demo lokal disposable
-   dengan data fiktif, boleh gunakan contoh publik pada [README](../README.md#akun-demo).
-   Contoh tersebut bukan kredensial deployment atau akun pengguna nyata.
+1. Siapkan tiga password **berbeda**, masing-masing 12–128 karakter dan
+   sesuai persyaratan UI. Masukkan melalui environment atau secret manager.
+   Docker melakukan langkah ini secara otomatis. [Panduan Docker](DOCKER-SETUP.md)
 2. Set NODE_ENV=development, ALLOW_DEV_SEED=true,
    ALLOW_DEV_ACCOUNT_PROVISION=true di terminal provisioning.
-3. Isi TEST_*_PASSWORD dari vault atau generate dan kirim ke tester melalui
-   kanal privat yang disetujui, atau gunakan contoh README hanya untuk demo lokal.
+3. Isi TEST_*_PASSWORD dari vault atau buat secara acak dan bagikan ke tester
+   melalui kanal privat yang disetujui.
    Script **tidak mencetak** password/URL.
 4. Jalankan `npm run auth:provision`. Command menjalankan seed idempoten,
    memverifikasi ID/role/isDemo, lalu mengisi hash hanya jika masih null.
